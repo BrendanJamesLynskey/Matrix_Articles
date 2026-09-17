@@ -1,0 +1,1289 @@
+<header class="hero">
+    <div class="series-label">Matrix Methods in Engineering &mdash; Deck 01</div>
+    <h1>Network Parameters: <span class="accent">S, Z and Y</span></h1>
+    <p class="subtitle">One linear operator, three coordinate systems &mdash; and the matrix
+    properties that decide whether a measured network is reciprocal, passive, lossless,
+    and safe to simulate.</p>
+
+    <div class="tags">
+        <span class="tag">impedance</span><span class="tag">admittance</span>
+        <span class="tag">scattering</span><span class="tag">reciprocity</span>
+        <span class="tag">passivity</span><span class="tag">unitary</span>
+        <span class="tag">poles &amp; zeros</span><span class="tag">Smith chart</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">$N$ ports</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$\mathbf{Z},\mathbf{Y},\mathbf{S}$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">structure</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">poles</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">macromodel</span>
+    </div>
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">One network, three descriptions</a></li>
+        <li><a href="#slide-02">$\mathbf{Z}$ and $\mathbf{Y}$ on the bench</a></li>
+        <li><a href="#slide-03">Passivity is positive semidefiniteness</a></li>
+        <li><a href="#slide-04">Why travelling waves are the natural variables</a></li>
+        <li><a href="#slide-05">What an S-parameter actually is</a></li>
+        <li><a href="#slide-14">Voltage waves, power waves and pseudo-waves</a></li>
+        <li><a href="#slide-06">What a scattering measurement cannot tell you</a></li>
+        <li><a href="#slide-07">Lossless is unitary, passive is a contraction</a></li>
+        <li><a href="#slide-08">Interactive: two-port scattering explorer</a></li>
+        <li><a href="#slide-09">One frequency and a sweep are the same idea</a></li>
+        <li><a href="#slide-10">The pair that really is two views</a></li>
+        <li><a href="#slide-11">Interactive: pole&ndash;zero explorer</a></li>
+        <li><a href="#slide-12">Causality and Kramers&ndash;Kronig</a></li>
+        <li><a href="#slide-13">Passivity is the hard part</a></li>
+        <li><a href="#slide-14">Conversions and the Smith chart</a></li>
+        <li><a href="#slide-15">Interactive: the bilinear map</a></li>
+        <li><a href="#slide-16">Mixed-mode: differential pairs done properly</a></li>
+        <li><a href="#slide-17">Interactive: skew and mode conversion</a></li>
+        <li><a href="#slide-18">Where this shows up</a></li>
+        <li><a href="#slide-19">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>One Network, Three Descriptions</h2>
+    <p>Take a system with $N$ ports &mdash; a filter, a length of cable, an amplifier, or
+    simply a box with $N$ coax connectors on it. Because such a system is linear, its
+    behaviour at any one frequency is captured entirely by an $N \times N$ matrix. Which
+    matrix you get depends only on what you choose to call the input.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Impedance $\mathbf{Z}$</h4>
+            <p>Drive the ports with <strong>currents</strong>, read the <strong>voltages</strong>
+            that appear.</p>
+            <p>$$\mathbf{V} = \mathbf{Z}\,\mathbf{I}$$</p>
+            <p>Entries in ohms.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Admittance $\mathbf{Y}$</h4>
+            <p>Drive with <strong>voltages</strong>, read the <strong>currents</strong>.
+            The exact reverse.</p>
+            <p>$$\mathbf{I} = \mathbf{Y}\,\mathbf{V}, \qquad \mathbf{Y} = \mathbf{Z}^{-1}$$</p>
+            <p>Entries in siemens &mdash; amps per volt.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Scattering $\mathbf{S}$</h4>
+            <p>Work with the <strong>travelling waves</strong> a transmission line carries.</p>
+            <p>$$\mathbf{b} = \mathbf{S}\,\mathbf{a}$$</p>
+            <p>Entries dimensionless.</p>
+        </div>
+    </div>
+
+    <p>The three matrices are three coordinate systems laid over the same underlying linear
+    operator, and slide 14 gives the formulae for moving between them. All three are
+    functions of frequency: writing $\mathbf{Z}$ rather than $\mathbf{Z}(f)$ is only a
+    shorthand.</p>
+
+    <div class="callout">
+        <div class="callout-label">Get the direction right</div>
+        <p>$\mathbf{Z}$ is <em>current in, voltage out</em>. It is $\mathbf{Y}$ that answers
+        "voltage in, current out", which is why its units are amps per volt. Mixing the two
+        up is the single most common slip in this material.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>$\mathbf{Z}$ and $\mathbf{Y}$ on the Bench</h2>
+    <p>Column $j$ of the impedance matrix has a direct experimental meaning. Inject a known
+    current into port $j$, leave every other port <strong>open</strong> so no current flows
+    there, and record the voltage at each port:</p>
+    <p>$$Z_{ij} = \left.\frac{V_i}{I_j}\right|_{I_k = 0,\ k \neq j}, \qquad
+       Y_{ij} = \left.\frac{I_i}{V_j}\right|_{V_k = 0,\ k \neq j}.$$</p>
+    <p>The admittance matrix is the mirror image, with every other port <strong>shorted</strong>
+    instead.</p>
+
+    <h3>How hard is that at microwave frequencies?</h3>
+    <p>Harder than at audio, but the difficulty is routinely overstated. An open has to be an
+    open <em>at the reference plane</em>, and a physical open has fringing capacitance and may
+    radiate, while a physical short has series inductance. Yet open, short and load standards
+    are exactly what a conventional <strong>SOLT</strong> calibration uses, accurately, at
+    5 GHz and a good deal higher &mdash; the standards are not assumed ideal but
+    <em>characterised</em>, their fringing capacitance and residual inductance captured in a
+    model the analyser applies. Higher still, and on wafer, <strong>TRL</strong> takes over
+    because it leans on transmission-line sections rather than lumped terminations.</p>
+
+    <div class="callout">
+        <div class="callout-label">So this is not why S-parameters exist</div>
+        <p>Realising ideal terminations is <em>challenging</em>, not hopeless, and the
+        inconvenience is real but secondary. The actual reason waves win is on slide 04.</p>
+    </div>
+
+    <h3>Reciprocity is transpose symmetry</h3>
+    <p>Build the network from ordinary R, L, C and PCB copper and transmission from port 1 to
+    port 2 equals transmission from 2 to 1. The matrix records that as symmetry about the
+    diagonal:</p>
+    <p>$$\mathbf{Z} = \mathbf{Z}^{\mathsf{T}}, \qquad
+       \mathbf{Y} = \mathbf{Y}^{\mathsf{T}}, \qquad
+       \mathbf{S} = \mathbf{S}^{\mathsf{T}}.$$</p>
+    <p>Note the plain transpose, <em>not</em> the conjugate transpose: $\mathbf{Z}$ stays
+    complex, so this is weaker than Hermitian symmetry. Ferrite isolators, circulators and
+    active devices break reciprocity on purpose, and in measured data the size of the
+    antisymmetric part $\mathbf{Z} - \mathbf{Z}^{\mathsf{T}}$ is a direct measure of error.</p>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Passivity Is Positive Semidefiniteness</h2>
+    <p>A passive network can absorb energy and store it, but it cannot on average deliver more
+    than it receives, however you drive it. In port variables the average power delivered
+    <em>into</em> the network by a set of phasor drives is</p>
+    <p>$$P_{\text{avg}} = \tfrac12 \operatorname{Re}\!\left(\mathbf{V}^{\mathsf{H}}\mathbf{I}\right)
+       = \tfrac12\, \mathbf{I}^{\mathsf{H}} \mathbf{Z}_{\mathsf{H}} \mathbf{I},
+       \qquad \mathbf{Z}_{\mathsf{H}} = \tfrac12\left(\mathbf{Z} + \mathbf{Z}^{\mathsf{H}}\right).$$</p>
+    <p>Requiring this to be non-negative for <em>every</em> drive vector is exactly the
+    statement that the Hermitian part is positive semidefinite, so passivity collapses to a
+    real eigenvalue test:</p>
+    <p>$$\mathbf{Z}_{\mathsf{H}} \succeq 0
+       \iff \lambda_i(\mathbf{Z}_{\mathsf{H}}) \ge 0 \ \ \forall i.$$</p>
+    <p>Split $\mathbf{Z} = \mathbf{R} + j\mathbf{X}$ and the physics is obvious: only
+    $\mathbf{R}$ absorbs average power, $\mathbf{X}$ merely stores and returns it, and a
+    lossless network is the boundary case $\mathbf{R} = 0$.</p>
+
+    <div class="callout">
+        <div class="callout-label">Symmetric, Hermitian and real are three different things</div>
+        <p>Transpose symmetry $\mathbf{Z} = \mathbf{Z}^{\mathsf{T}}$ expresses
+        <em>reciprocity</em> and needs a reciprocal medium; it assumes nothing about signals
+        being real. The Hermitian condition $\mathbf{Z}_{\mathsf{H}} \succeq 0$ expresses
+        <em>passivity</em> and likewise needs no reality, because average power is a Hermitian
+        quadratic form even for complex phasors. What <em>does</em> need real time-domain
+        signals is conjugate symmetry, $H(-j\omega) = H^*(j\omega)$. A VNA measuring real
+        voltages obeys it; a complex-baseband IQ model generally does not. Trust the Hermitian
+        passivity test for complex signals; distrust any negative-frequency mirror argument
+        unless $h(t)$ has been stated to be real.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Why Travelling Waves Are the Natural Variables</h2>
+    <p>Once a connection is long enough that the signal's phase changes appreciably along it,
+    the natural solution of the equations on that connection is not a single voltage but a
+    <strong>pair of waves</strong> &mdash; one heading towards the load, one heading back.
+    Transmission-line theory is built on that pair from the start, and the quantities an RF
+    engineer uses daily are all relationships between them: return loss, insertion loss, VSWR,
+    group delay, the action of a matching network, the effect of a length of line.</p>
+
+    <p>Scattering parameters carry that description into network theory, and <em>that</em> is
+    why they exist. When a signal arrives at one port and leaves by another, the useful thing
+    to know is how its magnitude and phase were altered on the way &mdash; and an S-parameter
+    is precisely that number. Cascade two components and the phases add; insert a quarter-wave
+    line and you can read off what it does. The description composes the way the hardware
+    does.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>The real reason</h4>
+            <p>Waves are the natural currency of transmission-line and network theory, and an
+            S-parameter is the natural bookkeeping for magnitude and phase from port to port.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>The secondary convenience</h4>
+            <p>Unused ports sit in $Z_0$ rather than open or short, so the device stays in the
+            broadband-matched state it meets in the real system &mdash; and a good 50&nbsp;&Omega;
+            load holds over a wide sweep more easily than an ideal open. Real, but a consequence
+            of the choice of variables rather than the motivation for it.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>What an S-Parameter Actually Is</h2>
+    <p>Start with what is physically on the line. At a port on a transmission line of
+    characteristic impedance $Z_0$, the total voltage and current are the superposition of a
+    wave heading into the network and one heading back out:</p>
+    <p>$$V = V^{+} + V^{-}, \qquad I = \frac{V^{+} - V^{-}}{Z_0},$$</p>
+    <p>$$V^{+} = \frac{V + Z_0 I}{2}, \qquad V^{-} = \frac{V - Z_0 I}{2}.$$</p>
+    <p>These are <strong>voltages, in volts</strong>. They are what a TDR displays and what
+    superposes at an impedance discontinuity. A scattering parameter is a ratio of one of
+    them to another:</p>
+    <p>$$S_{ij} = \left.\frac{V_i^{-}}{V_j^{+}}\right|_{V_k^{+} = 0,\ k \neq j}$$
+    <p>&mdash; that is, with every other port terminated in $Z_0$ so nothing is incident there.
+    In words: <strong>$S_{ij}$ is the complex ratio of the wave leaving port $i$ to the wave
+    arriving at port $j$</strong>, and being complex it carries a magnitude and a phase.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>$S_{21}$ &mdash; transmission</h4>
+            <p>The magnitude and phase of the signal emerging at port 2 relative to the signal
+            driven into port 1, at whichever frequency you are looking at. Sweep the source and
+            that collection of numbers <em>is</em> the transmission response.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>$S_{11}$ &mdash; reflection</h4>
+            <p>The wave that comes back out of port 1 relative to the one you sent in: the input
+            reflection coefficient.</p>
+        </div>
+    </div>
+    <p>In general the diagonal entries are reflections and the off-diagonal entries are
+    transmissions, and <strong>the second subscript is always the port you drove</strong>.</p>
+
+    <p>It is often convenient to rescale as $a_i = V_i^{+}/\sqrt{Z_0}$ and
+    $b_i = V_i^{-}/\sqrt{Z_0}$, so that $|a_i|^2$ is the power into port $i$ and $|b_i|^2$
+    the power out of it, and the matrix becomes $\mathbf{b} = \mathbf{S}\mathbf{a}$. The
+    rescaling is by a constant common to every port, so it cancels from every ratio and
+    leaves each $S_{ij}$ untouched; its only job is to let the power bookkeeping of slide 07
+    be written without dragging factors of $1/2Z_0$ around. With $Z_0$ real these are also
+    Kurokawa's <em>power waves</em> &mdash; the two descriptions part company only at a
+    complex reference, which slide 14 returns to.</p>
+
+    <div class="callout">
+        <div class="callout-label">Reading the numbers on the bench</div>
+        <p>Send 1&nbsp;W into port 1 with the other port matched. A fraction $|S_{11}|^2$ comes
+        straight back and $|S_{21}|^2$ arrives at port 2, so $|S_{11}| = -10$&nbsp;dB means a
+        tenth of the power reflected and $|S_{21}| = -3$&nbsp;dB means about half gets through.
+        One trap: cascading is <em>not</em> matrix multiplication of $\mathbf{S}$, because the
+        wave leaving the first component is partly reflected by the second and returns to be
+        re-reflected. Convert to ABCD or T, multiply there, convert back. A
+        second trap is the decibel convention: $S_{21}$ is a ratio of wave <em>amplitudes</em>,
+        so $|S_{21}|$ is a voltage ratio while $|S_{21}|^2$ is the power ratio, and the figure
+        on every datasheet is $20\log|S_{21}|$, not $10\log$. Halving the voltage is
+        &minus;6&nbsp;dB and quarters the power; &minus;3&nbsp;dB is $|S_{21}| = 0.707$,
+        which halves it.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>What a Scattering Measurement Cannot Tell You</h2>
+    <p>S-parameters account for power that <strong>leaves through a port</strong>. They say
+    nothing about where the rest of it went.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>What you can compute</h4>
+            <p>From a complete $N$-port set, the total power that failed to emerge:</p>
+            <p>$$1 - \sum_i |S_{i1}|^2.$$</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>What that number hides</h4>
+            <p>It lumps <strong>dissipation</strong> and <strong>radiation</strong> together. A
+            structure that reflects less than everything may be heating copper and dielectric,
+            or radiating into the room as an antenna. No scattering measurement separates the
+            two.</p>
+        </div>
+    </div>
+
+    <p>A perfect open reflects everything and does so in phase, sitting at $S_{11} = +1$. But
+    the moment the structure radiates, part of what would have returned is gone, and the
+    S-parameters record only that it did not come back. Distinguishing the mechanisms needs a
+    different experiment &mdash; a calorimetric one, or a pattern measurement in an anechoic
+    chamber.</p>
+
+    <div class="callout">
+        <div class="callout-label">The same limitation applies to passivity</div>
+        <p>The condition on the next slide certifies that the network is not <em>supplying</em>
+        energy. It says nothing about which mechanism is consuming it.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Lossless Is Unitary, Passive Is a Contraction</h2>
+    <p>Count the power. The difference between what goes in and what comes out is</p>
+    <p>$$\tfrac12\left(\mathbf{a}^{\mathsf{H}}\mathbf{a} - \mathbf{b}^{\mathsf{H}}\mathbf{b}\right)
+       = \tfrac12\,\mathbf{a}^{\mathsf{H}}
+         \left(\mathbf{I} - \mathbf{S}^{\mathsf{H}}\mathbf{S}\right)\mathbf{a}.$$</p>
+    <p>If the network absorbs nothing whatever you send it, that must vanish for every drive
+    vector, which forces</p>
+    <p>$$\mathbf{S}^{\mathsf{H}}\mathbf{S} = \mathbf{I}.$$</p>
+    <p>A lossless network has a <strong>unitary</strong> scattering matrix: it rotates the
+    vector of wave amplitudes without changing its length. The columns are orthonormal, which
+    is the algebraic way of saying that power sent into one port must emerge from some port.</p>
+
+    <p>Allow loss and the equality relaxes to an inequality,</p>
+    <p>$$\mathbf{I} - \mathbf{S}^{\mathsf{H}}\mathbf{S} \succeq 0
+       \iff \sigma_i(\mathbf{S}) \le 1 \ \ \forall i,$$</p>
+    <p>so a passive network is a <strong>contraction</strong> on wave space &mdash; it can
+    shrink the wave vector but never stretch it &mdash; and losslessness is the boundary case
+    in which nothing shrinks at all.</p>
+
+    <div class="callout">
+        <div class="callout-label">Use singular values, not eigenvalues</div>
+        <p>Once there is loss, $\mathbf{S}$ need not be normal and its eigenvectors need not
+        stay orthogonal. The singular-value form remains the correct test; the eigenvalues do
+        still satisfy $|\lambda_k| \le 1$, but they are the weaker statement.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Interactive: Two-Port Scattering Explorer</h2>
+    <p>A single resistor in series between two 50&nbsp;&Omega; ports. Small enough to solve in
+    your head, big enough to show what an eigenvector of $\mathbf{S}$ means:</p>
+    <p>$$\mathbf{S} = \begin{pmatrix} s_{11} & s_{21} \\ s_{21} & s_{11}\end{pmatrix},
+       \quad s_{11} = \frac{R}{R + 2Z_0}, \quad s_{21} = \frac{2Z_0}{R + 2Z_0}.$$</p>
+    <p>Because the matrix is symmetric with equal diagonals, its eigenvectors are fixed: the
+    <strong>even</strong> drive $(1,1)/\sqrt2$ and the <strong>odd</strong> drive
+    $(1,-1)/\sqrt2$, with eigenvalues $s_{11} + s_{21} = 1$ and $s_{11} - s_{21}$.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="rp-r">Series $R$ (&Omega;)</label>
+            <input type="range" id="rp-r" min="0" max="400" step="1" value="25">
+            <span class="val" id="rp-r-val">25</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric"><div class="metric-label">$s_{11}$</div><div class="metric-value" id="rp-s11">0.200</div></div>
+            <div class="metric"><div class="metric-label">$s_{21}$</div><div class="metric-value" id="rp-s21">0.800</div></div>
+            <div class="metric"><div class="metric-label">$\lambda_{\text{even}}$</div><div class="metric-value" id="rp-le">+1.000</div></div>
+            <div class="metric"><div class="metric-label">$\lambda_{\text{odd}}$</div><div class="metric-value" id="rp-lo">&minus;0.600</div></div>
+            <div class="metric"><div class="metric-label">Insertion loss</div><div class="metric-value" id="rp-il">1.94 dB</div></div>
+            <div class="metric"><div class="metric-label">$\sigma_{\max}$</div><div class="metric-value" id="rp-smax">1.000</div></div>
+        </div>
+        <div id="rp-verdict" class="verdict ok">passive: every singular value &le; 1</div>
+    </div>
+
+    <div class="canvas-wrap">
+        <div class="plane-grid">
+            <canvas id="rp-lambda" width="380" height="330"></canvas>
+            <canvas id="rp-power" width="380" height="330"></canvas>
+        </div>
+        <div class="legend">
+            <span><i style="background:#22d3ee"></i>even mode &mdash; survives</span>
+            <span><i style="background:#f472b6"></i>odd mode &mdash; attenuated</span>
+            <span><i style="background:#fbbf24"></i>dissipated in $R$</span>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Why the even mode is free</div>
+        <p>Drive both sides identically and both ends of the resistor sit at the same
+        potential, so no current flows through it and nothing is dissipated &mdash; the pattern
+        passes through untouched, $|\lambda| = 1$. Drive them in antiphase and the full
+        difference lands across the resistor, which warms up, so that pattern comes out
+        smaller. That is all an eigenvector of $\mathbf{S}$ amounts to: the drive pattern that
+        keeps its shape, with $|\lambda|$ telling you how much of it survives. Set $R = 0$ and
+        both eigenvalues reach the unit circle &mdash; a lossless through-connection.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>One Frequency and a Sweep Are the Same Idea</h2>
+    <p>It is tempting to present "the matrix at one frequency" and "the swept response" as two
+    different concepts. They are not. The matrix <em>is</em> a function of frequency, and a
+    swept measurement is that function sampled at many points rather than one.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>At $f = f_0$</h4>
+            <p>$\mathbf{S}(f_0)$ is an $N \times N$ matrix of complex numbers. Ask about
+            reciprocity, passivity, losslessness, eigenvectors &mdash; all answered from that
+            matrix.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Across a band</h4>
+            <p>Exactly the same questions, answered once per frequency. Plot one entry against
+            $f$ and you have a frequency response. <strong>No new concept has entered.</strong></p>
+        </div>
+    </div>
+
+    <p>Everything on slides 01&ndash;08 therefore applies unchanged across a sweep. What
+    genuinely deserves to be called a second view is the <strong>time domain</strong>, and that
+    is the next slide.</p>
+
+    <div class="callout">
+        <div class="callout-label">A word this material is better off without</div>
+        <p>Calling the single-frequency picture "spatial" invites a comparison with
+        beam-steering and phased arrays, where sources separated in <em>space</em> play the role
+        that taps separated in <em>time</em> play in a filter. That is a real and interesting
+        analogy &mdash; and a different article. Here, the honest split is time against
+        frequency.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>The Pair That Really Is Two Views</h2>
+    <p>Plotting an entry of $\mathbf{S}$ against frequency raises a new question: why does the
+    curve have the shape it has? Answering that means looking <em>inside</em> the box, and the
+    natural language inside is time.</p>
+
+    <p>For a network built from R, L and C, every entry is a ratio of polynomials,
+    $S_{21}(s) = N(s)/D(s)$. Collect every capacitor voltage and inductor current into a state
+    vector $\mathbf{q}$ and the dynamics become</p>
+    <p>$$\frac{d\mathbf{q}}{dt} = \mathbf{A}_c \mathbf{q} + \mathbf{b}\,x(t),$$</p>
+    <p>and for a minimal model &mdash; one with no hidden states that cancel out of the output
+    &mdash; the <strong>poles are exactly the eigenvalues of $\mathbf{A}_c$</strong>. Stable and
+    passive means all of them sit strictly left of the $j\omega$-axis, an axis which is both
+    the fence they must stay behind and the road along which you measure.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Frequency response</h4>
+            <p>$S_{21}(j\omega)$ against $\omega$. A pole near the axis gives a tall narrow
+            peak; a zero on the axis gives a null.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Impulse response</h4>
+            <p>$h(t)$ against $t$. The same pole gives a slowly decaying ring at the same
+            frequency. One Laplace transform apart.</p>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Three boundaries that all look like $|\cdot| = 1$</div>
+        <p><strong>(1) Eigenvalues of $\mathbf{S}(f)$.</strong> At a fixed frequency, lossless
+        means unitary means every $|\lambda| = 1$. A statement about how ports exchange energy;
+        nothing about stability.
+        <strong>(2) Poles in the $s$-plane.</strong> Eigenvalues of $\mathbf{A}_c$; stable when
+        strictly left of $\operatorname{Re}(s) = 0$, which is also the evaluation axis.
+        <strong>(3) Poles in the $z$-plane</strong> &mdash; the discrete-time world of the
+        companion deck, where the boundary is $|z| = 1$ and the response is evaluated on the
+        circle itself. The pair worth keeping apart is (1) and (3): both are unit circles in a
+        complex plane, and neither has anything to do with the other.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-11">
+    <div class="slide-number">11</div>
+    <h2>Interactive: Pole&ndash;Zero Explorer</h2>
+    <p>A notched resonance, the workhorse shape of filter design:</p>
+    <p>$$H(s) = \frac{s^2 + \omega_z^2}{s^2 + 2\sigma s + \omega_0^2}.$$</p>
+    <p>Move the pole pair towards the $j\omega$-axis and watch the peak grow and the ringing
+    lengthen &mdash; two readings of one change. Move the zero and watch the null follow it.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="pz-sig">$\sigma$ &mdash; distance from axis</label>
+            <input type="range" id="pz-sig" min="0.02" max="1.0" step="0.01" value="0.08">
+            <span class="val" id="pz-sig-val">0.08</span>
+        </div>
+        <div class="control-row">
+            <label for="pz-w0">$\omega_0$ &mdash; pole height</label>
+            <input type="range" id="pz-w0" min="0.3" max="2.6" step="0.02" value="1.00">
+            <span class="val" id="pz-w0-val">1.00</span>
+        </div>
+        <div class="control-row">
+            <label for="pz-wz">$\omega_z$ &mdash; zero height</label>
+            <input type="range" id="pz-wz" min="0.0" max="3.4" step="0.02" value="2.00">
+            <span class="val" id="pz-wz-val">2.00</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric"><div class="metric-label">$Q \approx \omega_0/2\sigma$</div><div class="metric-value" id="pz-q">6.3</div></div>
+            <div class="metric"><div class="metric-label">Peak $|H(j\omega_0)|$</div><div class="metric-value" id="pz-peak">18.8&times;</div></div>
+            <div class="metric"><div class="metric-label">Peak in dB</div><div class="metric-value" id="pz-db">25.5</div></div>
+            <div class="metric"><div class="metric-label">Ring-down $1/\sigma$</div><div class="metric-value" id="pz-tau">12.5 s</div></div>
+        </div>
+    </div>
+
+    <div class="canvas-wrap">
+        <div class="plane-grid">
+            <canvas id="pz-plane" width="380" height="360"></canvas>
+            <canvas id="pz-mag" width="380" height="360"></canvas>
+        </div>
+        <canvas id="pz-imp" width="780" height="200" style="margin-top:.75rem"></canvas>
+        <div class="legend">
+            <span><i style="background:#f472b6"></i>poles &times;</span>
+            <span><i style="background:#22d3ee"></i>zeros &cir;</span>
+            <span><i style="background:#fbbf24"></i>envelope $e^{-\sigma t}$</span>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">The swing analogy</div>
+        <p>Small pushes at the right rhythm build a large swing; grab the ropes &mdash; add
+        loss, move the pole away from the axis &mdash; and it dies quickly. A zero sitting
+        <em>on</em> the axis is the opposite trick: the numerator vanishes exactly there, so the
+        response nulls out. Notch filters put zeros on the axis deliberately.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-12">
+    <div class="slide-number">12</div>
+    <h2>Causality and Kramers&ndash;Kronig</h2>
+    <p>What the laboratory hands you is samples of $\mathbf{S}(j\omega)$ &mdash; discrete,
+    band-limited, noisy. Turning that into something a circuit simulator can use means fitting
+    a rational model, and the fit has to respect two physical constraints the raw data only
+    approximately encodes.</p>
+
+    <p>A causal impulse response, $h(t) = 0$ for $t &lt; 0$, corresponds to a transfer function
+    analytic in the right half-plane, and Cauchy's theorem then ties the real and imaginary
+    parts of $H(j\omega)$ together as a Hilbert pair:</p>
+    <p>$$\operatorname{Re} H(j\omega) = \frac{1}{\pi}\,\mathcal{P}\!\!\int_{-\infty}^{\infty}
+       \frac{\operatorname{Im} H(j\omega')}{\omega' - \omega}\, d\omega'.$$</p>
+    <p>These are the <strong>Kramers&ndash;Kronig</strong> relations, known in the network
+    literature as Bode's attenuation&ndash;phase relations. Their practical content: magnitude
+    and phase are <em>not</em> independent quantities you may fit separately.</p>
+
+    <div class="callout">
+        <div class="callout-label">A caveat usually stated too loosely</div>
+        <p>Kramers&ndash;Kronig itself requires only <strong>causality</strong>. The additional
+        mirror rule &mdash; real part even, imaginary part odd, $H(-j\omega) = H^*(j\omega)$
+        &mdash; additionally requires $h(t)$ to be <strong>real</strong>. True of VNA data taken
+        on real voltages; false in general for complex-envelope models.</p>
+    </div>
+
+    <p>The reliable way to enforce causality is structural rather than integral: fit a strictly
+    proper rational function with all poles in the open left half-plane, as
+    <strong>vector fitting</strong> does, and causality follows by construction.</p>
+</section>
+
+<section class="slide" id="slide-13">
+    <div class="slide-number">13</div>
+    <h2>Passivity Is the Hard Part</h2>
+    <p>Causality restricts where the poles may sit &mdash; a condition on a finite set of
+    numbers, easy to impose. Passivity is a condition at <em>every</em> frequency:</p>
+    <p>$$\mathbf{S}^{\mathsf{H}}(j\omega)\mathbf{S}(j\omega) \preceq \mathbf{I}
+       \quad \text{for all } \omega,$$</p>
+    <p>and it must hold not merely at the frequencies you happened to sample but everywhere in
+    between. An unconstrained fit will sail past 1 in the gaps, and a model that does so
+    manufactures energy and makes a transient simulation diverge &mdash; often long after
+    anyone was still suspicious of the model.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="hidden-viol" width="780" height="230"></canvas>
+        <div class="legend">
+            <span><i style="background:#22d3ee"></i>true $\sigma_{\max}(\omega)$</span>
+            <span><i style="background:#34d399"></i>sampled sweep &mdash; all pass</span>
+            <span><i style="background:#f472b6"></i>passivity limit $\sigma = 1$</span>
+        </div>
+    </div>
+
+    <h3>The standard remedy</h3>
+    <ol>
+        <li><strong>Locate every violation exactly.</strong> The frequencies at which a singular
+        value crosses 1 are the purely imaginary eigenvalues of a purpose-built
+        $2N \times 2N$ <strong>Hamiltonian</strong> matrix, so one eigenvalue computation finds
+        all of them at once. This is a third, purely diagnostic eigenvalue problem &mdash;
+        neither the eigenvalues of $\mathbf{S}$ from slide 07 nor the poles from slide 10.</li>
+        <li><strong>Perturb the residues minimally</strong> to push $\sigma_{\max}$ back below
+        1, holding the poles fixed so causality is not disturbed. A constrained quadratic
+        program.</li>
+    </ol>
+    <p>Only a model that is both causal <em>and</em> passive is safe to hand to a time-domain
+    simulator. (Grivet-Talocia &amp; Gustavsen, <em>Passive Macromodeling</em>, 2016.)</p>
+</section>
+
+<section class="slide" id="slide-14">
+    <div class="slide-number">14</div>
+    <h2>Conversions, and the Smith Chart</h2>
+    <p>With a single real reference impedance common to all ports the conversions are compact:</p>
+    <p>$$\mathbf{Y} = \mathbf{Z}^{-1}, \qquad
+       \mathbf{S} = (\mathbf{Z} + Z_0\mathbf{I})^{-1}(\mathbf{Z} - Z_0\mathbf{I}), \qquad
+       \mathbf{Z} = Z_0(\mathbf{I} + \mathbf{S})(\mathbf{I} - \mathbf{S})^{-1}.$$</p>
+    <p>This is a matrix <strong>M&ouml;bius transformation</strong>, and it carries the
+    half-plane $\operatorname{Re}(\mathbf{Z}) \succeq 0$ onto the unit ball
+    $\|\mathbf{S}\| \le 1$: passive networks become contractions, purely reactive ones land on
+    the boundary. Different <em>real</em> reference impedances at different ports need only the appropriate
+    per-port $\sqrt{Z_0}$ factors, and nothing conceptual changes. A <em>complex</em>
+    reference is a different matter.</p>
+
+    <h3>Three conventions that agree except at a complex reference</h3>
+    <p>The literature carries three definitions of the incident and reflected amplitudes.
+    They agree everywhere except when the reference impedance is complex &mdash; and there
+    the difference is physical, not cosmetic.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Travelling (voltage) waves</h4>
+            <p>Same reference in both: $V^{\pm} = (V \pm Z_0 I)/2$.</p>
+            <p>$$\Gamma = \frac{Z - Z_0}{Z + Z_0}$$</p>
+            <p>$\Gamma = 0$ means <strong>reflectionless</strong> &mdash; no backward wave on
+            the line. The signal-integrity convention, and the one used here.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Power waves (Kurokawa)</h4>
+            <p>Conjugate in the outgoing term:
+            $b = (V - Z_0^{*}I)/2\sqrt{\operatorname{Re}Z_0}$.</p>
+            <p>$$\Gamma = \frac{Z - Z_0^{*}}{Z + Z_0}$$</p>
+            <p>$\Gamma = 0$ means <strong>conjugate matched</strong> &mdash; maximum power
+            transfer. A different termination.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Pseudo-waves</h4>
+            <p>Marks &amp; Williams' generalisation, for a reference impedance that is itself
+            complex and frequency-dependent &mdash; lossy line, waveguide, on wafer.</p>
+        </div>
+    </div>
+
+    <p>With a real $Z_0$ the conjugate does nothing and all three coincide, which is why the
+    distinction can be set aside for most 50&nbsp;&Omega; coaxial and PCB work. The conjugate
+    is <em>not</em> a normalisation factor you can absorb, so state which convention you are
+    using whenever $Z_0$ is not real.</p>
+
+    <h3>For one port, this is the Smith chart</h3>
+    <p>The matrices become scalars and the map reduces to</p>
+    <p>$$\Gamma = \frac{z - 1}{z + 1}, \qquad z = Z/Z_0.$$</p>
+    <p>The familiar grid of circles is nothing more than the image of the constant-resistance
+    and constant-reactance lines under this bilinear map. The rim $|\Gamma| = 1$ is the
+    one-port case of the unit circle from slide 07, carrying the purely reactive terminations,
+    with everything passive inside it. There is no useful $N$-port generalisation of the
+    picture, which is why multiport work uses the matrix formulae above.</p>
+</section>
+
+<section class="slide" id="slide-15">
+    <div class="slide-number">15</div>
+    <h2>Interactive: The Bilinear Map</h2>
+    <p>Drag the normalised resistance and reactance and watch the termination move on the
+    chart. $Z_0 = 50\,\Omega$ throughout.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="sm-r">$r = R/Z_0$</label>
+            <input type="range" id="sm-r" min="0" max="6" step="0.02" value="0.5">
+            <span class="val" id="sm-r-val">0.50</span>
+        </div>
+        <div class="control-row">
+            <label for="sm-x">$x = X/Z_0$</label>
+            <input type="range" id="sm-x" min="-4" max="4" step="0.02" value="0">
+            <span class="val" id="sm-x-val">0.00</span>
+        </div>
+        <div class="control-row">
+            <button class="btn" data-preset="0,0">short</button>
+            <button class="btn" data-preset="0.5,0">25 &Omega;</button>
+            <button class="btn" data-preset="1,0">matched</button>
+            <button class="btn" data-preset="2,0">100 &Omega;</button>
+            <button class="btn secondary" data-preset="0,1.5">pure reactance</button>
+        </div>
+        <div class="metric-grid">
+            <div class="metric"><div class="metric-label">$Z$</div><div class="metric-value" id="sm-z">25 + j0</div></div>
+            <div class="metric"><div class="metric-label">$\Gamma$</div><div class="metric-value" id="sm-g">&minus;0.33 + j0.00</div></div>
+            <div class="metric"><div class="metric-label">$|\Gamma|$</div><div class="metric-value" id="sm-mag">0.333</div></div>
+            <div class="metric"><div class="metric-label">VSWR</div><div class="metric-value" id="sm-vswr">2.00</div></div>
+            <div class="metric"><div class="metric-label">Return loss</div><div class="metric-value" id="sm-rl">9.5 dB</div></div>
+        </div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="sm-chart" width="440" height="440" style="max-width:440px"></canvas>
+        <div class="legend">
+            <span><i style="background:#22d3ee"></i>constant $r$</span>
+            <span><i style="background:#fbbf24"></i>constant $x$</span>
+            <span><i style="background:#f472b6"></i>your termination</span>
+        </div>
+    </div>
+
+    <p class="note">Left of centre is low impedance, right of centre is high, the rim is
+    purely reactive, and the centre is a perfect match. A short sits at $\Gamma = -1$, an open
+    at $\Gamma = +1$, and 25&nbsp;&Omega; at $\Gamma = -1/3$ &mdash; a VSWR of 2.</p>
+</section>
+
+<section class="slide" id="slide-16">
+    <div class="slide-number">16</div>
+    <h2>Mixed-Mode: Differential Pairs Done Properly</h2>
+    <p>A differential pair on a VNA is a <strong>four-port</strong>: two single-ended ports at
+    the near end, one per conductor, and two at the far end. That 4&times;4 matrix says nothing
+    directly about differential behaviour, because differential and common mode are
+    <em>combinations</em> of the single-ended variables:</p>
+    <p>$$v_d = v_P - v_N, \qquad v_c = \tfrac{1}{2}(v_P + v_N).$$</p>
+    <p>Order the single-ended ports 1, 2 as the near-end pair and 3, 4 as the far-end pair, and
+    the mixed-mode vector as $(d_1, d_2, c_1, c_2)$. Then the change of variables is one
+    matrix:</p>
+    <p>$$\mathbf{M} = \frac{1}{\sqrt2}\begin{pmatrix}
+       1 & -1 & 0 & 0 \\ 0 & 0 & 1 & -1 \\ 1 & 1 & 0 & 0 \\ 0 & 0 & 1 & 1
+       \end{pmatrix}, \qquad
+       \mathbf{S}_{mm} = \mathbf{M}\,\mathbf{S}\,\mathbf{M}^{\mathsf{T}}.$$</p>
+    <p>The $1/\sqrt2$ makes $\mathbf{M}$ orthogonal, so $\mathbf{M}^{-1} =
+    \mathbf{M}^{\mathsf{T}}$ and this is a <strong>similarity transform</strong> — the same
+    linear operator in a different basis, exactly as on slide 01. Nothing is measured twice.</p>
+
+    <div class="callout">
+        <div class="callout-label">Why the basis change costs nothing</div>
+        <p>An orthogonal $\mathbf{M}$ is a rotation of wave space, and rotations preserve
+        eigenvalues and singular values. Every test on slides 02, 03, 07 and 13 — reciprocity,
+        passivity, losslessness, the Hamiltonian search — returns the same answer in either
+        basis. Mixed mode reorganises the information into the combinations an engineer cares
+        about; it adds none and destroys none.</p>
+    </div>
+
+    <h3>The four quadrants</h3>
+    <table>
+        <thead><tr><th>Block</th><th>What it describes</th><th>Why you look at it</th></tr></thead>
+        <tbody>
+            <tr><td>$\mathbf{S}_{dd}$</td><td>Differential in, differential out</td><td>The actual signal path. $S_{dd21}$ is the insertion loss that sets how much equalisation a link needs; $S_{dd11}$ the differential return loss</td></tr>
+            <tr><td>$\mathbf{S}_{cc}$</td><td>Common in, common out</td><td>How common-mode energy propagates — whether a choke or ferrite will achieve anything, and how much common-mode current reaches a cable</td></tr>
+            <tr><td>$\mathbf{S}_{cd}$</td><td>Differential in, common out</td><td>Your own signal leaking into common mode. Common-mode current on a cable radiates efficiently — this is the quadrant that fails an EMC scan</td></tr>
+            <tr><td>$\mathbf{S}_{dc}$</td><td>Common in, differential out</td><td>External common-mode noise arriving as differential noise at the receiver. Lands straight on the eye</td></tr>
+        </tbody>
+    </table>
+    <p>If the two halves of the pair are genuinely identical, the off-diagonal blocks
+    <strong>vanish</strong> and $\mathbf{S}_{mm}$ is block diagonal. Every non-zero entry in
+    $\mathbf{S}_{cd}$ or $\mathbf{S}_{dc}$ is a calibrated measure of how asymmetric the pair
+    really is — a far more useful thing to hand a layout engineer than a vague complaint
+    about EMC.</p>
+
+    <div class="callout">
+        <div class="callout-label">The port-numbering trap</div>
+        <p>Touchstone records the numbers but not what the ports were connected to, and two
+        conventions are in use: 1&ndash;2 / 3&ndash;4 as near and far pairs, or 1&ndash;3 /
+        2&ndash;4 as the two conductors. Apply the wrong $\mathbf{M}$ and the blocks permute —
+        most visibly $\mathbf{S}_{dd}$ swaps with $\mathbf{S}_{cc}$ — giving plots that look
+        like a catastrophic channel. Sanity check: $S_{dd21}$ should be the <em>least</em>
+        lossy trace on the chart. If it looks like rubbish while $S_{cc21}$ looks pristine,
+        you have the permutation backwards, not a broken board.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-17">
+    <div class="slide-number">17</div>
+    <h2>Interactive: Skew and Mode Conversion</h2>
+    <p>The cleanest asymmetry to work through is <strong>intra-pair skew</strong>. Take two
+    conductors identical in every respect except that one is electrically longer by $\Delta t$.
+    Split the delay symmetrically, drive differentially, and the far-end modes come out as</p>
+    <p>$$|S_{dd21}| = |H|\cos(\pi f \Delta t), \qquad
+       |S_{cd21}| = |H|\sin(\pi f \Delta t).$$</p>
+    <p>Energy the differential mode loses turns up in the common mode, exactly and without
+    waste. Note how differently the two respond.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="sk-dt">skew $\Delta t$ (ps)</label>
+            <input type="range" id="sk-dt" min="0" max="12" step="0.1" value="2">
+            <span class="val" id="sk-dt-val">2.0</span>
+        </div>
+        <div class="control-row">
+            <label for="sk-f">Nyquist frequency (GHz)</label>
+            <input type="range" id="sk-f" min="2" max="40" step="0.25" value="14">
+            <span class="val" id="sk-f-val">14.0</span>
+        </div>
+        <div class="control-row">
+            <button class="btn" data-sk="2,14">28 GBd NRZ, 2 ps</button>
+            <button class="btn" data-sk="5,26.56">53 GBd PAM4, 5 ps</button>
+            <button class="btn secondary" data-sk="0.5,14">well-matched pair</button>
+        </div>
+        <div class="metric-grid">
+            <div class="metric"><div class="metric-label">$|S_{cd21}|$ at Nyquist</div><div class="metric-value" id="sk-conv">&minus;21.1 dB</div></div>
+            <div class="metric"><div class="metric-label">$|S_{dd21}|$ penalty</div><div class="metric-value" id="sk-pen">0.03 dB</div></div>
+            <div class="metric"><div class="metric-label">Converted power</div><div class="metric-value" id="sk-pc">0.8%</div></div>
+            <div class="metric"><div class="metric-label">First $S_{dd21}$ null</div><div class="metric-value" id="sk-null">250 GHz</div></div>
+        </div>
+        <div id="sk-verdict" class="verdict ok">conversion below &minus;20 dBc</div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="sk-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#f472b6"></i>$|S_{cd21}|$ — mode conversion</span>
+            <span><i style="background:#22d3ee"></i>$|S_{dd21}|$ — differential penalty</span>
+            <span><i style="background:#fbbf24"></i>Nyquist</span>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">The practical reading</div>
+        <p>$S_{dd21}$ is almost blind to skew, so a channel can look perfectly healthy on the
+        plot everyone shows in review while radiating badly. $S_{cd21}$ is the sensitive
+        instrument, and it is the one to put a limit line on. Usual causes: unequal path
+        lengths where a pair turns a corner or dodges a via; asymmetric barrels, antipads and
+        connector footprints; and — most awkwardly — <strong>fibre weave</strong>, where one
+        conductor runs over glass bundles and the other over resin, giving them different
+        effective permittivity. Weave skew accumulates with length, which is why long pairs
+        are routed at a slight angle to the weave or on spread-glass laminate.</p>
+    </div>
+
+    <p class="note">Mode conversion is <em>not</em> loss. The energy changes mode rather than
+    disappearing, and the four-port stays perfectly passive — the singular values are
+    untouched, as the orthogonality of $\mathbf{M}$ guarantees. The trouble is that the energy
+    is now in a mode the receiver does not read and an enclosure does not contain.</p>
+</section>
+
+<section class="slide" id="slide-18">
+    <div class="slide-number">18</div>
+    <h2>Where This Shows Up</h2>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>RF and microwave</h4>
+            <ul>
+                <li>$|S_{11}|$ &mdash; mismatch and return loss.</li>
+                <li>$|S_{21}|$ &mdash; insertion loss or gain.</li>
+                <li>A VNA produces $\mathbf{S}$ natively; models travel as Touchstone
+                <code>.s2p</code> / <code>.sNp</code>.</li>
+                <li>$\sigma_i \le 1$ gates electromagnetic extractions before anyone trusts
+                them.</li>
+                <li>De-embedding a fixture: cascade in ABCD, convert back.</li>
+            </ul>
+        </div>
+        <div class="diagram-panel g">
+            <h4>High-speed digital</h4>
+            <ul>
+                <li>Traces, connectors and packages as multiport $\mathbf{S}$, very often a
+                four-port differential structure.</li>
+                <li>Into SPICE / IBIS-AMI as macromodels for eye diagrams and BER.</li>
+                <li>Those macromodels come from vector fitting (slide 12) with passivity
+                enforcement (slide 13).</li>
+                <li>Mixed-mode $\mathbf{S}$ (slide 16) turns the four-port into the
+                differential and common channels a link budget is written in.</li>
+                <li>SerDes FFE/DFE taps are the Hermitian PSD least-squares problem of the
+                companion deck.</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-19">
+    <div class="slide-number">19</div>
+    <h2>Cheat Sheet</h2>
+
+    <table>
+        <thead><tr><th>Claim</th><th>Test</th><th>Which boundary</th></tr></thead>
+        <tbody>
+            <tr><td>Reciprocity</td><td>$\mathbf{Z} = \mathbf{Z}^{\mathsf{T}}$, or $\mathbf{S} = \mathbf{S}^{\mathsf{T}}$</td><td>Symmetry; no boundary</td></tr>
+            <tr><td>Passivity</td><td>$\mathbf{Z}_{\mathsf{H}} \succeq 0$, equivalently $\sigma(\mathbf{S}) \le 1$ at every $\omega$</td><td>PSD and contraction</td></tr>
+            <tr><td>Losslessness</td><td>$\mathbf{S}^{\mathsf{H}}\mathbf{S} = \mathbf{I}$</td><td>$|\lambda(\mathbf{S})| = 1$ &mdash; the eigenvalue plane</td></tr>
+            <tr><td>Resonance or null</td><td>Pole near the $j\omega$-axis, or zero on it; $Q \approx \omega_0/2\sigma$</td><td>Distance from the $j\omega$-axis</td></tr>
+            <tr><td>Pair is symmetric</td><td>$S_{cd21}$ small across the band</td><td>Off-diagonal mixed-mode blocks vanish for a symmetric pair</td></tr>
+            <tr><td>Safe to simulate</td><td>LHP poles plus Hamiltonian passivity enforcement</td><td>No RHP poles; $\sigma \le 1$ everywhere</td></tr>
+        </tbody>
+    </table>
+
+    <div class="callout">
+        <div class="callout-label">Before you trust an S-parameter model</div>
+        <p><strong>1.</strong> Reciprocal? Unless it contains ferrite or active circuitry,
+        $\mathbf{S}$ should equal its transpose &mdash; the antisymmetric part measures your
+        error. <strong>2.</strong> Causal? Fitted poles all in the left half-plane, plus a
+        Kramers&ndash;Kronig spot check. <strong>3.</strong> Passive <em>everywhere</em>? Use
+        the all-frequency Hamiltonian test, not a sweep through the sample points &mdash; that
+        is exactly where violations hide. <strong>4.</strong> Resonances physical? Every peak
+        should match an LHP pole pair of the right $Q$, every null a nearby zero.
+        <strong>5.</strong> Reference consistent? One real $Z_0$, usually 50&nbsp;&Omega;,
+        before applying any conversion formula.</p>
+    </div>
+
+    <h3>Further reading</h3>
+    <ul>
+        <li>Pozar, <em>Microwave Engineering</em>, 4th ed., Wiley, 2011.</li>
+        <li>Kurokawa, "Power waves and the scattering matrix", <em>IEEE Trans. MTT</em>, 1965.</li>
+        <li>Bogatin, <a href="https://www.signalintegrityjournal.com/articles/1663-how-not-to-be-confused-by-s-parameters">"How not to be confused by S-parameters"</a>, <em>Signal Integrity Journal</em>, 2020 &mdash; the signal-integrity view, in voltage waves throughout.</li>
+        <li>Marks &amp; Williams, "A general waveguide circuit theory", <em>J. Res. NIST</em>, vol. 97, no. 5, 1992 &mdash; pseudo-waves for a complex, frequency-dependent reference.</li>
+        <li>Gustavsen &amp; Semlyen, "Rational approximation of frequency domain responses by vector fitting", <em>IEEE Trans. Power Delivery</em>, 1999.</li>
+        <li>Grivet-Talocia &amp; Gustavsen, <em>Passive Macromodeling</em>, Wiley, 2016.</li>
+        <li>Horn &amp; Johnson, <em>Matrix Analysis</em>, 2nd ed., Cambridge, 2012.</li>
+    </ul>
+</section>
+
+<script>
+/* ---------- shared canvas helpers -------------------------------------- */
+const C = { bg:'#0d1117', panel:'#161b22', grid:'#21262d', dim:'#8b949e',
+            accent:'#22d3ee', pink:'#f472b6', amber:'#fbbf24', green:'#34d399',
+            text:'#e6edf3' };
+
+function hidpi(id) {
+    const c = document.getElementById(id);
+    const r = window.devicePixelRatio || 1;
+    const w = c.width, h = c.height;
+    c.style.width = w + 'px'; c.style.height = h + 'px';
+    c.width = Math.round(w * r); c.height = Math.round(h * r);
+    const ctx = c.getContext('2d');
+    ctx.scale(r, r);
+    return { ctx, w, h };
+}
+function clear(ctx, w, h) { ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h); }
+function label(ctx, t, x, y, col, size, align) {
+    ctx.fillStyle = col || C.dim;
+    ctx.font = (size || 10) + "px 'JetBrains Mono', monospace";
+    ctx.textAlign = align || 'left';
+    ctx.fillText(t, x, y);
+    ctx.textAlign = 'left';
+}
+function dashed(ctx, on) { ctx.setLineDash(on ? [4, 4] : []); }
+
+/* ---------- 08 : two-port scattering explorer -------------------------- */
+(function () {
+    const Z0 = 50;
+    const L = hidpi('rp-lambda'), P = hidpi('rp-power');
+    const slider = document.getElementById('rp-r');
+
+    function drawLambda(le, lo) {
+        const { ctx, w, h } = L;
+        clear(ctx, w, h);
+        const cx = w / 2, cy = h / 2 + 6, R = Math.min(w, h) * 0.33;
+        ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(cx - R * 1.45, cy); ctx.lineTo(cx + R * 1.45, cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, cy - R * 1.45); ctx.lineTo(cx, cy + R * 1.45); ctx.stroke();
+        ctx.strokeStyle = C.dim; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI); ctx.stroke();
+        // eigenvalues (both real for this network)
+        function dot(v, col) {
+            ctx.fillStyle = col;
+            ctx.beginPath(); ctx.arc(cx + v * R, cy, 6, 0, 2 * Math.PI); ctx.fill();
+        }
+        dot(lo, C.pink); dot(le, C.accent);
+        label(ctx, 'unit circle  |λ| = 1', cx, 22, C.dim, 10, 'center');
+        label(ctx, 'eigenvalues of S', cx, h - 8, C.text, 11, 'center');
+        label(ctx, '−1', cx - R, cy + 26, C.dim, 9, 'center');
+        label(ctx, '+1', cx + R, cy + 26, C.dim, 9, 'center');
+    }
+
+    function drawPower(refl, trans, diss) {
+        const { ctx, w, h } = P;
+        clear(ctx, w, h);
+        const pad = 34, top = 46, bh = 34, gap = 20;
+        const bars = [['reflected  |s₁₁|²', refl, C.pink],
+                      ['transmitted |s₂₁|²', trans, C.accent],
+                      ['dissipated in R', diss, C.amber]];
+        label(ctx, 'Where 1 W into port 1 goes', w / 2, 24, C.text, 11, 'center');
+        bars.forEach((b, i) => {
+            const y = top + i * (bh + gap);
+            ctx.fillStyle = C.panel; ctx.fillRect(pad, y, w - 2 * pad, bh);
+            ctx.fillStyle = b[2];
+            ctx.fillRect(pad, y, (w - 2 * pad) * Math.max(0, Math.min(1, b[1])), bh);
+            label(ctx, b[0], pad, y - 5, C.dim, 10);
+            label(ctx, (b[1] * 100).toFixed(1) + '%', w - pad, y - 5, b[2], 10, 'right');
+        });
+        label(ctx, 'the even mode never touches R,', w / 2, h - 26, C.dim, 10, 'center');
+        label(ctx, 'so σ_max stays exactly 1', w / 2, h - 12, C.dim, 10, 'center');
+    }
+
+    function update() {
+        const R = parseFloat(slider.value);
+        const s11 = R / (R + 2 * Z0), s21 = 2 * Z0 / (R + 2 * Z0);
+        const le = s11 + s21, lo = s11 - s21;
+        const refl = s11 * s11, trans = s21 * s21, diss = 1 - refl - trans;
+        document.getElementById('rp-r-val').textContent = R.toFixed(0);
+        document.getElementById('rp-s11').textContent = s11.toFixed(3);
+        document.getElementById('rp-s21').textContent = s21.toFixed(3);
+        document.getElementById('rp-le').textContent = '+' + le.toFixed(3);
+        document.getElementById('rp-lo').textContent = (lo < 0 ? '−' : '+') + Math.abs(lo).toFixed(3);
+        document.getElementById('rp-il').textContent =
+            (s21 > 0 ? (-20 * Math.log10(s21)).toFixed(2) : '∞') + ' dB';
+        const smax = Math.max(Math.abs(le), Math.abs(lo));
+        document.getElementById('rp-smax').textContent = smax.toFixed(3);
+        const v = document.getElementById('rp-verdict');
+        v.className = 'verdict ' + (smax <= 1.0000001 ? 'ok' : 'bad');
+        v.textContent = smax <= 1.0000001
+            ? 'passive: every singular value ≤ 1 (the even mode sits on the boundary)'
+            : 'not passive';
+        drawLambda(le, lo); drawPower(refl, trans, diss);
+    }
+    slider.addEventListener('input', update);
+    update();
+})();
+
+/* ---------- 11 : pole-zero explorer ------------------------------------ */
+(function () {
+    const PL = hidpi('pz-plane'), MG = hidpi('pz-mag'), IM = hidpi('pz-imp');
+    const sSig = document.getElementById('pz-sig'),
+          sW0 = document.getElementById('pz-w0'),
+          sWz = document.getElementById('pz-wz');
+
+    const XMIN = -1.25, XMAX = 0.35, YMAX = 3.6;
+
+    function drawPlane(sig, w0, wz) {
+        const { ctx, w, h } = PL;
+        clear(ctx, w, h);
+        const padL = 40, padR = 14, padT = 26, padB = 26;
+        const X = v => padL + (v - XMIN) / (XMAX - XMIN) * (w - padL - padR);
+        const Y = v => h - padB - (v + YMAX) / (2 * YMAX) * (h - padT - padB);
+        // stable half-plane
+        ctx.fillStyle = 'rgba(34,211,238,0.05)';
+        ctx.fillRect(X(XMIN), Y(YMAX), X(0) - X(XMIN), Y(-YMAX) - Y(YMAX));
+        ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(X(XMIN), Y(0)); ctx.lineTo(X(XMAX), Y(0)); ctx.stroke();
+        ctx.strokeStyle = C.dim; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(X(0), Y(-YMAX)); ctx.lineTo(X(0), Y(YMAX)); ctx.stroke();
+        label(ctx, 'jω-axis', X(0) + 6, padT + 4, C.dim, 9);
+        label(ctx, 'stable half-plane', X(XMIN) + 6, Y(-YMAX) - 6, C.dim, 9);
+        label(ctx, 's-plane', w / 2, 16, C.text, 11, 'center');
+        // poles
+        const wd = Math.sqrt(Math.max(w0 * w0 - sig * sig, 0));
+        ctx.strokeStyle = C.pink; ctx.lineWidth = 2.2;
+        [wd, -wd].forEach(y => {
+            const px = X(-sig), py = Y(y), r = 6;
+            ctx.beginPath();
+            ctx.moveTo(px - r, py - r); ctx.lineTo(px + r, py + r);
+            ctx.moveTo(px + r, py - r); ctx.lineTo(px - r, py + r);
+            ctx.stroke();
+        });
+        // zeros
+        ctx.strokeStyle = C.accent; ctx.lineWidth = 2;
+        [wz, -wz].forEach(y => {
+            ctx.beginPath(); ctx.arc(X(0), Y(y), 6, 0, 2 * Math.PI); ctx.stroke();
+        });
+    }
+
+    function mag(w, sig, w0, wz) {
+        const num = Math.abs(wz * wz - w * w);
+        const den = Math.hypot(w0 * w0 - w * w, 2 * sig * w);
+        return num / Math.max(den, 1e-12);
+    }
+
+    function drawMag(sig, w0, wz) {
+        const { ctx, w, h } = MG;
+        clear(ctx, w, h);
+        const padL = 44, padR = 12, padT = 26, padB = 30;
+        const WMAX = 3.6, DBMIN = -50, DBMAX = 45;
+        const X = v => padL + v / WMAX * (w - padL - padR);
+        const Y = v => h - padB - (v - DBMIN) / (DBMAX - DBMIN) * (h - padT - padB);
+        ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+        for (let d = DBMIN; d <= DBMAX; d += 20) {
+            ctx.beginPath(); ctx.moveTo(padL, Y(d)); ctx.lineTo(w - padR, Y(d)); ctx.stroke();
+            label(ctx, d + '', padL - 6, Y(d) + 3, C.dim, 9, 'right');
+        }
+        ctx.strokeStyle = C.accent; ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        let first = true;
+        for (let i = 0; i <= 900; i++) {
+            const wv = 0.004 + i / 900 * WMAX;
+            const db = 20 * Math.log10(Math.max(mag(wv, sig, w0, wz), 1e-9));
+            const yy = Math.max(padT, Math.min(h - padB, Y(db)));
+            if (first) { ctx.moveTo(X(wv), yy); first = false; } else ctx.lineTo(X(wv), yy);
+        }
+        ctx.stroke();
+        // markers
+        ctx.strokeStyle = C.pink; dashed(ctx, true); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(X(w0), padT); ctx.lineTo(X(w0), h - padB); ctx.stroke();
+        ctx.strokeStyle = C.amber;
+        if (wz > 0.02) { ctx.beginPath(); ctx.moveTo(X(wz), padT); ctx.lineTo(X(wz), h - padB); ctx.stroke(); }
+        dashed(ctx, false);
+        label(ctx, '|H(jω)| dB', padL - 6, padT - 8, C.text, 10);
+        label(ctx, 'ω', w - padR, h - 8, C.dim, 10, 'right');
+        label(ctx, 'ω₀', X(w0), h - 8, C.pink, 9, 'center');
+        if (wz > 0.02) label(ctx, 'ω_z', X(wz), h - 8, C.amber, 9, 'center');
+    }
+
+    function drawImpulse(sig, w0) {
+        const { ctx, w, h } = IM;
+        clear(ctx, w, h);
+        const padL = 44, padR = 12, padT = 24, padB = 26;
+        const T = Math.min(70, 7 / sig);
+        const X = v => padL + v / T * (w - padL - padR);
+        const Y = v => padT + (1 - v) / 2 * (h - padT - padB);
+        ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(padL, Y(0)); ctx.lineTo(w - padR, Y(0)); ctx.stroke();
+        const wd = Math.sqrt(Math.max(w0 * w0 - sig * sig, 0));
+        // envelope
+        ctx.strokeStyle = C.amber; ctx.lineWidth = 1; dashed(ctx, true);
+        [1, -1].forEach(s => {
+            ctx.beginPath();
+            for (let i = 0; i <= 600; i++) {
+                const t = i / 600 * T, v = s * Math.exp(-sig * t);
+                if (i === 0) ctx.moveTo(X(t), Y(v)); else ctx.lineTo(X(t), Y(v));
+            }
+            ctx.stroke();
+        });
+        dashed(ctx, false);
+        // ringing
+        ctx.strokeStyle = C.pink; ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        for (let i = 0; i <= 2400; i++) {
+            const t = i / 2400 * T, v = Math.exp(-sig * t) * Math.cos(wd * t);
+            if (i === 0) ctx.moveTo(X(t), Y(v)); else ctx.lineTo(X(t), Y(v));
+        }
+        ctx.stroke();
+        label(ctx, 'the pole pair\'s ringing:  e^(−σt) cos(ω_d t)', padL, 16, C.text, 10);
+        label(ctx, 't = ' + T.toFixed(0) + ' s', w - padR, h - 8, C.dim, 9, 'right');
+    }
+
+    function update() {
+        const sig = parseFloat(sSig.value), w0 = parseFloat(sW0.value), wz = parseFloat(sWz.value);
+        document.getElementById('pz-sig-val').textContent = sig.toFixed(2);
+        document.getElementById('pz-w0-val').textContent = w0.toFixed(2);
+        document.getElementById('pz-wz-val').textContent = wz.toFixed(2);
+        const Q = w0 / (2 * sig);
+        const peak = Math.abs(w0 * w0 - wz * wz) / (2 * sig * w0);
+        document.getElementById('pz-q').textContent = Q.toFixed(1);
+        document.getElementById('pz-peak').textContent = peak.toFixed(1) + '×';
+        document.getElementById('pz-db').textContent =
+            (20 * Math.log10(Math.max(peak, 1e-9))).toFixed(1);
+        document.getElementById('pz-tau').textContent = (1 / sig).toFixed(1) + ' s';
+        drawPlane(sig, w0, wz); drawMag(sig, w0, wz); drawImpulse(sig, w0);
+    }
+    [sSig, sW0, sWz].forEach(s => s.addEventListener('input', update));
+    update();
+})();
+
+/* ---------- 13 : the violation that hides between samples -------------- */
+(function () {
+    const { ctx, w, h } = hidpi('hidden-viol');
+    clear(ctx, w, h);
+    const padL = 46, padR = 14, padT = 22, padB = 30;
+    const WMAX = 10, YMIN = 0.78, YMAX = 1.16;
+    const X = v => padL + v / WMAX * (w - padL - padR);
+    const Y = v => h - padB - (v - YMIN) / (YMAX - YMIN) * (h - padT - padB);
+    const f = x => 0.86 + 0.20 * Math.exp(-Math.pow(x - 6.15, 2) / (2 * 0.09 * 0.09));
+
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+    [0.8, 0.9, 1.0, 1.1].forEach(v => {
+        ctx.beginPath(); ctx.moveTo(padL, Y(v)); ctx.lineTo(w - padR, Y(v)); ctx.stroke();
+        label(ctx, v.toFixed(1), padL - 6, Y(v) + 3, C.dim, 9, 'right');
+    });
+    ctx.strokeStyle = C.pink; ctx.lineWidth = 1.4; dashed(ctx, true);
+    ctx.beginPath(); ctx.moveTo(padL, Y(1)); ctx.lineTo(w - padR, Y(1)); ctx.stroke();
+    dashed(ctx, false);
+
+    ctx.strokeStyle = C.accent; ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    for (let i = 0; i <= 1600; i++) {
+        const x = i / 1600 * WMAX;
+        if (i === 0) ctx.moveTo(X(x), Y(f(x))); else ctx.lineTo(X(x), Y(f(x)));
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = C.green;
+    for (let x = 0; x <= WMAX + 1e-9; x += 0.5) {
+        ctx.beginPath(); ctx.arc(X(x), Y(f(x)), 3.2, 0, 2 * Math.PI); ctx.fill();
+    }
+    label(ctx, 'σ_max', padL - 6, padT - 6, C.text, 10, 'right');
+    label(ctx, 'frequency', w - padR, h - 8, C.dim, 10, 'right');
+    label(ctx, 'every sample passes — the model still creates energy here',
+          X(6.15) - 12, Y(1.13), C.pink, 10, 'right');
+    ctx.strokeStyle = C.pink; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(X(6.15) - 8, Y(1.125)); ctx.lineTo(X(6.15) - 1, Y(1.075)); ctx.stroke();
+})();
+
+/* ---------- 17 : skew and mode conversion ------------------------------ */
+(function () {
+    const { ctx, w, h } = hidpi('sk-plot');
+    const sDt = document.getElementById('sk-dt'), sF = document.getElementById('sk-f');
+    const FMAX = 45;   // GHz
+
+    function draw(dt, fn) {
+        clear(ctx, w, h);
+        const padL = 52, padR = 16, padT = 26, padB = 32;
+        const DBMIN = -50, DBMAX = 4;
+        const X = g => padL + g / FMAX * (w - padL - padR);
+        const Y = d => h - padB - (d - DBMIN) / (DBMAX - DBMIN) * (h - padT - padB);
+        ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+        for (let d = DBMIN; d <= DBMAX; d += 10) {
+            ctx.beginPath(); ctx.moveTo(padL, Y(d)); ctx.lineTo(w - padR, Y(d)); ctx.stroke();
+            label(ctx, d + '', padL - 6, Y(d) + 3, C.dim, 9, 'right');
+        }
+        const curve = (fn2, col, lw) => {
+            ctx.strokeStyle = col; ctx.lineWidth = lw;
+            ctx.beginPath();
+            for (let i = 0; i <= 900; i++) {
+                const g = i / 900 * FMAX;
+                const db = 20 * Math.log10(Math.max(Math.abs(fn2(g)), 1e-6));
+                const yy = Math.max(padT, Math.min(h - padB, Y(db)));
+                if (i === 0) ctx.moveTo(X(g), yy); else ctx.lineTo(X(g), yy);
+            }
+            ctx.stroke();
+        };
+        curve(g => Math.sin(Math.PI * g * dt / 1000), C.pink, 1.9);
+        curve(g => Math.cos(Math.PI * g * dt / 1000), C.accent, 1.9);
+        ctx.strokeStyle = C.amber; ctx.lineWidth = 1.2; dashed(ctx, true);
+        ctx.beginPath(); ctx.moveTo(X(fn), padT); ctx.lineTo(X(fn), h - padB); ctx.stroke();
+        dashed(ctx, false);
+        label(ctx, 'relative to the through response, dB', padL - 6, padT - 8, C.text, 10);
+        label(ctx, 'frequency (GHz)', w - padR, h - 8, C.dim, 10, 'right');
+        label(ctx, fn.toFixed(1), X(fn), h - 8, C.amber, 9, 'center');
+        label(ctx, '0', padL, h - 8, C.dim, 9, 'center');
+    }
+
+    function update() {
+        const dt = parseFloat(sDt.value), fn = parseFloat(sF.value);
+        document.getElementById('sk-dt-val').textContent = dt.toFixed(1);
+        document.getElementById('sk-f-val').textContent = fn.toFixed(1);
+        const th = Math.PI * fn * dt / 1000;           // f in GHz, dt in ps
+        const conv = Math.abs(Math.sin(th)), keep = Math.abs(Math.cos(th));
+        document.getElementById('sk-conv').textContent = conv < 1e-6
+            ? '−∞ dB' : '−' + Math.abs(20 * Math.log10(conv)).toFixed(1) + ' dB';
+        document.getElementById('sk-pen').textContent =
+            Math.abs(20 * Math.log10(Math.max(keep, 1e-9))).toFixed(2) + ' dB';
+        document.getElementById('sk-pc').textContent = (100 * conv * conv).toFixed(1) + '%';
+        document.getElementById('sk-null').textContent = dt > 0.01
+            ? (500 / dt).toFixed(0) + ' GHz' : 'none';
+        const db = conv < 1e-6 ? -999 : 20 * Math.log10(conv);
+        const v = document.getElementById('sk-verdict');
+        if (db < -25) { v.className = 'verdict ok'; v.textContent = 'conversion below −25 dBc: comfortable'; }
+        else if (db < -20) { v.className = 'verdict ok'; v.textContent = 'conversion below −20 dBc: typical limit line'; }
+        else { v.className = 'verdict bad'; v.textContent = 'conversion above −20 dBc: expect EMC trouble and lost margin'; }
+        draw(dt, fn);
+    }
+    [sDt, sF].forEach(e => e.addEventListener('input', update));
+    document.querySelectorAll('[data-sk]').forEach(b => {
+        b.addEventListener('click', () => {
+            const [d, f] = b.dataset.sk.split(',');
+            sDt.value = d; sF.value = f; update();
+        });
+    });
+    update();
+})();
+
+/* ---------- 15 : the bilinear map / Smith chart ------------------------ */
+(function () {
+    const { ctx, w, h } = hidpi('sm-chart');
+    const sR = document.getElementById('sm-r'), sX = document.getElementById('sm-x');
+    const cx = w / 2, cy = h / 2, RAD = Math.min(w, h) / 2 - 26;
+    const PX = (re, im) => [cx + re * RAD, cy - im * RAD];
+
+    function arc(centre, radius, col, lw) {
+        // clip to the unit disc by sampling
+        ctx.strokeStyle = col; ctx.lineWidth = lw;
+        ctx.beginPath();
+        let pen = false;
+        for (let i = 0; i <= 720; i++) {
+            const t = i / 720 * 2 * Math.PI;
+            const re = centre[0] + radius * Math.cos(t), im = centre[1] + radius * Math.sin(t);
+            if (re * re + im * im <= 1.0001) {
+                const p = PX(re, im);
+                if (!pen) { ctx.moveTo(p[0], p[1]); pen = true; } else ctx.lineTo(p[0], p[1]);
+            } else pen = false;
+        }
+        ctx.stroke();
+    }
+
+    function draw(r, x) {
+        clear(ctx, w, h);
+        ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(cx - RAD, cy); ctx.lineTo(cx + RAD, cy); ctx.stroke();
+        [0.2, 0.5, 1, 2, 5].forEach(rr =>
+            arc([rr / (1 + rr), 0], 1 / (1 + rr), 'rgba(34,211,238,0.45)', 1));
+        [0.2, 0.5, 1, 2, 5].forEach(xx => {
+            arc([1, 1 / xx], 1 / xx, 'rgba(251,191,36,0.35)', 1);
+            arc([1, -1 / xx], 1 / xx, 'rgba(251,191,36,0.35)', 1);
+        });
+        ctx.strokeStyle = C.dim; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(cx, cy, RAD, 0, 2 * Math.PI); ctx.stroke();
+
+        const den = (r + 1) * (r + 1) + x * x;
+        const gr = (r * r - 1 + x * x) / den, gi = 2 * x / den;
+        const p = PX(gr, gi);
+        ctx.fillStyle = C.pink;
+        ctx.beginPath(); ctx.arc(p[0], p[1], 7, 0, 2 * Math.PI); ctx.fill();
+        ctx.strokeStyle = C.pink; ctx.lineWidth = 1; dashed(ctx, true);
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(p[0], p[1]); ctx.stroke();
+        dashed(ctx, false);
+
+        label(ctx, 'short', cx - RAD, cy + 28, C.dim, 9, 'center');
+        label(ctx, 'open', cx + RAD, cy + 28, C.dim, 9, 'center');
+        label(ctx, 'matched', cx, cy + 28, C.dim, 9, 'center');
+        label(ctx, 'Γ = (z − 1)/(z + 1)', cx, 18, C.text, 11, 'center');
+        return { gr, gi };
+    }
+
+    function update() {
+        const r = parseFloat(sR.value), x = parseFloat(sX.value);
+        document.getElementById('sm-r-val').textContent = r.toFixed(2);
+        document.getElementById('sm-x-val').textContent = x.toFixed(2);
+        const { gr, gi } = draw(r, x);
+        const m = Math.hypot(gr, gi);
+        document.getElementById('sm-z').textContent =
+            (50 * r).toFixed(0) + (x < 0 ? ' − j' : ' + j') + Math.abs(50 * x).toFixed(0);
+        document.getElementById('sm-g').textContent =
+            (gr < 0 ? '−' : '') + Math.abs(gr).toFixed(2) +
+            (gi < 0 ? ' − j' : ' + j') + Math.abs(gi).toFixed(2);
+        document.getElementById('sm-mag').textContent = m.toFixed(3);
+        document.getElementById('sm-vswr').textContent =
+            m >= 0.9995 ? '∞' : ((1 + m) / (1 - m)).toFixed(2);
+        document.getElementById('sm-rl').textContent =
+            m < 1e-6 ? '∞ dB' : (-20 * Math.log10(m)).toFixed(1) + ' dB';
+    }
+    [sR, sX].forEach(s => s.addEventListener('input', update));
+    document.querySelectorAll('[data-preset]').forEach(b => {
+        b.addEventListener('click', () => {
+            const [r, x] = b.dataset.preset.split(',');
+            sR.value = r; sX.value = x; update();
+        });
+    });
+    update();
+})();
+</script>

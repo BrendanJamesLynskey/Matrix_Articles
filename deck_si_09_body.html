@@ -1,0 +1,514 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 09</div>
+    <h1>Timing, Flight Time and <span class="accent">the Budget</span></h1>
+    <p class="subtitle">Flight time is not propagation delay, a statistical budget saves
+    far less at one error in a million million than at three sigma, and the arithmetic
+    that ended the wide parallel bus can be written down in a page.</p>
+
+    <div class="tags">
+        <span class="tag">flight time</span><span class="tag">setup and hold</span>
+        <span class="tag">skew</span><span class="tag">worst case vs statistical</span>
+        <span class="tag">source-synchronous</span><span class="tag">embedded clock</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">clock to output</span>
+        <span class="pipeline-arrow">+</span>
+        <span class="pipeline-step">flight</span>
+        <span class="pipeline-arrow">+</span>
+        <span class="pipeline-step">setup</span>
+        <span class="pipeline-arrow">+</span>
+        <span class="pipeline-step">skew</span>
+        <span class="pipeline-arrow">&lt;</span>
+        <span class="pipeline-step">one period</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Flight time is not propagation delay</a></li>
+        <li><a href="#slide-02">Interactive: a driver too weak for its line</a></li>
+        <li><a href="#slide-03">Setup, hold, and why only one of them has a period in it</a></li>
+        <li><a href="#slide-04">Where lane-to-lane skew comes from</a></li>
+        <li><a href="#slide-05">Worst case against statistical</a></li>
+        <li><a href="#slide-06">Why the saving shrinks at $10^{-12}$</a></li>
+        <li><a href="#slide-07">Interactive: three ways to clock a bus</a></li>
+        <li><a href="#slide-08">What the arithmetic predicts, against what happened</a></li>
+        <li><a href="#slide-09">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Flight Time Is Not Propagation Delay</h2>
+    <p>Propagation delay is a property of the line: length divided by velocity, about a
+    hundred and seventy picoseconds per inch in stripline on a dielectric constant of
+    four. <strong>Flight time</strong> is the interval between the driver crossing its
+    own switching threshold and the receiver crossing its. These are different
+    quantities and on a badly matched net they differ by a lot.</p>
+
+    <p>The reason is the reflection arithmetic of deck 01. A driver whose output
+    impedance is below the line impedance launches more than half the swing, the open
+    receiver doubles it, and the threshold is crossed on the first incident wave &mdash;
+    flight time is then propagation delay plus a little loading. A driver whose impedance
+    is well above the line impedance launches too little, the receiver does not cross,
+    and it has to wait for the wave to go to the source, reflect, and come back.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="ft-table"></table>
+    </div>
+
+    <p class="note" id="ft-note"></p>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Interactive: A Driver Too Weak for Its Line</h2>
+    <p>The staircase below is the voltage at the receiver of a line driven by a source
+    three hundred ohms above a fifty-ohm line &mdash; a weak driver, a long net, or a
+    bus with more loads on it than it was designed for. Each step is one round trip, and
+    the receiver's threshold is not crossed until the third.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="fs-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#2dd4bf"></i>voltage at the receiver</span>
+            <span><i style="background:#fbbf24"></i>switching threshold</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="fs-metrics"></div>
+
+    <div class="callout">
+        <div class="callout-label">Why this used to matter more than it does</div>
+        <p>This is the failure mode that made multi-drop buses hard and eventually killed
+        them. Loads distributed along a line lower its effective impedance and load it
+        capacitively, so a driver adequate for the unloaded net becomes inadequate for the
+        populated one, and the flight time depends on how many cards are plugged in. A
+        point-to-point serial link has exactly one load, a matched termination and a
+        flight time equal to the propagation delay, which is one of several reasons the
+        industry went that way.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Setup, Hold, and Why Only One of Them Has a Period in It</h2>
+    <p>A synchronous transfer requires the data to be stable for a setup time before the
+    capturing clock edge and a hold time after it. Written out, with the clock arriving
+    at the receiver later than at the transmitter by a skew:</p>
+
+    <p>$$T > t_{co} + t_{\text{flight,max}} + t_{su} + t_{\text{skew}},$$</p>
+    <p>$$t_{co} + t_{\text{flight,min}} > t_{h} + t_{\text{skew}}.$$</p>
+
+    <p>Notice what is absent from the second. There is no period in it. A hold violation
+    cannot be fixed by slowing the clock down, because slowing the clock does not change
+    how soon after an edge the new data arrives. Setup failures are frequency problems
+    and hold failures are layout or silicon problems, and that asymmetry is the single
+    most useful thing to know about timing closure.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="mg-table"></table>
+    </div>
+
+    <p class="note">A hold violation also gets <em>worse</em> when the line gets shorter,
+    which is counter-intuitive enough that it is worth stating plainly: shortening a
+    trace reduces the minimum flight time and can break a transfer that worked. It is the
+    one case in this entire series where more copper is the fix.</p>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Where Lane-to-Lane Skew Comes From</h2>
+    <p>On a parallel bus the skew between lanes comes directly out of the budget, so it
+    is worth knowing which contributions dominate. The term everybody controls is rarely
+    the largest.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="sk-plot" width="780" height="250"></canvas>
+    </div>
+
+    <div class="metric-grid" id="sk-metrics"></div>
+
+    <p class="note" id="sk-note"></p>
+
+    <p>Length matching is the term the layout tool measures and the reviewer checks. The
+    laminate's own variation &mdash; the glass weave of deck 03 &mdash; is invisible to
+    the tool, scales with board length rather than with routing tolerance, and on a long
+    bus is comparable or larger. Tightening the matching constraint from twenty-five to
+    five thousandths of an inch buys very little if the weave is contributing four
+    picoseconds regardless.</p>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Worst Case Against Statistical</h2>
+    <p>A budget can be added two ways. The <strong>worst-case</strong> sum takes every
+    term at its extreme and assumes they all go wrong together. The
+    <strong>statistical</strong> sum treats the independent ones as independent and adds
+    them in quadrature, then multiplies by however many standard deviations the required
+    confidence demands.</p>
+
+    <p>The statistical result is smaller, and the question worth asking is whether the
+    independence is earned. It usually is for manufacturing spread across many boards: two
+    boards from different panels genuinely have uncorrelated laminate thickness. It
+    usually is not for terms that share a cause: two lanes on the same board see the same
+    laminate lot, the same temperature and the same supply rail, so their variations move
+    together and quadrature addition understates the total.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="st-table"></table>
+    </div>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Why the Saving Shrinks at $10^{-12}$</h2>
+    <p>Here is the part that is specific to high-speed links and is frequently carried
+    over incorrectly from processor timing closure, where statistical methods transformed
+    the discipline.</p>
+
+    <p>Conventional statistical timing works at three standard deviations, which for a
+    handful of terms is a large saving over a worst-case sum. A serial link has to work
+    at an error ratio of one in a million million, which is slightly past
+    <em>seven</em> standard deviations. The quadrature sum is the same; the multiplier is
+    more than twice as large.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="sv-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#8b949e"></i>worst-case sum</span>
+            <span><i style="background:#34d399"></i>statistical at three sigma</span>
+            <span><i style="background:#2dd4bf"></i>statistical at $10^{-12}$</span>
+        </div>
+    </div>
+
+    <p class="note" id="sv-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">The result worth carrying away</div>
+        <p>With only a few terms the statistical budget at $10^{-12}$ can be
+        <em>larger</em> than the worst-case sum, which sounds absurd and is correct: if
+        four terms are each treated as a three-sigma spread and you then demand seven
+        sigma of the combination, you are asking for more than their arithmetic sum. The
+        technique pays only when there are many independent terms, and how many is a
+        computation rather than a matter of taste.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Interactive: Three Ways to Clock a Bus</h2>
+    <p>The historical argument can be written as arithmetic. Three clocking schemes are
+    budgeted against the same eight-inch board, and each spends its cycle on something
+    different.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Common clock</h4>
+            <p>One clock distributed to both ends. The data crosses the board and is
+            captured against a clock that has separately crossed the board, so the whole
+            flight time and all of the clock skew come out of one cycle.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Source synchronous</h4>
+            <p>The clock travels with the data and sees the same flight time, so the bulk
+            of it cancels. What remains is how well the lanes can be matched to each
+            other, which is the previous slide's skew budget.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Embedded clock</h4>
+            <p>Timing is recovered from the data on each lane separately. Neither flight
+            time nor lane-to-lane skew appears in the budget at all; what remains is
+            jitter and whatever eye the channel leaves.</p>
+        </div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="bs-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#8b949e"></i>common clock</span>
+            <span><i style="background:#fbbf24"></i>source synchronous</span>
+            <span><i style="background:#2dd4bf"></i>embedded clock</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="bs-metrics"></div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>What the Arithmetic Predicts, Against What Happened</h2>
+    <p>The model on the previous slide is crude &mdash; a handful of terms, one board
+    length, no attempt at a particular technology. It is worth checking against history
+    anyway, because if it is even approximately right it should reproduce the rates at
+    which each scheme actually ran out.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table class="checktab" id="hs-table"></table>
+    </div>
+
+    <p class="note" id="hs-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">And the aggregate, which is the real point</div>
+        <p>A source-synchronous bus thirty-two bits wide at its limit carries a
+        respectable aggregate. A single serial lane carries a fraction of that &mdash;
+        and costs two conductors rather than thirty-two, needs no length matching between
+        lanes, and can be added one lane at a time. The parallel bus did not lose on
+        bandwidth per pin, it lost on bandwidth per pin per unit of design effort, and
+        then it lost on bandwidth per pin as well.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Quantity</th><th>Expression</th><th>Worth remembering</th></tr></thead>
+        <tbody>
+            <tr><td>Propagation delay</td><td>$\ell\sqrt{\varepsilon_{\text{eff}}}/c$</td><td>A property of the line</td></tr>
+            <tr><td>Flight time</td><td>Threshold to threshold</td><td>A property of the line, the driver and the load together</td></tr>
+            <tr><td>Setup</td><td>$T > t_{co}+t_{\text{flight}}+t_{su}+t_{\text{skew}}$</td><td>Has a period in it; slowing down fixes it</td></tr>
+            <tr><td>Hold</td><td>$t_{co}+t_{\text{flight,min}} > t_h+t_{\text{skew}}$</td><td>No period; slowing down does nothing</td></tr>
+            <tr><td>Worst-case sum</td><td>$\sum |a_i|$</td><td>Safe, pessimistic, and independent of confidence level</td></tr>
+            <tr><td>Statistical sum</td><td>$Q\sqrt{\sum \sigma_i^2}$</td><td>Depends on the confidence demanded; at $10^{-12}$, $Q=7.03$</td></tr>
+            <tr><td>Common clock</td><td>&mdash;</td><td>Spends the whole flight time; ran out first</td></tr>
+            <tr><td>Source synchronous</td><td>&mdash;</td><td>Cancels flight time; limited by lane matching</td></tr>
+            <tr><td>Embedded clock</td><td>&mdash;</td><td>Spends neither; limited by the channel and by jitter</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#2dd4bf',teal:'#34d399',
+         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+function hidpi(id){const c=document.getElementById(id);if(!c)return null;
+  const r=window.devicePixelRatio||1,w=c.width,h=c.height;
+  c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
+  const x=c.getContext('2d');x.scale(r,r);return{ctx:x,w,h};}
+function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
+function label(ctx,t,x,y,c2,s,a){ctx.fillStyle=c2||C.dim;
+  ctx.font=(s||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=a||'left';
+  ctx.fillText(t,x,y);ctx.textAlign='left';}
+function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
+function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+
+  '</div><div class="metric-value">'+v+'</div></div>';}
+function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
+  if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
+  if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
+
+/* ---- 01 flight table ---- */
+(function(){
+  const t=document.getElementById('ft-table'); if(!t||!SI.flight)return;
+  let html='<thead><tr><th>Source impedance</th><th>First incident at the receiver</th>'+
+    '<th>Crosses on first incident?</th><th>Flight time</th>'+
+    '<th>Excess over propagation delay</th></tr></thead><tbody>';
+  SI.flight.forEach(function(r){
+    html+='<tr><td>'+r.z_source+' Ω</td><td>'+r.first_incident_v.toFixed(3)+
+      ' V</td><td class="'+(r.crosses_on_first_incident?'ok':'bad')+'">'+
+      (r.crosses_on_first_incident?'yes':'no — waits')+'</td><td>'+
+      r.flight_time_ps.toFixed(0)+' ps</td><td>'+r.excess_over_tpd_ps.toFixed(0)+
+      ' ps</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  const good=SI.flight[0], bad=SI.flight[SI.flight.length-1];
+  document.getElementById('ft-note').textContent=
+    'Eight inches of line has a propagation delay of '+good.tpd_ps.toFixed(0)+
+    ' picoseconds. A '+good.z_source+' ohm driver gives a flight time of '+
+    good.flight_time_ps.toFixed(0)+' ps; a '+bad.z_source+' ohm driver gives '+
+    bad.flight_time_ps.toFixed(0)+' ps, '+
+    (bad.flight_time_ps/good.flight_time_ps).toFixed(1)+
+    ' times longer, on the same piece of copper. A timing budget built on propagation '+
+    'delay alone would be wrong by '+(bad.flight_time_ps-bad.tpd_ps).toFixed(0)+
+    ' picoseconds.';
+})();
+
+/* ---- 02 staircase ---- */
+(function(){
+  const H=hidpi('fs-plot'); if(!H||!SI.flight_steps)return;
+  const d=SI.flight_steps; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:54,r:16,t:20,b:40};
+  const TM=d[d.length-1].t_s*1e9*1.05;
+  const X=t=>p.l+t/TM*(w-p.l-p.r);
+  let ym=0; d.forEach(function(r){ym=Math.max(ym,r.v_load);}); ym=Math.max(ym,1.05)*1.08;
+  const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+  axes(ctx,w,h,p,'time, ns','voltage at the receiver');
+  for(let v=0;v<=ym;v+=0.2){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v.toFixed(1),p.l-6,Y(v)+3,C.dim,9,'right');}
+  ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
+  ctx.moveTo(p.l,Y(0.5));ctx.lineTo(w-p.r,Y(0.5));ctx.stroke();dashed(ctx,false);
+  label(ctx,'threshold',w-p.r-4,Y(0.5)-5,C.amber,9,'right');
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+  let prev=0; ctx.moveTo(X(0),Y(0));
+  d.forEach(function(r){const t=r.t_s*1e9;
+    ctx.lineTo(X(t),Y(prev)); ctx.lineTo(X(t),Y(r.v_load)); prev=r.v_load;});
+  ctx.lineTo(X(TM),Y(prev)); ctx.stroke();
+  let first=null;
+  d.forEach(function(r){if(first===null&&r.v_load>=0.5)first=r;});
+  if(first){ctx.fillStyle=C.pink;ctx.beginPath();
+    ctx.arc(X(first.t_s*1e9),Y(first.v_load),5,0,6.3);ctx.fill();
+    label(ctx,'crosses here',X(first.t_s*1e9)+8,Y(first.v_load)-8,C.pink,10,'left');}
+  for(let g=0;g<=TM;g+=2){label(ctx,g.toFixed(0),X(g),h-p.b+14,C.dim,9,'center');}
+  const w300=SI.flight.filter(function(r){return r.z_source===250||r.z_source===400;})[0];
+  document.getElementById('fs-metrics').innerHTML=
+    metric('first step',d[0].v_load.toFixed(3)+' V')+
+    metric('crosses at',first?(first.t_s*1e9).toFixed(2)+' ns':'—')+
+    metric('round trips waited',first?Math.round((first.t_s*1e9)/(d[0].t_s*1e9)):'—')+
+    metric('final value','1.000 V');
+})();
+
+/* ---- 03 margins ---- */
+(function(){
+  const t=document.getElementById('mg-table'); if(!t||!SI.margins)return;
+  let html='<thead><tr><th>Clock period</th><th>Setup margin</th><th>Hold margin</th>'+
+    '<th>Maximum frequency</th></tr></thead><tbody>';
+  SI.margins.forEach(function(r){
+    html+='<tr><td>'+r.period_ps.toFixed(0)+' ps</td><td class="'+
+      (r.setup_ok?'ok':'bad')+'">'+r.setup_margin_ps.toFixed(0)+' ps</td><td class="'+
+      (r.hold_ok?'ok':'bad')+'">'+r.hold_margin_ps.toFixed(0)+' ps</td><td>'+
+      r.f_max_mhz.toFixed(0)+' MHz</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+
+/* ---- 04 skew ---- */
+(function(){
+  const H=hidpi('sk-plot'); if(!H||!SI.skew)return;
+  const d=SI.skew, terms=d.terms; const {ctx,w,h}=H; clear(ctx,w,h);
+  const keys=Object.keys(terms);
+  const p={l:20,r:20,t:34,b:52};
+  let tot=0; keys.forEach(function(k){tot+=terms[k];});
+  let x=p.l;
+  const cols=[C.accent,C.amber,C.pink];
+  keys.forEach(function(k,i){
+    const wd=(terms[k]/tot)*(w-p.l-p.r);
+    ctx.fillStyle=cols[i%cols.length];
+    ctx.fillRect(x,p.t,wd,h-p.t-p.b);
+    if(wd>70){label(ctx,k.replace(/_/g,' '),x+wd/2,p.t+30,'#0d1117',11,'center');
+      label(ctx,terms[k].toFixed(2)+' ps',x+wd/2,p.t+48,'#0d1117',10,'center');}
+    x+=wd;});
+  label(ctx,'contributions to lane-to-lane skew, by size',p.l,22,C.dim,10,'left');
+  label(ctx,'worst-case sum '+d.worst_case_ps.toFixed(2)+' ps   •   '+
+        'root-sum-square '+d.rss_ps.toFixed(2)+' ps',p.l,h-14,C.dim,10,'left');
+  let html='';
+  keys.forEach(function(k){html+=metric(k.replace(/_/g,' '),terms[k].toFixed(2)+' ps');});
+  document.getElementById('sk-metrics').innerHTML=html;
+  document.getElementById('sk-note').textContent=
+    'Length matching to twenty-five thousandths of an inch contributes '+
+    terms.length_matching.toFixed(2)+' picoseconds; the laminate weave over the same '+
+    'eight inches contributes '+terms.laminate_weave.toFixed(2)+
+    '. Tightening the routing constraint attacks the smaller of the two, and the larger '+
+    'one is not visible to the tool that reports the constraint.';
+})();
+
+/* ---- 05,06 statistics ---- */
+(function(){
+  const t=document.getElementById('st-table'); if(!t||!SI.stat)return;
+  let html='<thead><tr><th>Number of terms</th><th>Worst-case sum</th>'+
+    '<th>One sigma</th><th>Statistical at 3&sigma;</th><th>Statistical at $10^{-12}$</th>'+
+    '<th>Saving at 3&sigma;</th><th>Saving at $10^{-12}$</th></tr></thead><tbody>';
+  Object.keys(SI.stat).forEach(function(k){const r=SI.stat[k];
+    const s3=100*(1-r.ratio_3sigma), s12=100*(1-r.ratio);
+    html+='<tr><td>'+k+'</td><td>'+r.worst_case_ps.toFixed(1)+' ps</td><td>'+
+      r.sigma_ps.toFixed(2)+' ps</td><td>'+r.statistical_3sigma_ps.toFixed(1)+
+      ' ps</td><td>'+r.statistical_ps.toFixed(1)+' ps</td><td class="ok">'+
+      s3.toFixed(0)+' %</td><td class="'+(s12>0?'ok':'bad')+'">'+
+      s12.toFixed(0)+' %</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+
+  const H=hidpi('sv-plot'); if(!H)return;
+  const {ctx,w,h}=H; clear(ctx,w,h);
+  const keys=Object.keys(SI.stat);
+  const p={l:56,r:16,t:20,b:44};
+  const X=i=>p.l+(i+0.5)/keys.length*(w-p.l-p.r);
+  let ym=0; keys.forEach(function(k){ym=Math.max(ym,SI.stat[k].worst_case_ps,
+    SI.stat[k].statistical_ps);}); ym*=1.15;
+  const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+  axes(ctx,w,h,p,'number of independent terms','budget, ps');
+  for(let i=0;i<=5;i++){const v=ym*i/5;ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v.toFixed(0),p.l-6,Y(v)+3,C.dim,9,'right');}
+  [['worst_case_ps',C.dim],['statistical_3sigma_ps',C.teal],
+   ['statistical_ps',C.accent]].forEach(function(s){
+    ctx.strokeStyle=s[1];ctx.lineWidth=2;ctx.beginPath();
+    keys.forEach(function(k,i){const px=X(i),py=Y(SI.stat[k][s[0]]);
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    keys.forEach(function(k,i){ctx.fillStyle=s[1];ctx.beginPath();
+      ctx.arc(X(i),Y(SI.stat[k][s[0]]),3.5,0,6.3);ctx.fill();});});
+  keys.forEach(function(k,i){label(ctx,k,X(i),h-p.b+15,C.dim,9,'center');});
+  const four=SI.stat[keys[0]], sixteen=SI.stat[keys[keys.length-1]];
+  document.getElementById('sv-note').textContent=
+    'With '+keys[0]+' the statistical budget at one error in a million million is '+
+    four.statistical_ps.toFixed(1)+' picoseconds against a worst-case sum of '+
+    four.worst_case_ps.toFixed(1)+' — '+
+    (four.ratio>1?'larger, not smaller':'barely smaller')+
+    '. With '+keys[keys.length-1]+' it is '+sixteen.statistical_ps.toFixed(1)+
+    ' against '+sixteen.worst_case_ps.toFixed(1)+', a saving of '+
+    (100*(1-sixteen.ratio)).toFixed(0)+' per cent. At three sigma the same two cases '+
+    'save '+(100*(1-four.ratio_3sigma)).toFixed(0)+' and '+
+    (100*(1-sixteen.ratio_3sigma)).toFixed(0)+' per cent. The technique is worth having; '+
+    'how much it is worth depends on both numbers.';
+})();
+
+/* ---- 07 bus ---- */
+(function(){
+  const H=hidpi('bs-plot'); if(!H||!SI.bus)return;
+  const d=SI.bus, rows=d.rows; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:60,r:16,t:20,b:44};
+  const X=i=>p.l+(i+0.5)/rows.length*(w-p.l-p.r);
+  const LO=-400,HI=900, Y=v=>h-p.b-(Math.max(LO,Math.min(HI,v))-LO)/(HI-LO)*(h-p.t-p.b);
+  axes(ctx,w,h,p,'rate per pin, Gb/s','timing margin, ps');
+  for(let v=LO;v<=HI;v+=200){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');}
+  ctx.strokeStyle=C.text;ctx.lineWidth=1.5;ctx.beginPath();
+  ctx.moveTo(p.l,Y(0));ctx.lineTo(w-p.r,Y(0));ctx.stroke();
+  [['common_clock_ps',C.dim],['source_sync_ps',C.amber],
+   ['serial_ps',C.accent]].forEach(function(s){
+    ctx.strokeStyle=s[1];ctx.lineWidth=2;ctx.beginPath();
+    rows.forEach(function(r,i){const px=X(i),py=Y(r[s[0]]);
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    rows.forEach(function(r,i){ctx.fillStyle=s[1];ctx.beginPath();
+      ctx.arc(X(i),Y(r[s[0]]),3.2,0,6.3);ctx.fill();});});
+  rows.forEach(function(r,i){label(ctx,r.rate_gbps+'',X(i),h-p.b+15,C.dim,9,'center');});
+  document.getElementById('bs-metrics').innerHTML=
+    metric('flight time, 8 in',d.flight_ps.toFixed(0)+' ps')+
+    metric('lane-to-lane skew',d.lane_skew_ps.toFixed(1)+' ps')+
+    metric('common clock ends at',d.max_rate_common_clock.toFixed(1)+' Gb/s')+
+    metric('source sync ends at',d.max_rate_source_sync.toFixed(1)+' Gb/s')+
+    metric('serial still running at',d.max_rate_serial.toFixed(1)+' Gb/s')+
+    metric('parallel aggregate',d.aggregate_parallel_gbps.toFixed(0)+' Gb/s');
+})();
+
+/* ---- 08 history ---- */
+(function(){
+  const t=document.getElementById('hs-table'); if(!t||!SI.bus)return;
+  const d=SI.bus;
+  const hist=[['common clock',d.max_rate_common_clock,0.133,
+               'PCI at 33 MHz, PCI-X at 133 MHz'],
+              ['source synchronous',d.max_rate_source_sync,6.4,
+               'DDR4 at 3.2 Gb/s per pin, DDR5 at 6.4'],
+              ['embedded clock',d.max_rate_serial,32.0,
+               'PCIe Gen5 at 32 GT/s per lane']];
+  let html='<thead><tr><th>Scheme</th><th>This model predicts</th>'+
+    '<th>What shipped</th><th>Example</th></tr></thead><tbody>';
+  hist.forEach(function(r){
+    html+='<tr><td>'+r[0]+'</td><td>'+r[1].toFixed(1)+' Gb/s</td><td>'+
+      r[2].toFixed(3).replace(/0+$/,'').replace(/\.$/,'')+' Gb/s</td><td>'+r[3]+
+      '</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  document.getElementById('hs-note').textContent=
+    'The model has one board length, one set of device timings and no technology '+
+    'scaling, so agreement to within a factor of two or three across two orders of '+
+    'magnitude of data rate is as much as it can claim. What it does reproduce is the '+
+    'ordering and the spacing: source-synchronous buses reach roughly an order of '+
+    'magnitude beyond common-clock ones, and embedded-clock links go well past both. '+
+    'That is the argument the arithmetic is being asked to make.';
+})();
+</script>

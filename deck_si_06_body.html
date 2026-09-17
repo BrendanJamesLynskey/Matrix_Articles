@@ -1,0 +1,518 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 06</div>
+    <h1><span class="accent">Crosstalk</span></h1>
+    <p class="subtitle">The impairment no equaliser can remove, because it is driven by
+    somebody else's data. Why near-end and far-end coupling behave so differently, why
+    stripline has none of the second kind at all, and what the three-widths rule is
+    actually worth.</p>
+
+    <div class="tags">
+        <span class="tag">NEXT</span><span class="tag">FEXT</span>
+        <span class="tag">even / odd mode</span><span class="tag">guard traces</span>
+        <span class="tag">ICN</span><span class="tag">budget</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">$L_m, C_m$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$K_b, K_f$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">NEXT, FEXT</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">power sum</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">lost margin</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Why crosstalk is different from everything else</a></li>
+        <li><a href="#slide-02">Two couplings, one sum and one difference</a></li>
+        <li><a href="#slide-03">The stripline result, computed</a></li>
+        <li><a href="#slide-04">Near end saturates, far end does not</a></li>
+        <li><a href="#slide-05">Faster edges make one worse and the other better</a></li>
+        <li><a href="#slide-06">Interactive: is the three-widths rule any good?</a></li>
+        <li><a href="#slide-07">Guard traces, solved rather than assumed</a></li>
+        <li><a href="#slide-08">Many aggressors: the power sum and ICN</a></li>
+        <li><a href="#slide-09">What it costs the link budget</a></li>
+        <li><a href="#slide-10">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Why Crosstalk Is Different From Everything Else</h2>
+    <p>Loss and reflection are both deterministic functions of the victim's own data. The
+    pulse response tells you exactly what the channel will do to any bit pattern, so a
+    filter designed against that pulse response can subtract the damage &mdash; which is
+    what every equaliser in
+    <a href="https://brendanjameslynskey.github.io/SerDes_Equalisation/">SerDes_Equalisation</a>
+    does.</p>
+
+    <p>Crosstalk is driven by a different lane's data, which the victim's receiver has
+    never seen and cannot predict. To that receiver it is indistinguishable from noise,
+    so it enters the budget as a variance to be added in quadrature rather than as a tap
+    to be cancelled. No amount of equalisation removes it, and the only places to fix it
+    are the geometry and the routing.</p>
+
+    <div class="callout">
+        <div class="callout-label">One important exception</div>
+        <p>A receiver that can <em>observe</em> the aggressor can cancel it, and some
+        modern transceivers do exactly that for the near-end crosstalk from their own
+        transmitter, which is the one aggressor whose data is known locally. That is
+        genuinely effective and it is also the narrow case: the aggressors on a
+        backplane connector belong to other devices, and nothing on the victim's die
+        knows what they are sending.</p>
+    </div>
+
+    <p>There is also a vocabulary trap worth clearing. <strong>Near-end</strong> crosstalk
+    is measured at the end of the victim nearest the aggressor's transmitter, and
+    <strong>far-end</strong> at the other end. The names describe where you measure, not
+    where the coupling happens, and the two behave so differently that keeping them
+    straight matters.</p>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Two Couplings, One Sum and One Difference</h2>
+    <p>Two adjacent lines are coupled both capacitively, through the mutual capacitance
+    $C_m$ between them, and inductively, through the mutual inductance $L_m$. Both
+    couplings inject current into the victim; the difference is direction. Capacitive
+    coupling injects current that flows both ways along the victim. Inductive coupling
+    drives a loop, which sends current one way and returns it the other.</p>
+
+    <p>Towards the near end the two add; towards the far end they subtract. That gives
+    the two coupling coefficients:</p>
+
+    <p>$$K_b = \frac{1}{4}\left(\frac{L_m}{L} + \frac{C_m}{C}\right), \qquad
+        K_f = -\frac{1}{2}\left(\frac{L_m}{L} - \frac{C_m}{C}\right).$$</p>
+
+    <p>Everything distinctive about crosstalk follows from that one sign. The near-end
+    coefficient is a sum of two positive quantities and cannot vanish. The far-end
+    coefficient is a difference, and it vanishes whenever the two ratios are equal
+    &mdash; which happens whenever the dielectric surrounding the pair is uniform.</p>
+
+    <div class="metric-grid" id="co-metrics"></div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>The Stripline Result, Computed</h2>
+    <p>The claim on the previous slide is checkable. The field solver is given two
+    identical cross-sections: a pair of coupled striplines buried in uniform laminate,
+    and a pair of coupled microstrips with laminate below and air above. It computes the
+    capacitance matrix with the dielectrics present and again with them replaced by
+    vacuum, and obtains the inductance matrix from the second. Nothing in that procedure
+    knows what answer is expected.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="cs-table"></table>
+    </div>
+
+    <p class="note" id="cs-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">Why the uniform case is exact rather than approximate</div>
+        <p>In a homogeneous medium every mode travels at the same speed, $c/\sqrt{
+        \varepsilon_r}$, and that forces $LC = \mu\varepsilon$ as matrices, not merely as
+        scalars. The mutual and self terms are then locked in the same ratio and the
+        difference in $K_f$ is identically zero. It is a consequence of the medium, not a
+        property of the geometry, which is why it survives any spacing, any trace width
+        and any asymmetry as long as the dielectric is uniform.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Near End Saturates, Far End Does Not</h2>
+    <p>The two kinds of crosstalk also scale differently with the length over which the
+    lines run together, and this is what decides which one a given design has to worry
+    about.</p>
+
+    <p>Near-end crosstalk builds up while the aggressor's edge travels, but the
+    contribution from a point further along arrives later and later, spread over a
+    window two one-way delays wide. Once the coupled section is long enough that the
+    backward wave from the far end is still arriving when the edge has finished, making
+    it longer adds nothing more &mdash; it simply extends the duration. The
+    <strong>saturation length</strong> is the distance the edge covers in half its own
+    rise time.</p>
+
+    <p>Far-end crosstalk has no such limit. Each element of coupled length adds a
+    contribution that arrives at the same instant as all the others, because it travels
+    with the aggressor's edge, so the total grows in proportion to length without
+    bound.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="ln-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#f472b6"></i>near end, microstrip</span>
+            <span><i style="background:#fbbf24"></i>far end, microstrip</span>
+            <span><i style="background:#34d399"></i>near end, stripline</span>
+            <span><i style="background:#22d3ee"></i>far end, stripline</span>
+        </div>
+    </div>
+
+    <p class="note" id="ln-note"></p>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Faster Edges Make One Worse and the Other Better</h2>
+    <p>Rise time acts on the two mechanisms in opposite directions, which is a genuinely
+    counter-intuitive result and a useful one.</p>
+
+    <p>Far-end crosstalk is proportional to the rate of change of the aggressor, so
+    halving the rise time doubles it. Near-end crosstalk, once saturated, does not depend
+    on rise time at all &mdash; its amplitude is fixed by $K_b$ alone. What the rise time
+    changes is the saturation <em>length</em>: a faster edge saturates in a shorter
+    distance, so a shorter coupled section reaches full amplitude.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="rt-table"></table>
+    </div>
+
+    <p>The practical consequence is that moving to a faster technology on the same board
+    makes far-end crosstalk worse in direct proportion while leaving near-end amplitude
+    where it was. On an inner layer, where the far-end term is zero, a rise-time
+    reduction therefore costs very little crosstalk; on an outer layer it costs a great
+    deal. That is another entry in deck 05's list of reasons to bury the fast pairs.</p>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Interactive: Is the Three-Widths Rule Any Good?</h2>
+    <p>Layout guidelines are usually written as a multiple of the trace width: keep
+    neighbours three widths away, or five. The rule is convenient because the router
+    knows the trace width. It is also the wrong variable, because what sets the coupling
+    is the spacing relative to the <em>dielectric height</em>, and the two move
+    independently whenever the stackup changes.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="sp-k">spacing</label>
+            <input type="range" id="sp-k" min="0" max="7" step="1" value="2">
+            <span class="val" id="sp-k-val"></span>
+        </div>
+        <div class="metric-grid" id="sp-metrics"></div>
+        <div id="sp-verdict" class="verdict ok"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="sp-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#f472b6"></i>near-end crosstalk</span>
+            <span><i style="background:#8b949e"></i>1 % of the aggressor</span>
+        </div>
+    </div>
+
+    <p class="note" id="sp-note"></p>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Guard Traces, Solved Rather Than Assumed</h2>
+    <p>A grounded trace between two signals is an appealing idea and a frequently
+    disappointing one. The solver is given three conductors rather than two, so the guard
+    is treated as a conductor with charge of its own rather than as a wall, and the
+    comparison is run three ways: no guard, a guard tied to the planes, and a guard left
+    floating.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="gd-table"></table>
+    </div>
+
+    <p class="note" id="gd-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">The condition everybody forgets</div>
+        <p>A guard trace only works if it is grounded <em>along its length</em>, stitched
+        to the planes often enough that it cannot support a standing wave. Grounded at
+        its two ends and nowhere else, it is a resonator: near its resonances it is an
+        efficient path from aggressor to victim rather than a barrier. Stitching vias
+        every tenth of a wavelength at the highest frequency of interest is the usual
+        requirement, and at fourteen gigahertz on FR-4 that is roughly every four
+        millimetres &mdash; a lot of vias for a benefit that the same board area spent on
+        spacing would deliver more reliably.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Many Aggressors: The Power Sum and ICN</h2>
+    <p>A real lane has neighbours on both sides, above and below, and through the
+    connector. Their data is uncorrelated with each other's and with the victim's, so
+    their contributions add in power rather than in amplitude: four equal aggressors give
+    twice the amplitude of one, not four times.</p>
+
+    <p>The quantity the standards define is <strong>integrated crosstalk noise</strong>,
+    which weights each aggressor's coupling by the spectrum of the transmitted signal and
+    the response of a reference receiver and reports a single root-mean-square voltage.
+    The version computed here keeps the essential structure &mdash; uncorrelated sources
+    adding in power, producing a variance that sits beside receiver noise in the budget
+    &mdash; without the full weighting of the published method.</p>
+
+    <div class="metric-grid" id="ic-metrics"></div>
+
+    <p class="note" id="ic-note"></p>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>What It Costs the Link Budget</h2>
+    <p>Because crosstalk adds in quadrature with the other noise terms and cannot be
+    equalised away, its effect on the budget is direct: it reduces the ratio of signal to
+    noise that the whole design rests on. Expressing that reduction in decibels makes it
+    comparable with the remedies priced in the equalisation deck, where changing the
+    board bought one and a half to two and a half decibels and more silicon bought a
+    quarter of a decibel.</p>
+
+    <div class="metric-grid" id="bg-metrics"></div>
+
+    <p class="note" id="bg-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">Where this lands in the series</div>
+        <p>Deck 11 runs the same crosstalk figure through a channel operating margin
+        calculation and finds that varying it across the range a real connector spans
+        moves the verdict by several decibels &mdash; more than any of the receiver
+        parameters the standard specifies. Crosstalk is not a secondary term in a
+        compliance calculation; on a dense connector it is frequently the dominant one.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Quantity</th><th>Expression</th><th>Worth remembering</th></tr></thead>
+        <tbody>
+            <tr><td>Near-end coefficient</td><td>$K_b=\frac{1}{4}(L_m/L + C_m/C)$</td><td>A sum; cannot vanish</td></tr>
+            <tr><td>Far-end coefficient</td><td>$K_f=-\frac{1}{2}(L_m/L - C_m/C)$</td><td>A difference; vanishes in a uniform dielectric</td></tr>
+            <tr><td>Near-end saturation length</td><td>$\ell_{\text{sat}} = v\,t_r/2$</td><td>Longer coupling adds duration, not amplitude</td></tr>
+            <tr><td>Far-end amplitude</td><td>$K_f\,\ell\,t_{pd}/t_r$</td><td>Grows with length, worsens with faster edges</td></tr>
+            <tr><td>Stripline far-end</td><td>zero</td><td>Confirmed by the solver to five decimal places</td></tr>
+            <tr><td>Many aggressors</td><td>$\sqrt{\sum V_i^2}$</td><td>Uncorrelated sources add in power</td></tr>
+            <tr><td>Guard trace</td><td>&mdash;</td><td>Needs stitching every tenth of a wavelength or it is a resonator</td></tr>
+            <tr><td>Equalisation</td><td>&mdash;</td><td>Does nothing; the fix is geometry</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#f472b6',teal:'#34d399',
+         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+function hidpi(id){const c=document.getElementById(id);if(!c)return null;
+  const r=window.devicePixelRatio||1,w=c.width,h=c.height;
+  c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
+  const x=c.getContext('2d');x.scale(r,r);return{ctx:x,w,h};}
+function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
+function label(ctx,t,x,y,c2,s,a){ctx.fillStyle=c2||C.dim;
+  ctx.font=(s||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=a||'left';
+  ctx.fillText(t,x,y);ctx.textAlign='left';}
+function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
+function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+
+  '</div><div class="metric-value">'+v+'</div></div>';}
+function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
+  if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
+  if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
+
+/* ---- 02 coefficients ---- */
+(function(){
+  const el=document.getElementById('co-metrics');
+  if(!el||!SI.stripline_coeff||!SI.microstrip_coeff)return;
+  const s=SI.stripline_coeff,m=SI.microstrip_coeff;
+  el.innerHTML=
+    metric('stripline K_b',s.kb.toFixed(5))+
+    metric('stripline K_f',s.kf.toFixed(6))+
+    metric('microstrip K_b',m.kb.toFixed(5))+
+    metric('microstrip K_f',m.kf.toFixed(5));
+})();
+
+/* ---- 03 table ---- */
+(function(){
+  const t=document.getElementById('cs-table');
+  if(!t||!SI.stripline_modal||!SI.microstrip_modal)return;
+  const s=SI.stripline_modal,m=SI.microstrip_modal;
+  const sc=SI.stripline_coeff,mc=SI.microstrip_coeff;
+  let html='<thead><tr><th>Quantity</th><th>Stripline (uniform laminate)</th>'+
+    '<th>Microstrip (laminate and air)</th></tr></thead><tbody>';
+  function row(n,a,b){html+='<tr><td>'+n+'</td><td>'+a+'</td><td>'+b+'</td></tr>';}
+  row('even-mode impedance',s.z0e.toFixed(2)+' Ω',m.z0e.toFixed(2)+' Ω');
+  row('odd-mode impedance',s.z0o.toFixed(2)+' Ω',m.z0o.toFixed(2)+' Ω');
+  row('$L_m/L$',sc.lm_over_l.toFixed(6),mc.lm_over_l.toFixed(6));
+  row('$C_m/C$',sc.cm_over_c.toFixed(6),mc.cm_over_c.toFixed(6));
+  row('difference',
+    '<span class="ok">'+(sc.lm_over_l-sc.cm_over_c).toExponential(2)+'</span>',
+    '<span class="bad">'+(mc.lm_over_l-mc.cm_over_c).toFixed(6)+'</span>');
+  row('near-end $K_b$',sc.kb.toFixed(5),mc.kb.toFixed(5));
+  row('far-end $K_f$','<span class="ok">'+sc.kf.toFixed(6)+'</span>',
+      '<span class="bad">'+mc.kf.toFixed(5)+'</span>');
+  html+='</tbody>'; t.innerHTML=html;
+  document.getElementById('cs-note').textContent=
+    'In the stripline the two ratios agree to six decimal places and the far-end '+
+    'coefficient is zero to within the solver’s numerical noise. In the microstrip '+
+    'the inductive ratio is '+(mc.lm_over_l/mc.cm_over_c).toFixed(2)+
+    ' times the capacitive one, and the far-end coefficient that results is '+
+    mc.kf.toFixed(4)+'. The only difference between the two cross-sections is what is '+
+    'above the traces.';
+})();
+
+/* ---- 04 length ---- */
+(function(){
+  const H=hidpi('ln-plot'); if(!H||!SI.length)return;
+  const d=SI.length; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:56,r:16,t:20,b:40};
+  const LM=d[d.length-1].length_in;
+  const X=v=>p.l+v/LM*(w-p.l-p.r);
+  let ym=0; d.forEach(function(r){ym=Math.max(ym,r.next_micro,r.fext_micro,r.next_strip);});
+  ym*=1.15;
+  const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+  axes(ctx,w,h,p,'coupled length, inches','crosstalk, % of aggressor swing');
+  for(let i=0;i<=5;i++){const v=ym*i/5;ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v.toFixed(2),p.l-6,Y(v)+3,C.dim,9,'right');}
+  [0,5,10,15,20].forEach(function(g){if(g>LM)return;ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+    label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');});
+  function ser(key,col,wd){ctx.strokeStyle=col;ctx.lineWidth=wd||2;ctx.beginPath();
+    d.forEach(function(r,i){const px=X(r.length_in),py=Y(r[key]);
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();}
+  ser('next_micro',C.pink); ser('fext_micro',C.amber);
+  ser('next_strip',C.teal); ser('fext_strip',C.cyan,2.5);
+  const sat=d[0].saturation_in;
+  ctx.strokeStyle=C.text;dashed(ctx,true);ctx.beginPath();
+  ctx.moveTo(X(sat),p.t);ctx.lineTo(X(sat),h-p.b);ctx.stroke();dashed(ctx,false);
+  label(ctx,'near-end saturates at '+sat.toFixed(2)+' in',X(sat)+5,p.t+14,C.text,10,'left');
+  document.getElementById('ln-note').textContent=
+    'With a 20 ps edge the near-end coupling saturates after '+sat.toFixed(2)+
+    ' inches and is flat thereafter; the far-end coupling on microstrip keeps climbing, '+
+    'reaching '+d[d.length-1].fext_micro.toFixed(3)+' per cent at '+LM.toFixed(0)+
+    ' inches. On stripline the far-end trace sits on zero for the whole sweep.';
+})();
+
+/* ---- 05 rise time ---- */
+(function(){
+  const t=document.getElementById('rt-table'); if(!t||!SI.risetime)return;
+  let html='<thead><tr><th>Rise time</th><th>Near-end, % of swing</th>'+
+    '<th>Far-end, % of swing</th><th>Saturation length</th></tr></thead><tbody>';
+  SI.risetime.forEach(function(r){
+    html+='<tr><td>'+r.tr_ps+' ps</td><td>'+r.next_pct.toFixed(4)+'</td><td>'+
+      r.fext_pct.toFixed(4)+'</td><td>'+r.saturation_in.toFixed(2)+' in</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+
+/* ---- 06 spacing ---- */
+(function(){
+  const H=hidpi('sp-plot'); if(!H||!SI.spacing)return;
+  const d=SI.spacing, rows=d.rows;
+  const sl=document.getElementById('sp-k'); sl.max=rows.length-1;
+  function draw(i){
+    const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:56,r:16,t:20,b:44};
+    const X=j=>p.l+(j+0.5)/rows.length*(w-p.l-p.r);
+    let ym=0; rows.forEach(function(r){ym=Math.max(ym,r.next_pct);}); ym*=1.15;
+    const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+    axes(ctx,w,h,p,'spacing, in trace widths','near-end crosstalk, % of swing');
+    for(let k=0;k<=5;k++){const v=ym*k/5;ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+      label(ctx,v.toFixed(2),p.l-6,Y(v)+3,C.dim,9,'right');}
+    ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.beginPath();
+    ctx.moveTo(p.l,Y(1));ctx.lineTo(w-p.r,Y(1));ctx.stroke();dashed(ctx,false);
+    ctx.strokeStyle=C.pink;ctx.lineWidth=2;ctx.beginPath();
+    rows.forEach(function(r,j){const px=X(j),py=Y(r.next_pct);
+      j?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    rows.forEach(function(r,j){ctx.fillStyle=j===i?C.text:C.pink;ctx.beginPath();
+      ctx.arc(X(j),Y(r.next_pct),j===i?5:3.2,0,6.3);ctx.fill();
+      label(ctx,r.spacing_w+'W',X(j),h-p.b+15,C.dim,9,'center');
+      label(ctx,(r.s_over_h).toFixed(1)+'h',X(j),h-p.b+28,C.dim,8,'center');});
+    const r=rows[i];
+    document.getElementById('sp-k-val').textContent=r.spacing_w+'W';
+    document.getElementById('sp-metrics').innerHTML=
+      metric('spacing',r.spacing_w+' trace widths')+
+      metric('in dielectric heights',r.s_over_h.toFixed(1)+' h')+
+      metric('near-end crosstalk',r.next_pct.toFixed(4)+' %')+
+      metric('in decibels',r.next_db.toFixed(1)+' dB');
+    const v=document.getElementById('sp-verdict');
+    const three=rows.filter(function(q){return Math.abs(q.spacing_w-3)<0.01;})[0];
+    v.className='verdict '+(r.next_pct<1?'ok':'bad');
+    v.textContent=r.next_pct<1
+      ? 'below one per cent of the aggressor swing'
+      : 'above one per cent of the aggressor swing — a significant budget entry';
+    document.getElementById('sp-note').textContent=
+      'On this stackup, trace width '+d.trace_w_mm.toFixed(3)+' mm between planes '+
+      d.b_mm.toFixed(2)+' mm apart, three trace widths of spacing is '+
+      (three?three.s_over_h.toFixed(1):'?')+' dielectric heights and leaves '+
+      (three?three.next_pct.toFixed(3):'?')+' per cent near-end crosstalk. The rule is '+
+      'not wrong here, but it is only right by coincidence: change the core thickness '+
+      'and the same three widths buys a different number, because the coupling follows '+
+      'the height and the rule follows the width.';
+  }
+  sl.addEventListener('input',function(){draw(+sl.value);});
+  draw(2);
+})();
+
+/* ---- 07 guard ---- */
+(function(){
+  const t=document.getElementById('gd-table'); if(!t||!SI.guard)return;
+  let html='<thead><tr><th>Arrangement</th><th>Near-end, % of swing</th>'+
+    '<th>Far-end, % of swing</th><th>$K_b$</th></tr></thead><tbody>';
+  const keys=Object.keys(SI.guard);
+  const base=SI.guard[keys[0]];
+  keys.forEach(function(k){const r=SI.guard[k];
+    const rel=r.next_pct/base.next_pct;
+    html+='<tr><td>'+k+'</td><td>'+r.next_pct.toFixed(4)+'</td><td>'+
+      r.fext_pct.toFixed(4)+'</td><td>'+r.kb.toFixed(5)+'</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  const g=SI.guard['grounded guard'], f=SI.guard['floating guard'], n=SI.guard['no guard'];
+  if(g&&f&&n){
+    document.getElementById('gd-note').textContent=
+      'A properly grounded guard reduces the near-end coupling from '+
+      n.next_pct.toFixed(4)+' to '+g.next_pct.toFixed(4)+' per cent, a factor of '+
+      (n.next_pct/g.next_pct).toFixed(1)+'. A floating guard leaves '+
+      f.next_pct.toFixed(4)+' per cent — '+
+      (f.next_pct>n.next_pct?'worse than no guard at all, because it couples the two '+
+       'signals to each other through itself':'barely better than no guard')+
+      '. The same board area given to spacing instead would buy more.';}
+})();
+
+/* ---- 08 ICN ---- */
+(function(){
+  const el=document.getElementById('ic-metrics'); if(!el||!SI.icn)return;
+  const d=SI.icn;
+  el.innerHTML=metric('aggressors',d.n_aggressors)+
+    metric('near-end part',d.next_part_mv.toFixed(3)+' mV')+
+    metric('far-end part',d.fext_part_mv.toFixed(3)+' mV')+
+    metric('total, rms',d.icn_mv.toFixed(3)+' mV');
+  document.getElementById('ic-note').textContent=
+    'Eight aggressors — four near-end and four far-end, each at four hundred '+
+    'millivolts — combine to '+d.icn_mv.toFixed(2)+' millivolts root-mean-square. '+
+    'Doubling the number of aggressors would raise that by a factor of the square root '+
+    'of two, not by two, which is why a connector with twice the lanes is not twice as '+
+    'bad; and why halving the coupling of each is worth more than removing half of them.';
+})();
+
+/* ---- 09 budget ---- */
+(function(){
+  const el=document.getElementById('bg-metrics'); if(!el||!SI.budget)return;
+  const b=SI.budget;
+  el.innerHTML=metric('Q without crosstalk',b.q_without.toFixed(2))+
+    metric('Q with crosstalk',b.q_with.toFixed(2))+
+    metric('margin lost',b.margin_lost_db.toFixed(2)+' dB')+
+    metric('noise, with',b.sigma_with_mv.toFixed(2)+' mV');
+  document.getElementById('bg-note').textContent=
+    'Against a cursor of 44.5 millivolts and 4 millivolts of other noise, this '+
+    'crosstalk costs '+b.margin_lost_db.toFixed(2)+' dB of margin and takes the ratio '+
+    'from '+b.q_without.toFixed(2)+' to '+b.q_with.toFixed(2)+
+    '. For comparison, SerDes_Equalisation found that adding five more '+
+    'decision-feedback taps to that channel bought between a quarter and half a '+
+    'decibel — so this crosstalk is worth more than the silicon remedy, and it is '+
+    'fixed with spacing rather than with transistors.';
+})();
+</script>

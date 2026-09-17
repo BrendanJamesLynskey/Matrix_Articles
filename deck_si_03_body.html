@@ -1,0 +1,767 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 03</div>
+    <h1>Materials, Loss and <span class="accent">Causality</span></h1>
+    <p class="subtitle">Two loss mechanisms with two different slopes, a copper surface
+    that is not flat, and a dielectric constant that cannot be constant without
+    describing a material in which effects precede their causes.</p>
+
+    <div class="tags">
+        <span class="tag">skin effect</span><span class="tag">roughness</span>
+        <span class="tag">Hammerstad</span><span class="tag">Huray</span>
+        <span class="tag">Djordjevi&cacute;&ndash;Sarkar</span>
+        <span class="tag">Kramers&ndash;Kronig</span><span class="tag">fibre weave</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">copper</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$\alpha_c \propto \sqrt{f}$</span>
+        <span class="pipeline-arrow">+</span>
+        <span class="pipeline-step">laminate</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$\alpha_d \propto f$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">a causal channel</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Two mechanisms, two slopes</a></li>
+        <li><a href="#slide-02">The skin effect, and what it does to resistance</a></li>
+        <li><a href="#slide-03">Interactive: roughness, and why Hammerstad stops working</a></li>
+        <li><a href="#slide-04">Checking both roughness models against measurement</a></li>
+        <li><a href="#slide-05">Dielectric loss, Dk and Df</a></li>
+        <li><a href="#slide-06">Interactive: laminates by generation</a></li>
+        <li><a href="#slide-07">Why a constant dielectric constant cannot exist</a></li>
+        <li><a href="#slide-08">Interactive: the causal alternative</a></li>
+        <li><a href="#slide-09">What the Kramers&ndash;Kronig test says about both</a></li>
+        <li><a href="#slide-10">Interactive: the glass weave</a></li>
+        <li><a href="#slide-11">Routing at an angle, computed</a></li>
+        <li><a href="#slide-12">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Two Mechanisms, Two Slopes</h2>
+    <p>A signal loses energy on a circuit board in two quite separate ways, and keeping
+    them apart is the single most useful thing in this deck because they scale
+    differently and they are fixed by different purchases.</p>
+
+    <p><strong>Conductor loss</strong> is ohmic heating in the copper. It grows as the
+    square root of frequency, because the current crowds into a surface layer whose depth
+    falls as $1/\sqrt{f}$, so the effective cross-section shrinks and the resistance
+    rises. <strong>Dielectric loss</strong> is energy absorbed by the laminate as its
+    molecules are polarised and re-polarised. It grows roughly in proportion to
+    frequency, because the number of polarisation cycles per second does.</p>
+
+    <p>Those two exponents mean the mix changes with data rate. At a gigahertz a
+    typical stripline is conductor-dominated and a wider trace is the cheap fix. Past
+    about ten gigahertz on most laminates the dielectric term has overtaken, and no
+    amount of copper helps &mdash; the only remedy is a better resin system, which is a
+    procurement decision rather than a layout one.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Conductor loss, $\propto\sqrt{f}$</h4>
+            <p>Fixed by trace width, copper thickness, and &mdash; more than most people
+            expect &mdash; the roughness of the foil. Improved by making the trace wider,
+            which the escape routing usually forbids, or smoother, which costs money and
+            adhesion.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Dielectric loss, $\propto f$</h4>
+            <p>Fixed by the resin system and the glass, through the loss tangent. Cannot
+            be improved by any layout change at all. This is the term that drove the
+            industry from FR&#8209;4 to the low-loss laminates, and it is why the
+            material choice is made before the stackup.</p>
+        </div>
+    </div>
+
+    <p class="note" id="s1-note"></p>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>The Skin Effect, and What It Does to Resistance</h2>
+    <p>A changing magnetic field inside a conductor induces eddy currents that oppose the
+    current in the interior and reinforce it at the surface. The result is that current
+    density falls exponentially with depth, with a characteristic
+    <strong>skin depth</strong></p>
+
+    <p>$$\delta = \sqrt{\frac{2}{\omega\mu\sigma}}.$$</p>
+
+    <p>In copper this is about two micrometres at one gigahertz and about
+    six-tenths of a micrometre at ten. Since a half-ounce foil is roughly seventeen
+    micrometres thick, the current is confined to a small fraction of the available
+    copper across the entire band of interest &mdash; which is why the thickness of the
+    foil stops mattering to loss above a few hundred megahertz, while its
+    <em>perimeter</em>, and the state of its surface, matter a great deal.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="sd-plot" width="780" height="260"></canvas>
+        <div class="legend">
+            <span><i style="background:#fbbf24"></i>skin depth in copper</span>
+            <span><i style="background:#8b949e"></i>foil thicknesses</span>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Proximity, and why perimeter is not the whole story</div>
+        <p>Current does not spread evenly around the perimeter either. It crowds onto
+        the faces looking at the return conductor, because that is what minimises loop
+        inductance &mdash; the same principle that put the return current in a narrow
+        band in deck 02. The ratio by which this raises the resistance above the
+        uniform-perimeter estimate is Johnson's proximity factor, and for a tightly
+        coupled differential stripline it is around three.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Interactive: Roughness, and Why Hammerstad Stops Working</h2>
+    <p>Copper foil is deliberately roughened so that the resin grips it. The teeth are
+    between a fraction of a micrometre and a couple of micrometres tall, which is the
+    same scale as the skin depth at the frequencies that matter, so the current is forced
+    to follow a longer path than the flat dimension suggests and the resistance rises.</p>
+
+    <p>Two models are in general use. <strong>Hammerstad</strong> fits Morgan's 1949
+    corrugated-surface results to an arctangent; it is simple, it is in every field
+    solver, and it is bounded &mdash; it cannot predict a factor greater than two,
+    however rough the copper. <strong>Huray</strong> replaces the tooth structure with a
+    cluster of spheres and computes the power each scatters; it has no ceiling. The
+    difference between them is invisible below about five gigahertz and decisive above
+    it.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="rf-foil">copper foil</label>
+            <select id="rf-foil" style="flex:1;min-width:160px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="rf-metrics"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="rf-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#fbbf24"></i>Hammerstad</span>
+            <span><i style="background:#f472b6"></i>Huray</span>
+            <span><i style="background:#8b949e"></i>Hammerstad's ceiling of 2</span>
+        </div>
+    </div>
+
+    <p class="note" id="rf-note"></p>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Checking Both Roughness Models Against Measurement</h2>
+    <p>Neither model is worth using unless it reproduces the worked examples in the
+    literature, so both implementations here are checked against Hall and Heck's, whose
+    numbers come from measured transmission lines rather than from other models.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table class="checktab" id="rv-table"></table>
+    </div>
+
+    <p class="note" id="rv-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">What the Huray model needs that Hammerstad does not</div>
+        <p>Hammerstad takes one number, the root-mean-square tooth height. Huray needs a
+        sphere radius and a count, and those come from fitting to a measured surface or a
+        measured insertion loss. That is a real practical cost: the more accurate model
+        is the one you cannot use until you have already measured something. In practice
+        laminate suppliers publish fitted Huray parameters for their foils, and the
+        alternative is to fit them from a test coupon.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Dielectric Loss, Dk and Df</h2>
+    <p>A laminate is described to first order by two numbers. The
+    <strong>dielectric constant</strong> Dk, properly the relative permittivity, sets how
+    much charge the line holds per unit length and therefore both its impedance and its
+    propagation delay. The <strong>dissipation factor</strong> Df, also called the loss
+    tangent, is the ratio of the imaginary part of the permittivity to the real part, and
+    sets how much energy is absorbed per cycle. Attenuation from this mechanism is</p>
+
+    <p>$$\alpha_d = \frac{\pi f \sqrt{\mathrm{Dk}}\,\mathrm{Df}}{c}
+        \ \text{nepers per metre},$$</p>
+
+    <p>which is linear in frequency and, importantly, independent of the trace geometry.
+    Widening a trace reduces conductor loss and does nothing at all to dielectric loss.
+    That asymmetry is why the crossover frequency between the two mechanisms is a
+    property of the material and the geometry together, and why it moves down in
+    frequency as traces get narrower.</p>
+
+    <div class="callout">
+        <div class="callout-label">Reading a datasheet honestly</div>
+        <p>A quoted Dk and Df are meaningless without the frequency at which they were
+        measured and the method used, because both vary. Older FR&#8209;4 datasheets
+        quote at one megahertz or one gigahertz, where the numbers flatter the material
+        considerably. Comparison between laminates is only fair at a common frequency,
+        which is why the table on the next slide states the measurement frequency for
+        each.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Interactive: Laminates by Generation</h2>
+    <p>Each curve below is the total loss per inch for one laminate, split into its
+    conductor and dielectric parts, computed for a hundred-and-fifty-micrometre stripline
+    on the foil selected. The crossover point &mdash; where the dielectric term overtakes
+    the conductor term &mdash; is marked, because it is the frequency above which better
+    copper stops being the answer.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="lm-sel">laminate</label>
+            <select id="lm-sel" style="flex:1;min-width:190px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="lm-metrics"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="lm-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#22d3ee"></i>conductor</span>
+            <span><i style="background:#f472b6"></i>dielectric</span>
+            <span><i style="background:#fbbf24"></i>total</span>
+        </div>
+    </div>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="lm-table"></table>
+    </div>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Why a Constant Dielectric Constant Cannot Exist</h2>
+    <p>The obvious way to model a laminate is to take the datasheet Dk and Df and hold
+    both fixed across the band. This is what a great many channel models do and it is
+    wrong in a way that matters, because it describes a material that violates
+    causality.</p>
+
+    <p>The reason is the <strong>Kramers&ndash;Kronig relations</strong>. For any linear
+    system that cannot respond before it is excited, the real and imaginary parts of its
+    response function are not independent: each is the Hilbert transform of the other. A
+    medium with loss is therefore obliged to have a permittivity whose real part varies
+    with frequency, and specifically to have a Dk that falls as frequency rises. Holding
+    Dk flat while admitting a nonzero Df asserts an impossibility.</p>
+
+    <p>The consequence is not abstract. Transform such a model into the time domain and
+    energy arrives before the wavefront &mdash; the response begins before the stimulus.
+    The model below computes exactly that for ten inches of a low-loss laminate.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="ca-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#34d399"></i>causal model</span>
+            <span><i style="background:#f472b6"></i>constant Dk and Df</span>
+            <span><i style="background:#8b949e"></i>time of flight</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="ca-metrics"></div>
+    <p class="note" id="ca-note"></p>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Interactive: The Causal Alternative</h2>
+    <p>The standard repair is the <strong>Djordjevi&cacute;&ndash;Sarkar</strong> model,
+    sometimes called the wideband Debye model. A single Debye relaxation gives a loss
+    peak rather than the flat loss tangent real laminates show, so the trick is to
+    superpose a continuum of relaxations spread between two frequency limits. That
+    integral has a closed form:</p>
+
+    <p>$$\varepsilon(\omega) = \varepsilon_\infty +
+        \frac{\Delta\varepsilon}{\ln(m_2/m_1)}
+        \ln\!\left(\frac{m_2 + j\omega}{m_1 + j\omega}\right).$$</p>
+
+    <p>Between the two limits the imaginary part is nearly constant, which is what a
+    datasheet's flat Df describes, and the real part falls logarithmically, which is what
+    causality demands. The two are not separate design choices; fixing one fixes the
+    other.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="ds-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#22d3ee"></i>Dk</span>
+            <span><i style="background:#f472b6"></i>Df</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="ds-metrics"></div>
+
+    <p class="note">The downward slope in Dk is not a defect to be flattened. It is
+    small &mdash; a couple of hundredths per decade on a modern laminate &mdash; but it
+    is the visible signature of the loss, and a model that removes it has removed the
+    consistency between the two halves of the permittivity.</p>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>What the Kramers&ndash;Kronig Test Says About Both</h2>
+    <p>The claim on the previous two slides can be tested rather than asserted. Take the
+    imaginary part of each model's permittivity, reconstruct the real part from it by the
+    Kramers&ndash;Kronig integral, and compare with the real part the model actually has.
+    A causal model reproduces itself; a non-causal one does not.</p>
+
+    <div class="metric-grid" id="kk-metrics"></div>
+
+    <p class="note" id="kk-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">Where this connects</div>
+        <p>The same relations, and the same contour-integral argument behind them, are
+        treated at length in
+        <a href="https://brendanjameslynskey.github.io/Kramers_Kronig_Relations/">Kramers&ndash;Kronig
+        Relations</a>. Deck 10 applies the identical test to a measured channel rather
+        than to a material model, where it detects a different failure: a data set whose
+        magnitude has been edited without the dispersion that must accompany it.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>Interactive: The Glass Weave</h2>
+    <p>A laminate is not a uniform dielectric. It is woven glass yarn, with a relative
+    permittivity near six, embedded in resin near three. The windows between the yarn
+    bundles are wide enough that one leg of a differential pair can sit over glass while
+    the other sits over resin, and the two then propagate at measurably different speeds.
+    The pair arrives skewed, and skew converts differential signal into common mode.</p>
+
+    <p>What matters is the spread in <em>effective</em> permittivity seen by the trace,
+    not the raw contrast between the materials: the field spans several yarn pitches and
+    several plies, so most of the contrast averages away. That spread has been measured
+    &mdash; Hall and Heck report 0.23 across sixty-four parallel microstrips on 2116
+    cloth &mdash; and that measurement, rather than a mixing rule, anchors the model
+    here.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="fw-sel">glass style</label>
+            <select id="fw-sel" style="flex:1;min-width:180px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="fw-metrics"></div>
+        <div id="fw-verdict" class="verdict bad"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="fw-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#f472b6"></i>differential to common conversion</span>
+            <span><i style="background:#fbbf24"></i>Nyquist, 14 GHz</span>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-11">
+    <div class="slide-number">11</div>
+    <h2>Routing at an Angle, Computed</h2>
+    <p>The standard mitigation is to route the pair at an angle to the weave so that each
+    trace crosses glass and resin alternately and the difference averages out. How much
+    angle is enough is usually given as a rule of thumb; it can be computed instead.</p>
+
+    <p>A trace at angle $\theta$ over a length $\ell$ traverses $\ell\sin\theta/p$ yarn
+    pitches laterally, and a periodic modulation sampled over $N$ periods averages down
+    by roughly $1/\pi N$. The model reports that envelope rather than the exact
+    expression, because the exact expression has nulls at particular angles and a real
+    board does not hold its angle to a fraction of a degree across a panel.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="fa-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#34d399"></i>residual skew over 10 inches</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="fa-metrics"></div>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Angled routing</h4>
+            <p>A few degrees over a few inches is worth more than an order of magnitude.
+            Free, if it is planned; awkward if the connectors are already placed.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Spread glass</h4>
+            <p>Mechanically flattened yarn fills the windows and cuts the modulation at
+            source. Costs money on the laminate and needs no layout change at all.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Zig-zag routing</h4>
+            <p>Deliberate small jogs achieve the averaging without rotating the whole
+            board. Ugly, effective, and the usual answer when the stackup is fixed.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-12">
+    <div class="slide-number">12</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Quantity</th><th>Expression</th><th>Worth remembering</th></tr></thead>
+        <tbody>
+            <tr><td>Skin depth</td><td>$\delta=\sqrt{2/\omega\mu\sigma}$</td><td>2.1 &micro;m at 1 GHz in copper, 0.66 &micro;m at 10 GHz</td></tr>
+            <tr><td>Conductor loss</td><td>$\alpha_c \propto \sqrt{f}$</td><td>Fixed by perimeter, proximity and roughness; improved by wider traces</td></tr>
+            <tr><td>Dielectric loss</td><td>$\alpha_d=\pi f\sqrt{\mathrm{Dk}}\,\mathrm{Df}/c$</td><td>Linear in frequency and independent of geometry</td></tr>
+            <tr><td>Hammerstad</td><td>$1+\frac{2}{\pi}\arctan\!\left(1.4(\Delta/\delta)^2\right)$</td><td>Bounded at 2; adequate below about 5 GHz</td></tr>
+            <tr><td>Huray</td><td>Sphere-scattering power ratio</td><td>Unbounded; needs a fitted radius and count</td></tr>
+            <tr><td>Djordjevi&cacute;&ndash;Sarkar</td><td>$\varepsilon_\infty+\frac{\Delta\varepsilon}{\ln(m_2/m_1)}\ln\frac{m_2+j\omega}{m_1+j\omega}$</td><td>Flat Df, logarithmically falling Dk, and causal</td></tr>
+            <tr><td>Weave skew</td><td>$\ell\left(\sqrt{\varepsilon_1}-\sqrt{\varepsilon_2}\right)/c$</td><td>About 5 ps/inch worst case on 2116 cloth</td></tr>
+            <tr><td>Skew to mode conversion</td><td>$|S_{cd21}|=|\sin(\pi f \tau)|$</td><td>Complete at half a period of skew</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#fbbf24',teal:'#34d399',
+         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+function hidpi(id){const c=document.getElementById(id);if(!c)return null;
+  const r=window.devicePixelRatio||1,w=c.width,h=c.height;
+  c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
+  const x=c.getContext('2d');x.scale(r,r);return{ctx:x,w,h};}
+function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
+function label(ctx,t,x,y,c2,s,a){ctx.fillStyle=c2||C.dim;
+  ctx.font=(s||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=a||'left';
+  ctx.fillText(t,x,y);ctx.textAlign='left';}
+function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
+function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+
+  '</div><div class="metric-value">'+v+'</div></div>';}
+function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
+  if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
+  if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
+function logx(p,w,lo,hi){return f=>p.l+(Math.log10(f)-Math.log10(lo))/(Math.log10(hi)-Math.log10(lo))*(w-p.l-p.r);}
+
+/* ---- 01 note ---- */
+(function(){
+  const n=document.getElementById('s1-note'); if(!n||!SI.laminates)return;
+  const k=Object.keys(SI.laminates);
+  const fr=SI.laminates['FR-4 (generic)'], m7=SI.laminates['Panasonic Megtron 7'];
+  if(!fr||!m7)return;
+  n.textContent='Over ten inches at 14 GHz the model gives '+(10*fr.at_14ghz).toFixed(1)+
+    ' dB on generic FR-4 and '+(10*m7.at_14ghz).toFixed(1)+' dB on Megtron 7 — a '+
+    'difference of '+(10*(fr.at_14ghz-m7.at_14ghz)).toFixed(1)+' dB, which is larger '+
+    'than the entire margin most backplane links have to spare.';
+})();
+
+/* ---- 02 skin depth ---- */
+(function(){
+  const H=hidpi('sd-plot'); if(!H||!SI.skin_depth_um)return;
+  const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:56,r:16,t:20,b:38}, FLO=0.01,FHI=100;
+  const X=logx(p,w,FLO,FHI);
+  const DLO=-1.2,DHI=1.6;
+  const Y=d=>h-p.b-(Math.log10(d)-DLO)/(DHI-DLO)*(h-p.t-p.b);
+  axes(ctx,w,h,p,'frequency, GHz','skin depth, µm');
+  [0.1,1,10].forEach(function(v){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');});
+  [0.01,0.1,1,10,100].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+    label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');});
+  [[17.4,'½ oz, 17.4 µm'],[34.8,'1 oz, 34.8 µm']].forEach(function(t){
+    if(t[0]>Math.pow(10,DHI))return;
+    ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.beginPath();
+    ctx.moveTo(p.l,Y(t[0]));ctx.lineTo(w-p.r,Y(t[0]));ctx.stroke();dashed(ctx,false);
+    label(ctx,t[1],w-p.r-4,Y(t[0])-4,C.dim,9,'right');});
+  ctx.strokeStyle=C.amber;ctx.lineWidth=2;ctx.beginPath();
+  let st=false;
+  SI.f_ghz.forEach(function(f,i){if(f<FLO||f>FHI)return;
+    const px=X(f),py=Y(SI.skin_depth_um[i]);
+    st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+  ctx.stroke();
+  function at(g){let b=0;SI.f_ghz.forEach(function(f,i){
+    if(Math.abs(f-g)<Math.abs(SI.f_ghz[b]-g))b=i;});return SI.skin_depth_um[b];}
+  label(ctx,'1 GHz: '+at(1).toFixed(2)+' µm    10 GHz: '+at(10).toFixed(2)+
+        ' µm    28 GHz: '+at(28).toFixed(2)+' µm',p.l+8,p.t+14,C.text,10,'left');
+})();
+
+/* ---- 03 roughness ---- */
+(function(){
+  const H=hidpi('rf-plot'); if(!H||!SI.roughness)return;
+  const sel=document.getElementById('rf-foil');
+  Object.keys(SI.roughness).forEach(function(k){const o=document.createElement('option');
+    o.value=k;o.textContent=k+'  ('+SI.roughness[k].rms_um+' µm)';sel.appendChild(o);});
+  function draw(key){
+    const d=SI.roughness[key]; const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:52,r:16,t:20,b:38}, FLO=0.05,FHI=100;
+    const X=logx(p,w,FLO,FHI);
+    const KHI=4.2, Y=k=>h-p.b-(k-1)/(KHI-1)*(h-p.t-p.b);
+    axes(ctx,w,h,p,'frequency, GHz','resistance multiplier');
+    for(let k=1;k<=KHI;k+=0.5){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(k));ctx.lineTo(w-p.r,Y(k));ctx.stroke();
+      label(ctx,k.toFixed(1),p.l-6,Y(k)+3,C.dim,9,'right');}
+    [0.1,1,10,100].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+      label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');});
+    ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.beginPath();
+    ctx.moveTo(p.l,Y(2));ctx.lineTo(w-p.r,Y(2));ctx.stroke();dashed(ctx,false);
+    function ser(arr,col){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();
+      let st=false;
+      SI.f_ghz.forEach(function(f,i){if(f<FLO||f>FHI)return;
+        const px=X(f),py=Y(Math.min(arr[i],KHI));
+        st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+      ctx.stroke();}
+    ser(d.hammerstad,C.amber); ser(d.huray,C.pink);
+    function at(arr,g){let b=0;SI.f_ghz.forEach(function(f,i){
+      if(Math.abs(f-g)<Math.abs(SI.f_ghz[b]-g))b=i;});return arr[b];}
+    document.getElementById('rf-metrics').innerHTML=
+      metric('RMS tooth height',d.rms_um+' µm')+
+      metric('Hammerstad at 14 GHz','×'+at(d.hammerstad,14).toFixed(2))+
+      metric('Huray at 14 GHz','×'+at(d.huray,14).toFixed(2))+
+      metric('Huray at 28 GHz','×'+at(d.huray,28).toFixed(2));
+    document.getElementById('rf-note').textContent=
+      'On '+key+' foil the two models differ by '+
+      Math.abs(100*(at(d.huray,28)/at(d.hammerstad,28)-1)).toFixed(0)+
+      ' per cent at 28 GHz. Hammerstad cannot exceed a factor of two whatever the '+
+      'roughness, which is visible as the curve flattening against the dashed line; '+
+      'Huray keeps climbing, and it is Huray that tracks measurement on rough foil.';
+  }
+  sel.addEventListener('input',function(){draw(sel.value);});
+  draw(Object.keys(SI.roughness)[0]);
+})();
+
+/* ---- 04 verification ---- */
+(function(){
+  const t=document.getElementById('rv-table'); if(!t||!SI.roughness_check)return;
+  const names={f_rough_onset:'frequency where skin depth equals the tooth height',
+    hammerstad_rac_ratio:'Hammerstad resistance ratio at 2 GHz',
+    huray_factor:'Huray correction factor at 5 GHz',
+    huray_sphere_area_um2:'hemispheroid surface area, µm²'};
+  let html='<thead><tr><th>Quantity</th><th>This model</th><th>Hall &amp; Heck</th>'+
+    '<th>Difference</th></tr></thead><tbody>'; let worst=0;
+  Object.keys(names).forEach(function(k){
+    const r=SI.roughness_check[k]; if(!r)return;
+    worst=Math.max(worst,Math.abs(r.err_pct));
+    const o=Math.abs(r.ours)>1e6?r.ours.toExponential(3):r.ours.toPrecision(4);
+    const q=Math.abs(r.published)>1e6?r.published.toExponential(3):r.published.toPrecision(4);
+    html+='<tr><td>'+names[k]+'</td><td>'+o+'</td><td>'+q+'</td><td class="'+
+      (Math.abs(r.err_pct)<2?'ok':'bad')+'">'+(r.err_pct>=0?'+':'')+
+      r.err_pct.toFixed(2)+' %</td></tr>';});
+  const wc=SI.weave_check;
+  if(wc){['ten_inch_ghz','five_inch_ghz'].forEach(function(k,i){
+    const r=wc[k]; worst=Math.max(worst,Math.abs(r.err_pct));
+    html+='<tr><td>full mode conversion, '+(i?'5':'10')+' inch pair, GHz</td><td>'+
+      r.ours.toPrecision(4)+'</td><td>'+r.published.toPrecision(3)+'</td><td class="'+
+      (Math.abs(r.err_pct)<6?'ok':'bad')+'">'+(r.err_pct>=0?'+':'')+
+      r.err_pct.toFixed(2)+' %</td></tr>';});}
+  html+='</tbody>'; t.innerHTML=html;
+  document.getElementById('rv-note').textContent=
+    'Worst disagreement '+worst.toFixed(2)+' per cent. The last two rows are read from '+
+    'a published figure rather than a table, so a couple of per cent is the resolution '+
+    'of the comparison rather than of the model.';
+})();
+
+/* ---- 06 laminates ---- */
+(function(){
+  const H=hidpi('lm-plot'); if(!H||!SI.laminates)return;
+  const sel=document.getElementById('lm-sel');
+  Object.keys(SI.laminates).forEach(function(k){const o=document.createElement('option');
+    o.value=k;o.textContent=k;sel.appendChild(o);});
+  const F=SI.f_ghz_thin;
+  function draw(key){
+    const d=SI.laminates[key]; const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:54,r:16,t:20,b:38}, FLO=0.1,FHI=100;
+    const X=logx(p,w,FLO,FHI);
+    let ym=0; d.total.forEach(function(v){ym=Math.max(ym,v);}); ym=Math.min(ym,2.2)*1.05;
+    const Y=y=>h-p.b-y/ym*(h-p.t-p.b);
+    axes(ctx,w,h,p,'frequency, GHz','loss, dB per inch');
+    for(let y=0;y<=ym;y+=ym/6){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(y));ctx.lineTo(w-p.r,Y(y));ctx.stroke();
+      label(ctx,y.toFixed(2),p.l-6,Y(y)+3,C.dim,9,'right');}
+    [0.1,1,10,100].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+      label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');});
+    function ser(arr,col,wd){ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.beginPath();
+      let st=false;
+      F.forEach(function(f,i){if(f<FLO||f>FHI)return;
+        const px=X(f),py=Y(Math.min(arr[i],ym));
+        st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+      ctx.stroke();}
+    ser(d.alpha_c,C.cyan,1.6); ser(d.alpha_d,C.pink,1.6); ser(d.total,C.amber,2.4);
+    if(d.crossover_ghz){ctx.strokeStyle=C.text;dashed(ctx,true);ctx.beginPath();
+      ctx.moveTo(X(d.crossover_ghz),p.t);ctx.lineTo(X(d.crossover_ghz),h-p.b);
+      ctx.stroke();dashed(ctx,false);
+      label(ctx,'crossover '+d.crossover_ghz.toFixed(1)+' GHz',X(d.crossover_ghz)+5,
+            p.t+14,C.text,10,'left');}
+    document.getElementById('lm-metrics').innerHTML=
+      metric('Dk',d.dk.toFixed(2))+metric('Df',d.df.toFixed(4))+
+      metric('loss at 14 GHz',d.at_14ghz.toFixed(3)+' dB/in')+
+      metric('over 28.8 in',(28.8*d.at_14ghz).toFixed(1)+' dB');
+  }
+  sel.addEventListener('input',function(){draw(sel.value);});
+  draw(Object.keys(SI.laminates)[0]);
+  const t=document.getElementById('lm-table');
+  let html='<thead><tr><th>Laminate</th><th>Dk</th><th>Df</th>'+
+    '<th>dB/in at 14 GHz</th><th>dB/in at 28 GHz</th><th>28.8 in at Nyquist</th></tr></thead><tbody>';
+  Object.keys(SI.laminates).forEach(function(k){const d=SI.laminates[k];
+    html+='<tr><td>'+k+'</td><td>'+d.dk.toFixed(2)+'</td><td>'+d.df.toFixed(4)+
+      '</td><td>'+d.at_14ghz.toFixed(3)+'</td><td>'+d.at_28ghz.toFixed(3)+'</td><td>'+
+      (28.8*d.at_14ghz).toFixed(1)+' dB</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+
+/* ---- 07 causality ---- */
+(function(){
+  const H=hidpi('ca-plot'); if(!H||!SI.causality)return;
+  const d=SI.causality; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:54,r:16,t:20,b:38};
+  const t0=d.time_of_flight_ns, TLO=t0-0.20, THI=t0+0.35;
+  const X=t=>p.l+(t-TLO)/(THI-TLO)*(w-p.l-p.r);
+  let ym=0; d.y_causal.forEach(function(v){ym=Math.max(ym,Math.abs(v));});
+  d.y_flat.forEach(function(v){ym=Math.max(ym,Math.abs(v));}); ym*=1.1;
+  const Y=y=>h-p.b-(y+ym)/(2*ym)*(h-p.t-p.b);
+  axes(ctx,w,h,p,'time, ns','impulse response');
+  ctx.strokeStyle=C.grid;ctx.beginPath();ctx.moveTo(p.l,Y(0));ctx.lineTo(w-p.r,Y(0));ctx.stroke();
+  ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.beginPath();
+  ctx.moveTo(X(t0),p.t);ctx.lineTo(X(t0),h-p.b);ctx.stroke();dashed(ctx,false);
+  label(ctx,'time of flight',X(t0)+5,p.t+14,C.dim,10,'left');
+  function ser(arr,col){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();let st=false;
+    d.t_ns.forEach(function(t,i){if(t<TLO||t>THI)return;
+      const px=X(t),py=Y(arr[i]);st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+    ctx.stroke();}
+  ser(d.y_causal,C.teal); ser(d.y_flat,C.pink);
+  [0,0.1,0.2,0.3].forEach(function(o){const t=t0+o-0.2;
+    label(ctx,t.toFixed(2),X(t),h-p.b+14,C.dim,9,'center');});
+  document.getElementById('ca-metrics').innerHTML=
+    metric('time of flight',d.time_of_flight_ns.toFixed(4)+' ns')+
+    metric('causal first arrival',d.onset_causal_ns.toFixed(4)+' ns')+
+    metric('constant-Dk arrival',d.onset_flat_ns.toFixed(4)+' ns')+
+    metric('energy arriving early',d.precursor_ps.toFixed(0)+' ps');
+  document.getElementById('ca-note').textContent=
+    'Over ten inches the constant-Dk model delivers detectable energy '+
+    d.precursor_ps.toFixed(0)+' picoseconds before the wave could physically have '+
+    'arrived — about '+(d.precursor_ps/35.7).toFixed(1)+' unit intervals at 28 GBd. '+
+    'A simulator handed such a channel will happily report the result.';
+})();
+
+/* ---- 08 Djordjevic-Sarkar ---- */
+(function(){
+  const H=hidpi('ds-plot'); if(!H||!SI.causal_dk)return;
+  const d=SI.causal_dk; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:58,r:56,t:20,b:38}, FLO=0.01,FHI=100;
+  const X=logx(p,w,FLO,FHI);
+  let dlo=99,dhi=0; d.dk.forEach(function(v){dlo=Math.min(dlo,v);dhi=Math.max(dhi,v);});
+  const pad=(dhi-dlo)*0.35||0.05; dlo-=pad; dhi+=pad;
+  const Y1=v=>h-p.b-(v-dlo)/(dhi-dlo)*(h-p.t-p.b);
+  const FHI2=0.006, Y2=v=>h-p.b-v/FHI2*(h-p.t-p.b);
+  axes(ctx,w,h,p,'frequency, GHz','Dk');
+  for(let i=0;i<=4;i++){const v=dlo+(dhi-dlo)*i/4;
+    ctx.strokeStyle=C.grid;ctx.beginPath();ctx.moveTo(p.l,Y1(v));ctx.lineTo(w-p.r,Y1(v));
+    ctx.stroke(); label(ctx,v.toFixed(3),p.l-6,Y1(v)+3,C.cyan,9,'right');}
+  for(let i=0;i<=4;i++){const v=FHI2*i/4;
+    label(ctx,v.toFixed(4),w-p.r+6,Y2(v)+3,C.pink,9,'left');}
+  [0.01,0.1,1,10,100].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+    label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');});
+  ctx.strokeStyle=C.cyan;ctx.lineWidth=2;ctx.beginPath();let st=false;
+  d.f_ghz.forEach(function(f,i){if(f<FLO||f>FHI)return;const px=X(f),py=Y1(d.dk[i]);
+    st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+  ctx.stroke();
+  ctx.strokeStyle=C.pink;ctx.lineWidth=2;ctx.beginPath();st=false;
+  d.f_ghz.forEach(function(f,i){if(f<FLO||f>FHI)return;const px=X(f),py=Y2(d.df[i]);
+    st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+  ctx.stroke();
+  function at(arr,g){let b=0;d.f_ghz.forEach(function(f,i){
+    if(Math.abs(f-g)<Math.abs(d.f_ghz[b]-g))b=i;});return arr[b];}
+  document.getElementById('ds-metrics').innerHTML=
+    metric('Dk at 1 GHz',at(d.dk,1).toFixed(4))+
+    metric('Dk at 12 GHz',at(d.dk,12).toFixed(4))+
+    metric('Dk at 40 GHz',at(d.dk,40).toFixed(4))+
+    metric('Df across the band',at(d.df,1).toFixed(5)+' to '+at(d.df,40).toFixed(5));
+})();
+
+/* ---- 09 KK ---- */
+(function(){
+  const el=document.getElementById('kk-metrics'); if(!el||!SI.kk)return;
+  const c=SI.kk.causal, f=SI.kk.flat;
+  el.innerHTML=metric('causal model, residual',c.rel_err_pct.toFixed(3)+' %')+
+    metric('constant Dk, residual',f.rel_err_pct.toFixed(3)+' %')+
+    metric('ratio','×'+(f.rms_err/c.rms_err).toFixed(0));
+  document.getElementById('kk-note').textContent=
+    'The reconstruction is a finite-band numerical integral, so even a perfectly causal '+
+    'model leaves a small residual — here '+c.rel_err_pct.toFixed(3)+' per cent of Dk. '+
+    'The constant-Dk model leaves '+(f.rms_err/c.rms_err).toFixed(0)+
+    ' times more. It is the contrast that carries the argument, not the absolute value.';
+})();
+
+/* ---- 10 weave ---- */
+(function(){
+  const H=hidpi('fw-plot'); if(!H||!SI.weave)return;
+  const sel=document.getElementById('fw-sel');
+  SI.weave.forEach(function(wv,i){const o=document.createElement('option');
+    o.value=i;o.textContent=wv.style;sel.appendChild(o);});
+  function draw(i){
+    const d=SI.weave[i]; const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:52,r:16,t:20,b:38}, FHI=40;
+    const X=f=>p.l+f/FHI*(w-p.l-p.r);
+    const DLO=-40,DHI=2, Y=v=>h-p.b-(v-DLO)/(DHI-DLO)*(h-p.t-p.b);
+    axes(ctx,w,h,p,'frequency, GHz','Sᶜᵈ₂₁, dB');
+    for(let v=DLO;v<=DHI;v+=10){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+      label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');}
+    [0,10,20,30,40].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+      label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');});
+    ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
+    ctx.moveTo(X(14),p.t);ctx.lineTo(X(14),h-p.b);ctx.stroke();dashed(ctx,false);
+    ctx.strokeStyle=C.pink;ctx.lineWidth=2;ctx.beginPath();
+    const tau=d.skew_ps*1e-12;
+    for(let k=0;k<=400;k++){const f=FHI*k/400;
+      const v=20*Math.log10(Math.max(Math.abs(Math.sin(Math.PI*f*1e9*tau)),1e-6));
+      const px=X(f),py=Y(Math.max(DLO,Math.min(DHI,v)));
+      k?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+    ctx.stroke();
+    document.getElementById('fw-metrics').innerHTML=
+      metric('spread in Dk seen',d.delta_er_eff.toFixed(3))+
+      metric('skew over 10 in',d.skew_ps.toFixed(1)+' ps')+
+      metric('per inch',d.skew_ps_per_in.toFixed(2)+' ps/in')+
+      metric('full conversion at',d.f_full_conversion_ghz.toFixed(1)+' GHz');
+    const v=document.getElementById('fw-verdict');
+    const bad=d.f_full_conversion_ghz<28;
+    v.className='verdict '+(bad?'bad':'ok');
+    v.textContent=bad
+      ? 'complete differential-to-common conversion inside the band of a 28 GBd lane'
+      : 'first full conversion above 28 GHz — tolerable for this lane rate';
+  }
+  sel.addEventListener('input',function(){draw(+sel.value);});
+  draw(0);
+})();
+
+/* ---- 11 angle ---- */
+(function(){
+  const H=hidpi('fa-plot'); if(!H||!SI.weave_angle)return;
+  const d=SI.weave_angle; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:56,r:16,t:20,b:42};
+  const X=i=>p.l+(i+0.5)/d.length*(w-p.l-p.r);
+  let ym=0; d.forEach(function(r){ym=Math.max(ym,r.skew_ps);}); ym*=1.1;
+  const Y=y=>h-p.b-y/ym*(h-p.t-p.b);
+  axes(ctx,w,h,p,'angle between trace and weave, degrees','skew over 10 in, ps');
+  for(let i=0;i<=5;i++){const y=ym*i/5;ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(y));ctx.lineTo(w-p.r,Y(y));ctx.stroke();
+    label(ctx,y.toFixed(0),p.l-6,Y(y)+3,C.dim,9,'right');}
+  ctx.strokeStyle=C.teal;ctx.lineWidth=2;ctx.beginPath();
+  d.forEach(function(r,i){const px=X(i),py=Y(r.skew_ps);
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  d.forEach(function(r,i){ctx.fillStyle=C.teal;ctx.beginPath();
+    ctx.arc(X(i),Y(r.skew_ps),3.5,0,6.3);ctx.fill();
+    label(ctx,r.angle_deg+'°',X(i),h-p.b+15,C.dim,9,'center');});
+  let html='';
+  [0,2,4,5].forEach(function(i){if(!d[i])return;
+    html+=metric(d[i].angle_deg+'° to the weave',d[i].skew_ps.toFixed(2)+' ps');});
+  document.getElementById('fa-metrics').innerHTML=html;
+})();
+</script>

@@ -1,0 +1,839 @@
+<header class="hero">
+    <div class="series-label">Matrix Methods in Engineering &mdash; Deck 02</div>
+    <h1>Digital Filters: <span class="accent">State, Structure and Stability</span></h1>
+    <p class="subtitle">Three matrix ideas do the organising work &mdash; eigenvalues of the
+    state matrix decide stability, Hermitian structure decides the optimal taps, and
+    paraunitary structure decides whether you can take a signal apart and put it back
+    together.</p>
+
+    <div class="tags">
+        <span class="tag">state-space</span><span class="tag">z-plane</span>
+        <span class="tag">stability</span><span class="tag">Wiener&ndash;Hopf</span>
+        <span class="tag">Toeplitz</span><span class="tag">eigenfilter</span>
+        <span class="tag">paraunitary</span><span class="tag">filter banks</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">$\mathbf{A}$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$|\lambda| &lt; 1$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$\mathbf{R}\mathbf{w}=\mathbf{p}$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$\mathbf{Q}$ eigenvector</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">paraunitary</span>
+    </div>
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Three matrix structures in one filter</a></li>
+        <li><a href="#slide-02">The state matrix $\mathbf{A}$ and stability</a></li>
+        <li><a href="#slide-03">Interactive: pole explorer</a></li>
+        <li><a href="#slide-04">Why tones are the natural language</a></li>
+        <li><a href="#slide-05">Hermitian matrices and optimal taps</a></li>
+        <li><a href="#slide-06">Interactive: the eigenfilter bowl</a></li>
+        <li><a href="#slide-07">Paraunitary matrices and lossless banks</a></li>
+        <li><a href="#slide-08">Interactive: a rotation once per frequency</a></li>
+        <li><a href="#slide-09">The analogue &harr; digital map</a></li>
+        <li><a href="#slide-10">What the linear theory does not model</a></li>
+        <li><a href="#slide-11">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Three Matrix Structures in One Filter</h2>
+    <p>You feed samples $x[n]$ in and samples $y[n]$ come out. If the filter remembers anything
+    at all &mdash; any recursive structure, and even a plain FIR viewed as a delay line &mdash;
+    it carries an internal state, and matrices are the tidy way to track it. The three questions
+    you actually ask on the job are all matrix questions in disguise.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Will it stay stable?</h4>
+            <p>Eigenvalues of the state matrix $\mathbf{A}$, in the $z$-plane. Inside the unit
+            circle is safe.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>What taps are optimal?</h4>
+            <p>Hermitian positive-semidefinite structure. Wiener&ndash;Hopf and the eigenfilter
+            are the same bowl with different spoons.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Can I split and rebuild?</h4>
+            <p>Paraunitary structure &mdash; a unitary matrix generalised so it holds at every
+            frequency rather than at one.</p>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">A dictionary for the analogue&ndash;digital boundary</div>
+        <p>In <strong>continuous time</strong> (the companion deck) a network is stable when its
+        poles lie in the open left half-plane, and the boundary is the $j\omega$-axis &mdash;
+        which is also the axis along which the frequency response is evaluated, since
+        $s = j\omega$ there. In <strong>discrete time</strong> a filter is stable when its poles
+        lie strictly inside the unit circle, and the boundary is $|z| = 1$ &mdash; again also
+        the evaluation contour, since $z = e^{j\omega}$ there. Same idea, carried across by a
+        conformal map. <strong>Neither</strong> is the circle on which the eigenvalues of a
+        lossless scattering matrix sit at one fixed frequency: that is a third setting in which
+        $|\cdot| = 1$ appears, and it means how ports exchange energy, not whether anything is
+        stable.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>The State Matrix $\mathbf{A}$ and Stability</h2>
+    <p>Keep the samples the filter still needs in a state vector $\mathbf{q}$. On each tick the
+    new state is the old state pushed through a matrix, plus a contribution from the fresh
+    input:</p>
+    <p>$$\mathbf{q}[n+1] = \mathbf{A}\mathbf{q}[n] + \mathbf{b}\,x[n], \qquad
+       y[n] = \mathbf{c}^{\mathsf{T}}\mathbf{q}[n] + d\,x[n].$$</p>
+    <p>Cut the input off and the state simply evolves as $\mathbf{A}^n$ applied to whatever it
+    started with, so the long-run behaviour is decided entirely by the eigenvalues:</p>
+    <p>$$|\lambda| &lt; 1 \ \text{fades}, \qquad
+       |\lambda| = 1 \ \text{hums forever}, \qquad
+       |\lambda| &gt; 1 \ \text{explodes}.$$</p>
+    <p>Stability means every eigenvalue lies strictly inside the unit circle &mdash; the same
+    thing as saying every pole of $H(z)$ does. The textbook complication of a defective matrix,
+    where repeated eigenvalues bring a factor $n^m$ along with $\lambda^n$, changes the details
+    of the transient but not the location of the fence.</p>
+
+    <div class="callout">
+        <div class="callout-label">Two reassurances</div>
+        <p><strong>Hidden states.</strong> A realisation can contain internal modes the output
+        never sees, which cancel out of $H(z)$ &mdash; textbooks call it non-minimal. The
+        direct, cascade and lattice forms you would actually build are minimal, so eigenvalue
+        and pole coincide. <strong>FIR filters cannot blow up.</strong> Their state matrix is
+        just a shift register, every eigenvalue is exactly zero, and only feedback makes
+        instability possible in the first place.</p>
+    </div>
+
+    <p>A useful picture for a single real pole is a leaky bucket: at each sample you keep a
+    fraction $r$ of what was there and pour the fresh input on top. With $r = 0.9$ the bucket
+    remembers roughly ten samples; push $r$ towards 1 and it remembers for a very long time,
+    which is exactly why the response becomes sharply peaked &mdash; a filter that averages over
+    many cycles of its favourite tone rejects everything else. With $r &gt; 1$ you have the
+    public-address system howling.</p>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Interactive: Pole Explorer</h2>
+    <p>A conjugate pole pair at radius $r$ and angle $\theta$ &mdash; the smallest interesting
+    IIR filter there is:</p>
+    <p>$$H(z) = \frac{1}{\left(1 - re^{j\theta}z^{-1}\right)\left(1 - re^{-j\theta}z^{-1}\right)},
+       \qquad h[n] = r^{\,n}\,\frac{\sin\!\big((n+1)\theta\big)}{\sin\theta}.$$</p>
+    <p>Push $r$ past 1 and watch the verdict change.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="pe-r">radius $r$</label>
+            <input type="range" id="pe-r" min="0.05" max="1.12" step="0.005" value="0.90">
+            <span class="val" id="pe-r-val">0.900</span>
+        </div>
+        <div class="control-row">
+            <label for="pe-th">angle $\theta$ (rad)</label>
+            <input type="range" id="pe-th" min="0.05" max="3.05" step="0.01" value="0.80">
+            <span class="val" id="pe-th-val">0.80</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric"><div class="metric-label">Peak gain</div><div class="metric-value" id="pe-peak">17.3 dB</div></div>
+            <div class="metric"><div class="metric-label">Memory (1% point)</div><div class="metric-value" id="pe-mem">44 samples</div></div>
+            <div class="metric"><div class="metric-label">Distance to circle</div><div class="metric-value" id="pe-dist">0.100</div></div>
+            <div class="metric"><div class="metric-label">Peak at $\omega \approx$</div><div class="metric-value" id="pe-w">0.80</div></div>
+        </div>
+        <div id="pe-verdict" class="verdict ok">stable: |λ| &lt; 1</div>
+    </div>
+
+    <div class="canvas-wrap">
+        <div class="plane-grid">
+            <canvas id="pe-plane" width="380" height="350"></canvas>
+            <canvas id="pe-mag" width="380" height="350"></canvas>
+        </div>
+        <canvas id="pe-imp" width="780" height="190" style="margin-top:.75rem"></canvas>
+        <div class="legend">
+            <span><i style="background:#f472b6"></i>poles &times;</span>
+            <span><i style="background:#34d399"></i>$|H(e^{j\omega})|$</span>
+            <span><i style="background:#fbbf24"></i>envelope $r^{\,n}$</span>
+        </div>
+    </div>
+
+    <p class="note">Radius is memory, angle is tune. The peak sharpening as $r \to 1$ is the
+    continuous-time story about a pole approaching the $j\omega$-axis, wearing digital
+    clothes &mdash; and the ringing lengthens by exactly the same amount, because these are two
+    readings of one change.</p>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Why Tones Are the Natural Language</h2>
+    <p>Here is the part worth pausing on. Feed any LTI filter a pure exponential $z^n$ and what
+    comes out is the <em>same</em> exponential, scaled by a single complex number:</p>
+    <p>$$x[n] = z^n \ \longrightarrow\ y[n] = H(z)\, z^n.$$</p>
+    <p>Delays and weighted sums cannot manufacture a new shape out of an exponential; all they
+    can do is scale it. That is precisely what an <strong>eigenvector</strong> is for a matrix,
+    and it is why exponentials rather than, say, square waves are the natural basis for
+    describing filters. Each natural mode of the filter is such a tone, $\lambda_k^{\,n}$, whose
+    angle sets the pitch and whose radius sets the rate at which it swells or decays.</p>
+
+    <h3>The shortest possible EQ lesson</h3>
+    <p>Take $y[n] = \big(x[n] + x[n-1]\big)/2$, the average of the current sample and the last
+    one.</p>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel g">
+            <h4>Constant input</h4>
+            <p>$(1,1,1,\dots)$ sails through at unit gain &mdash; averaging two equal numbers
+            changes nothing.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Fastest wiggle</h4>
+            <p>$(+1,-1,+1,\dots)$, the fastest thing the sample rate can carry, averages to
+            zero every time. Killed outright.</p>
+        </div>
+    </div>
+    <p>That is a <strong>zero at $z = -1$</strong> doing its job. Every larger FIR design is the
+    same trick scaled up: place the $N-1$ zeros so they fall on the parts of the spectrum you
+    want removed and avoid the parts you want kept. No feedback appears anywhere in that
+    description, which is why an FIR has nothing to become unstable with.</p>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Hermitian Matrices and Optimal Taps</h2>
+    <p>A different matrix appears as soon as you stop asking whether a filter is stable and
+    start asking whether its coefficients are any good. For a length-$N$ FIR on a stationary
+    input with autocorrelation $r[k]$, the least-squares optimal taps solve the
+    <strong>Wiener&ndash;Hopf</strong> equations</p>
+    <p>$$\mathbf{R}\mathbf{w} = \mathbf{p}, \qquad R_{ij} = r[i-j], \qquad
+       r[k] = \mathbb{E}\{x[n]\,x^*[n-k]\}.$$</p>
+    <p>$\mathbf{R}$ is <strong>Toeplitz</strong> because the input is stationary, and Hermitian
+    positive semidefinite by construction, since</p>
+    <p>$$\mathbf{w}^{\mathsf{H}}\mathbf{R}\mathbf{w}
+       = \mathbb{E}\left|\mathbf{w}^{\mathsf{H}}\mathbf{x}\right|^2 \ge 0$$</p>
+    <p>is an expected squared magnitude. That is the same PSD structure that expresses passivity
+    in the companion deck, reached from a completely different direction. The Toeplitz structure
+    is what <strong>Levinson&ndash;Durbin</strong> exploits to solve the system in $O(N^2)$
+    rather than $O(N^3)$, and the solution has a clean reading: the residual error is orthogonal
+    to the data used to predict it, and a lattice implementation peels off one layer of
+    predictability at a time.</p>
+
+    <div class="callout">
+        <div class="callout-label">Where 'real' matters and where it does not</div>
+        <p>$\mathbf{R} \succeq 0$ holds for complex IQ data just as for real samples; nothing
+        about reality is needed. What reality buys is the <em>extra</em> structure of a real
+        symmetric $\mathbf{R}$ &mdash; a special case. Toeplitz comes from stationarity, not from
+        the signal being real, and Levinson&ndash;Durbin has a standard complex Hermitian form
+        that works perfectly well on baseband IQ. The one thing that genuinely needs real signals
+        is the negative-frequency mirror relation, so do not lean on
+        $H(-e^{j\omega}) = H^*(e^{j\omega})$ in a complex-baseband design.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Interactive: The Eigenfilter Bowl</h2>
+    <p>The eigenfilter method makes the geometry explicit. Build a matrix $\mathbf{Q}$ that
+    measures how much energy a candidate set of taps leaks into the stopband:</p>
+    <p>$$\mathcal{E}(\mathbf{w}) = \frac{\mathbf{w}^{\mathsf{T}}\mathbf{Q}\mathbf{w}}
+       {\mathbf{w}^{\mathsf{T}}\mathbf{w}}, \qquad
+       Q_{ij} = \int_{\omega_s}^{\pi}\cos\!\big((i-j)\omega\big)\, d\omega.$$</p>
+    <p>That ratio is a <strong>Rayleigh quotient</strong>, so its stationary points are the
+    eigenvectors of $\mathbf{Q}$ and its minimum is the eigenvector belonging to the smallest
+    eigenvalue. The normalisation is there only to rule out the trivial answer
+    $\mathbf{w} = \mathbf{0}$.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="ef-w0">$w_0$</label>
+            <input type="range" id="ef-w0" min="-1" max="1" step="0.01" value="0.41">
+            <span class="val" id="ef-w0-val">0.41</span>
+        </div>
+        <div class="control-row">
+            <label for="ef-w1">$w_1$</label>
+            <input type="range" id="ef-w1" min="-1" max="1" step="0.01" value="0.82">
+            <span class="val" id="ef-w1-val">0.82</span>
+        </div>
+        <div class="control-row">
+            <label for="ef-w2">$w_2$</label>
+            <input type="range" id="ef-w2" min="-1" max="1" step="0.01" value="0.41">
+            <span class="val" id="ef-w2-val">0.41</span>
+        </div>
+        <div class="control-row">
+            <label for="ef-ws">stopband edge $\omega_s/\pi$</label>
+            <input type="range" id="ef-ws" min="0.15" max="0.85" step="0.01" value="0.50">
+            <span class="val" id="ef-ws-val">0.50</span>
+        </div>
+        <div class="control-row">
+            <button class="btn" id="ef-best">snap to smallest eigenvector</button>
+            <button class="btn secondary" id="ef-worst">snap to largest</button>
+        </div>
+        <div class="metric-grid">
+            <div class="metric"><div class="metric-label">Leakage $\mathcal{E}$</div><div class="metric-value" id="ef-leak">0.238</div></div>
+            <div class="metric"><div class="metric-label">$\lambda_{\min}$</div><div class="metric-value" id="ef-lmin">0.157</div></div>
+            <div class="metric"><div class="metric-label">$\lambda_{\max}$</div><div class="metric-value" id="ef-lmax">2.985</div></div>
+            <div class="metric"><div class="metric-label">Gap to optimum</div><div class="metric-value" id="ef-gap">51.7%</div></div>
+        </div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="ef-resp" width="780" height="250"></canvas>
+        <div class="legend">
+            <span><i style="background:#34d399"></i>your taps</span>
+            <span><i style="background:#22d3ee"></i>smallest eigenvector</span>
+            <span><i style="background:#f472b6"></i>stopband</span>
+        </div>
+    </div>
+
+    <p class="note">For three taps the ranking is easy to see by eye: the smooth shape
+    $[1, 2, 1]$ leaks least, and the alternating shape $[1, -2, 1]$ leaks most, because the
+    latter does its best to emphasise exactly the high-frequency content the stopband is meant
+    to suppress. But press <em>snap to smallest eigenvector</em> and you will find the true
+    optimum at $\omega_s = \pi/2$ is not $[1,2,1]$ at all &mdash; it is $[1,\sqrt{2},1]$.
+    Intuition gets you close; the eigenvector gets you there. Move the stopband edge and the
+    optimal shape moves with it.</p>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Paraunitary Matrices and Lossless Banks</h2>
+    <p>Splitting a signal into subbands for audio or image coding, processing each band, and
+    rebuilding the original only works if the splitter conserves energy at every frequency
+    rather than merely on average. In terms of the polyphase matrix of the analysis bank the
+    requirement is</p>
+    <p>$$\tilde{\mathbf{H}}_p(z)\,\mathbf{H}_p(z) = c\,\mathbf{I}, \qquad
+       \tilde{\mathbf{H}}(z) = \mathbf{H}^{\mathsf{T}}(1/z^*)^*,$$</p>
+    <p>where the tilde denotes the <strong>paraconjugate</strong>. On the unit circle that
+    condition says nothing more exotic than that the bank performs a rotation at each frequency
+    &mdash; the same losslessness you met as unitarity in the companion deck, now allowed to
+    vary with frequency instead of holding at a single one. The Daubechies wavelets are
+    constructed on exactly this principle.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Unitary</h4>
+            <p>One matrix. Redistributes energy among its outputs without creating or destroying
+            any.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Paraunitary</h4>
+            <p>A unitary-valued <em>function</em> on $|z| = 1$. Does the same thing
+            independently at every frequency.</p>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Notice which circle is in play</div>
+        <p>The companion deck rotates in the plane of the eigenvalues of $\mathbf{S}$ at one
+        fixed frequency. Here the rotations are indexed <em>by</em> frequency and ride around the
+        $z$-plane circle. Same geometry, entirely different meaning. And bit-exact
+        reconstruction on real hardware needs integer <strong>lifting</strong> on top, because
+        rounding breaks the perfect undo even when the mathematics is flawless.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Interactive: A Rotation Once Per Frequency</h2>
+    <p>The simplest paraunitary bank there is. Split the signal into its even and odd samples,
+    rotate that pair by $\theta$, and rotate back on the way out:</p>
+    <p>$$\mathbf{H}_p = \begin{pmatrix}\cos\theta & \sin\theta \\
+       -\sin\theta & \cos\theta\end{pmatrix}, \qquad
+       \mathbf{H}_p^{\mathsf{T}}\mathbf{H}_p = \mathbf{I}.$$</p>
+    <p>Any $\theta$ reconstructs perfectly. Now put a gain $g$ on one subband &mdash; a stand-in
+    for a quantiser, a coder, or any well-meant processing that breaks the structure &mdash; and
+    watch perfect reconstruction fail the instant $\mathbf{H}_p$ stops being paraunitary.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="pu-th">rotation $\theta$ (rad)</label>
+            <input type="range" id="pu-th" min="0" max="1.57" step="0.01" value="0.79">
+            <span class="val" id="pu-th-val">0.79</span>
+        </div>
+        <div class="control-row">
+            <label for="pu-g">subband gain $g$</label>
+            <input type="range" id="pu-g" min="0.4" max="1.6" step="0.005" value="1.000">
+            <span class="val" id="pu-g-val">1.000</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric"><div class="metric-label">Energy in</div><div class="metric-value" id="pu-ein">1.000</div></div>
+            <div class="metric"><div class="metric-label">Energy in bands</div><div class="metric-value" id="pu-eb">1.000</div></div>
+            <div class="metric"><div class="metric-label">Reconstruction error</div><div class="metric-value" id="pu-err">&lt; &minus;290 dB</div></div>
+            <div class="metric"><div class="metric-label">Band split</div><div class="metric-value" id="pu-split">50 / 50</div></div>
+        </div>
+        <div id="pu-verdict" class="verdict ok">paraunitary: perfect reconstruction</div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="pu-sig" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#8b949e"></i>input $x[n]$</span>
+            <span><i style="background:#34d399"></i>subband 0</span>
+            <span><i style="background:#22d3ee"></i>subband 1</span>
+            <span><i style="background:#f472b6"></i>reconstruction error</span>
+        </div>
+    </div>
+
+    <p class="note">Note what does <em>not</em> change as you turn $\theta$: the total energy in
+    the two subbands. That invariance is the whole content of losslessness, and it is why the
+    energy meter stays pinned at 1.000 until you touch the gain.</p>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>The Analogue &harr; Digital Map</h2>
+
+    <table>
+        <thead><tr><th>Idea</th><th>Continuous-time networks</th><th>Discrete-time filters</th></tr></thead>
+        <tbody>
+            <tr><td>Stability boundary</td><td>The $j\omega$-axis, $\operatorname{Re}(s) = 0$</td><td>The circle $|z| = 1$</td></tr>
+            <tr><td>Stable region</td><td>The open left half-plane</td><td>The open unit disc</td></tr>
+            <tr><td>What closeness buys</td><td>Small $\sigma$ gives high $Q \approx \omega_0/2\sigma$</td><td>Radius $r$ near 1 gives a slow envelope $r^{\,n}$ and a peak at $\omega \approx \theta$</td></tr>
+            <tr><td>Lossless mixing</td><td>Unitary $\mathbf{S}(f)$, eigenvalues of unit modulus at that frequency</td><td>Paraunitary $\mathbf{H}_p(e^{j\omega})$, unitary at every $\omega$ on the circle</td></tr>
+            <tr><td>Optimal design</td><td>Not treated here</td><td>Hermitian PSD $\mathbf{R}$ and $\mathbf{Q}$</td></tr>
+            <tr><td>What a violation looks like</td><td>The model creates energy; the transient diverges</td><td>The recursion is unstable, or settles into a limit cycle</td></tr>
+        </tbody>
+    </table>
+
+    <div class="callout">
+        <div class="callout-label">The confusion worth guarding against</div>
+        <p>Mixing up the <em>eigenvalues of a scattering matrix</em>, which describe how ports
+        exchange energy at one frequency, with the <em>poles of a transfer function</em>, which
+        describe how the response varies with frequency. Both get compared against a unit circle.
+        Neither has anything to do with the other.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>What the Linear Theory Does Not Model</h2>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel r">
+            <h4>Quantised coefficients move the poles</h4>
+            <p>Sometimes far enough to cross the unit circle. Re-check $|\lambda| &lt; 1$
+            <em>after</em> quantisation, not only before, and prefer cascaded second-order
+            sections to a single high-order direct form &mdash; the pole sensitivity of a direct
+            form grows viciously with order.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Overflow and limit cycles</h4>
+            <p>Nonlinear finite-wordlength effects that slide 02 simply does not describe,
+            because that analysis assumes arithmetic of unlimited precision. A filter can be
+            provably stable and still sit in a small self-sustaining oscillation.</p>
+        </div>
+    </div>
+
+    <h3>Where these structures show up beyond filter design</h3>
+    <ul>
+        <li>The vector-fitted macromodels of the companion deck are realised as state-space
+        systems, and whether one is usable comes down to the eigenvalue test of slide 02 applied
+        to its $\mathbf{A}$ matrix.</li>
+        <li>SerDes equaliser taps minimise a quadratic error built from the channel's Hermitian
+        PSD autocorrelation &mdash; the Wiener problem of slide 05 in different packaging.</li>
+        <li>A <strong>feed-forward</strong> equaliser is an FIR that pre-shapes the signal and
+        unavoidably boosts noise with it; a <strong>decision-feedback</strong> equaliser operates
+        on already-decided bits, so it cancels post-cursor interference without amplifying noise
+        at all &mdash; at the cost of being unable to touch pre-cursor interference, and of
+        propagating its own errors when it decides wrongly.</li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-11">
+    <div class="slide-number">11</div>
+    <h2>Cheat Sheet</h2>
+
+    <table>
+        <thead><tr><th>Question</th><th>Matrix</th><th>Answer</th></tr></thead>
+        <tbody>
+            <tr><td>Will it stay stable?</td><td>State matrix $\mathbf{A}$</td><td>Every $|\lambda_k| &lt; 1$. FIR has all $\lambda = 0$, so only IIR is in play.</td></tr>
+            <tr><td>Eigenvalue = pole?</td><td>$\mathbf{A}$, minimal realisation</td><td>Yes for direct, cascade and lattice forms; non-minimal realisations hide modes.</td></tr>
+            <tr><td>What taps are optimal?</td><td>Toeplitz Hermitian PSD $\mathbf{R}$</td><td>$\mathbf{R}\mathbf{w} = \mathbf{p}$, solved in $O(N^2)$ by Levinson&ndash;Durbin.</td></tr>
+            <tr><td>Least stopband leak?</td><td>Hermitian PSD $\mathbf{Q}$</td><td>The eigenvector of the smallest eigenvalue &mdash; a Rayleigh quotient minimum.</td></tr>
+            <tr><td>Can I rebuild exactly?</td><td>Polyphase $\mathbf{H}_p(z)$</td><td>Paraunitary $\Rightarrow$ perfect reconstruction; add lifting for bit-exactness.</td></tr>
+        </tbody>
+    </table>
+
+    <div class="callout">
+        <div class="callout-label">One sentence per structure</div>
+        <p><strong>Dynamics</strong> are eigenvalues of $\mathbf{A}$ in the $z$-plane.
+        <strong>Optimal taps</strong> are Hermitian positive-semidefinite matrices and the
+        spectral theorem, the same theorem that runs the passivity test in the companion deck.
+        <strong>Lossless analysis and synthesis</strong> is a unitary matrix made
+        frequency-dependent.</p>
+    </div>
+
+    <h3>Further reading</h3>
+    <ul>
+        <li>Oppenheim &amp; Schafer, <em>Discrete-Time Signal Processing</em>, 3rd ed., Pearson, 2009.</li>
+        <li>Vaidyanathan, <em>Multirate Systems and Filter Banks</em>, Prentice Hall, 1993.</li>
+        <li>Haykin, <em>Adaptive Filter Theory</em>, 5th ed., Pearson, 2013.</li>
+        <li>Horn &amp; Johnson, <em>Matrix Analysis</em>, 2nd ed., Cambridge, 2012.</li>
+    </ul>
+</section>
+
+<script>
+/* ---------- shared canvas helpers -------------------------------------- */
+const C = { bg:'#0d1117', panel:'#161b22', grid:'#21262d', dim:'#8b949e',
+            accent:'#34d399', cyan:'#22d3ee', pink:'#f472b6', amber:'#fbbf24',
+            text:'#e6edf3' };
+
+function hidpi(id) {
+    const c = document.getElementById(id);
+    const r = window.devicePixelRatio || 1;
+    const w = c.width, h = c.height;
+    c.style.width = w + 'px'; c.style.height = h + 'px';
+    c.width = Math.round(w * r); c.height = Math.round(h * r);
+    const ctx = c.getContext('2d');
+    ctx.scale(r, r);
+    return { ctx, w, h };
+}
+function clear(ctx, w, h) { ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h); }
+function label(ctx, t, x, y, col, size, align) {
+    ctx.fillStyle = col || C.dim;
+    ctx.font = (size || 10) + "px 'JetBrains Mono', monospace";
+    ctx.textAlign = align || 'left';
+    ctx.fillText(t, x, y);
+    ctx.textAlign = 'left';
+}
+function dashed(ctx, on) { ctx.setLineDash(on ? [4, 4] : []); }
+
+/* Jacobi eigen-decomposition for a small real symmetric matrix. */
+function jacobiEig(Ain, n) {
+    const A = Ain.map(r => r.slice());
+    let V = [];
+    for (let i = 0; i < n; i++) { V.push(new Array(n).fill(0)); V[i][i] = 1; }
+    for (let sweep = 0; sweep < 60; sweep++) {
+        let off = 0;
+        for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) off += A[i][j] * A[i][j];
+        if (off < 1e-24) break;
+        for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) {
+            if (Math.abs(A[p][q]) < 1e-18) continue;
+            const theta = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+            const t = Math.sign(theta || 1) / (Math.abs(theta) + Math.sqrt(theta * theta + 1));
+            const c = 1 / Math.sqrt(t * t + 1), s = t * c;
+            for (let k = 0; k < n; k++) {
+                const akp = A[k][p], akq = A[k][q];
+                A[k][p] = c * akp - s * akq; A[k][q] = s * akp + c * akq;
+            }
+            for (let k = 0; k < n; k++) {
+                const apk = A[p][k], aqk = A[q][k];
+                A[p][k] = c * apk - s * aqk; A[q][k] = s * apk + c * aqk;
+            }
+            for (let k = 0; k < n; k++) {
+                const vkp = V[k][p], vkq = V[k][q];
+                V[k][p] = c * vkp - s * vkq; V[k][q] = s * vkp + c * vkq;
+            }
+        }
+    }
+    const idx = [...Array(n).keys()].sort((a, b) => A[a][a] - A[b][b]);
+    return {
+        values: idx.map(i => A[i][i]),
+        vectors: idx.map(i => V.map(row => row[i]))
+    };
+}
+
+/* ---------- 03 : pole explorer ----------------------------------------- */
+(function () {
+    const PL = hidpi('pe-plane'), MG = hidpi('pe-mag'), IM = hidpi('pe-imp');
+    const sR = document.getElementById('pe-r'), sT = document.getElementById('pe-th');
+
+    function magAt(w, r, th) {
+        // |H| = 1 / |1 - 2r cos(th) e^-jw + r^2 e^-2jw|
+        const c1 = -2 * r * Math.cos(th), c2 = r * r;
+        const re = 1 + c1 * Math.cos(w) + c2 * Math.cos(2 * w);
+        const im = -c1 * Math.sin(w) - c2 * Math.sin(2 * w);
+        return 1 / Math.max(Math.hypot(re, im), 1e-12);
+    }
+
+    function drawPlane(r, th) {
+        const { ctx, w, h } = PL;
+        clear(ctx, w, h);
+        const cx = w / 2, cy = h / 2 + 4, R = Math.min(w, h) * 0.30;
+        ctx.fillStyle = 'rgba(52,211,153,0.06)';
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI); ctx.fill();
+        ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(cx - R * 1.5, cy); ctx.lineTo(cx + R * 1.5, cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, cy - R * 1.5); ctx.lineTo(cx, cy + R * 1.5); ctx.stroke();
+        ctx.strokeStyle = C.dim; ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI); ctx.stroke();
+        ctx.strokeStyle = C.pink; ctx.lineWidth = 2.2;
+        [th, -th].forEach(a => {
+            const px = cx + r * R * Math.cos(a), py = cy - r * R * Math.sin(a), k = 6;
+            ctx.beginPath();
+            ctx.moveTo(px - k, py - k); ctx.lineTo(px + k, py + k);
+            ctx.moveTo(px + k, py - k); ctx.lineTo(px - k, py + k);
+            ctx.stroke();
+        });
+        label(ctx, 'z-plane', w / 2, 16, C.text, 11, 'center');
+        label(ctx, '|z| = 1', cx + R * 0.72, cy - R * 0.78, C.dim, 9);
+        label(ctx, 'inside = stable', cx, h - 8, C.dim, 9, 'center');
+    }
+
+    function drawMag(r, th) {
+        const { ctx, w, h } = MG;
+        clear(ctx, w, h);
+        const padL = 44, padR = 12, padT = 26, padB = 30;
+        const DBMIN = -25, DBMAX = 45;
+        const X = v => padL + v / Math.PI * (w - padL - padR);
+        const Y = v => h - padB - (v - DBMIN) / (DBMAX - DBMIN) * (h - padT - padB);
+        ctx.strokeStyle = C.grid;
+        for (let d = DBMIN; d <= DBMAX; d += 10) {
+            ctx.beginPath(); ctx.moveTo(padL, Y(d)); ctx.lineTo(w - padR, Y(d)); ctx.stroke();
+        }
+        [-20, 0, 20, 40].forEach(d => label(ctx, d + '', padL - 6, Y(d) + 3, C.dim, 9, 'right'));
+        ctx.strokeStyle = C.accent; ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        for (let i = 0; i <= 900; i++) {
+            const wv = i / 900 * Math.PI;
+            const db = 20 * Math.log10(magAt(wv, r, th));
+            const yy = Math.max(padT, Math.min(h - padB, Y(db)));
+            if (i === 0) ctx.moveTo(X(wv), yy); else ctx.lineTo(X(wv), yy);
+        }
+        ctx.stroke();
+        ctx.strokeStyle = C.pink; dashed(ctx, true); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(X(th), padT); ctx.lineTo(X(th), h - padB); ctx.stroke();
+        dashed(ctx, false);
+        label(ctx, '|H| dB', padL - 6, padT - 8, C.text, 10);
+        label(ctx, '0', padL, h - 8, C.dim, 9, 'center');
+        label(ctx, 'π', w - padR, h - 8, C.dim, 9, 'right');
+        label(ctx, 'θ', X(th), h - 8, C.pink, 9, 'center');
+    }
+
+    function drawImpulse(r, th) {
+        const { ctx, w, h } = IM;
+        clear(ctx, w, h);
+        const padL = 44, padR = 12, padT = 22, padB = 24;
+        const N = 90;
+        const hs = [];
+        let peak = 1e-9;
+        for (let n = 0; n <= N; n++) {
+            const v = Math.pow(r, n) * Math.sin((n + 1) * th) / Math.sin(th);
+            hs.push(v); peak = Math.max(peak, Math.abs(v));
+        }
+        const X = n => padL + n / N * (w - padL - padR);
+        const Y = v => padT + (1 - v / peak) / 2 * (h - padT - padB);
+        ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(padL, Y(0)); ctx.lineTo(w - padR, Y(0)); ctx.stroke();
+        ctx.strokeStyle = C.amber; ctx.lineWidth = 1; dashed(ctx, true);
+        [1, -1].forEach(sg => {
+            ctx.beginPath();
+            for (let n = 0; n <= N; n++) {
+                const v = sg * Math.pow(r, n) / Math.abs(Math.sin(th));
+                if (n === 0) ctx.moveTo(X(n), Y(v)); else ctx.lineTo(X(n), Y(v));
+            }
+            ctx.stroke();
+        });
+        dashed(ctx, false);
+        ctx.strokeStyle = C.pink; ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        hs.forEach((v, n) => { if (n === 0) ctx.moveTo(X(n), Y(v)); else ctx.lineTo(X(n), Y(v)); });
+        ctx.stroke();
+        label(ctx, 'impulse response h[n]   (auto-scaled, peak = ' + peak.toFixed(1) + ')',
+              padL, 15, C.text, 10);
+        label(ctx, 'n = ' + N, w - padR, h - 7, C.dim, 9, 'right');
+    }
+
+    function update() {
+        const r = parseFloat(sR.value), th = parseFloat(sT.value);
+        document.getElementById('pe-r-val').textContent = r.toFixed(3);
+        document.getElementById('pe-th-val').textContent = th.toFixed(2);
+        let best = 0, bestW = 0;
+        for (let i = 0; i <= 1200; i++) {
+            const wv = i / 1200 * Math.PI, m = magAt(wv, r, th);
+            if (m > best) { best = m; bestW = wv; }
+        }
+        document.getElementById('pe-peak').textContent =
+            (20 * Math.log10(best)).toFixed(1) + ' dB';
+        document.getElementById('pe-mem').textContent = r < 1
+            ? Math.round(Math.log(0.01) / Math.log(r)) + ' samples' : 'never decays';
+        document.getElementById('pe-dist').textContent = (1 - r).toFixed(3);
+        document.getElementById('pe-w').textContent = bestW.toFixed(2);
+        const v = document.getElementById('pe-verdict');
+        if (r < 0.9995) { v.className = 'verdict ok'; v.textContent = 'stable: |λ| < 1, the transient dies away'; }
+        else if (r < 1.0005) { v.className = 'verdict bad'; v.textContent = 'marginal: |λ| = 1, it hums forever'; }
+        else { v.className = 'verdict bad'; v.textContent = 'unstable: |λ| > 1, every lap comes back louder'; }
+        drawPlane(r, th); drawMag(r, th); drawImpulse(r, th);
+    }
+    [sR, sT].forEach(s => s.addEventListener('input', update));
+    update();
+})();
+
+/* ---------- 06 : the eigenfilter bowl ---------------------------------- */
+(function () {
+    const { ctx, w, h } = hidpi('ef-resp');
+    const ids = ['ef-w0', 'ef-w1', 'ef-w2'];
+    const sl = ids.map(i => document.getElementById(i));
+    const sWs = document.getElementById('ef-ws');
+
+    function buildQ(ws) {
+        const Q = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+        for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+            const k = i - j;
+            Q[i][j] = (k === 0) ? (Math.PI - ws) : (-Math.sin(k * ws) / k);
+        }
+        return Q;
+    }
+    const norm = v => { const n = Math.hypot(...v) || 1; return v.map(x => x / n); };
+    function quad(Q, v) {
+        let s = 0;
+        for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) s += v[i] * Q[i][j] * v[j];
+        return s;
+    }
+    function respDb(v, wv) {
+        let re = 0, im = 0;
+        v.forEach((t, i) => { re += t * Math.cos(i * wv); im -= t * Math.sin(i * wv); });
+        return 20 * Math.log10(Math.max(Math.hypot(re, im), 1e-6));
+    }
+
+    function draw(v, opt, ws) {
+        clear(ctx, w, h);
+        const padL = 46, padR = 14, padT = 26, padB = 30;
+        const DBMIN = -60, DBMAX = 12;
+        const X = a => padL + a / Math.PI * (w - padL - padR);
+        const Y = d => h - padB - (d - DBMIN) / (DBMAX - DBMIN) * (h - padT - padB);
+        ctx.fillStyle = 'rgba(244,114,182,0.10)';
+        ctx.fillRect(X(ws), padT, X(Math.PI) - X(ws), h - padT - padB);
+        ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+        for (let d = DBMIN; d <= DBMAX; d += 12) {
+            ctx.beginPath(); ctx.moveTo(padL, Y(d)); ctx.lineTo(w - padR, Y(d)); ctx.stroke();
+            label(ctx, d + '', padL - 6, Y(d) + 3, C.dim, 9, 'right');
+        }
+        [[opt, C.cyan, 1.3], [v, C.accent, 2]].forEach(([vec, col, lw]) => {
+            ctx.strokeStyle = col; ctx.lineWidth = lw;
+            ctx.beginPath();
+            for (let i = 0; i <= 700; i++) {
+                const wv = i / 700 * Math.PI;
+                const yy = Math.max(padT, Math.min(h - padB, Y(respDb(vec, wv))));
+                if (i === 0) ctx.moveTo(X(wv), yy); else ctx.lineTo(X(wv), yy);
+            }
+            ctx.stroke();
+        });
+        label(ctx, '|H(e^jω)| dB', padL - 6, padT - 8, C.text, 10);
+        label(ctx, 'stopband', X(ws) + 8, padT + 14, C.pink, 10);
+        label(ctx, '0', padL, h - 8, C.dim, 9, 'center');
+        label(ctx, 'ω_s', X(ws), h - 8, C.pink, 9, 'center');
+        label(ctx, 'π', w - padR, h - 8, C.dim, 9, 'right');
+    }
+
+    function update() {
+        const ws = parseFloat(sWs.value) * Math.PI;
+        const v = norm(sl.map(s => parseFloat(s.value)));
+        sl.forEach((s, i) => document.getElementById(ids[i] + '-val').textContent =
+            parseFloat(s.value).toFixed(2));
+        document.getElementById('ef-ws-val').textContent = (ws / Math.PI).toFixed(2);
+        const Q = buildQ(ws);
+        const { values, vectors } = jacobiEig(Q, 3);
+        const E = quad(Q, v);
+        document.getElementById('ef-leak').textContent = E.toFixed(3);
+        document.getElementById('ef-lmin').textContent = values[0].toFixed(3);
+        document.getElementById('ef-lmax').textContent = values[2].toFixed(3);
+        document.getElementById('ef-gap').textContent =
+            (100 * (E - values[0]) / Math.max(values[0], 1e-9)).toFixed(1) + '%';
+        draw(v, vectors[0], ws);
+        return { values, vectors };
+    }
+    function snap(which) {
+        const ws = parseFloat(sWs.value) * Math.PI;
+        const { vectors } = jacobiEig(buildQ(ws), 3);
+        let vec = vectors[which];
+        if (vec[0] < 0) vec = vec.map(x => -x);
+        const m = Math.max(...vec.map(Math.abs));
+        sl.forEach((s, i) => s.value = (vec[i] / m).toFixed(2));
+        update();
+    }
+    [...sl, sWs].forEach(s => s.addEventListener('input', update));
+    document.getElementById('ef-best').addEventListener('click', () => snap(0));
+    document.getElementById('ef-worst').addEventListener('click', () => snap(2));
+    update();
+})();
+
+/* ---------- 08 : a rotation once per frequency ------------------------- */
+(function () {
+    const { ctx, w, h } = hidpi('pu-sig');
+    const sTh = document.getElementById('pu-th'), sG = document.getElementById('pu-g');
+
+    const N = 64;
+    const x = [];
+    for (let n = 0; n < N; n++) {
+        x.push(Math.sin(2 * Math.PI * 3 * n / N) * Math.exp(-n / 42)
+             + 0.45 * Math.sin(2 * Math.PI * 17 * n / N));
+    }
+    const Ex = x.reduce((a, b) => a + b * b, 0);
+    const xs = x.map(v => v / Math.sqrt(Ex));   // unit energy
+
+    function strip(y0, y1, top, height, series) {
+        const padL = 52, padR = 14;
+        let peak = 0;
+        series.forEach(s => s.data.forEach(v => peak = Math.max(peak, Math.abs(v))));
+        const scale = Math.max(peak, 1e-300);
+        const mid = top + height / 2;
+        ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(padL, mid); ctx.lineTo(w - padR, mid); ctx.stroke();
+        series.forEach(s => {
+            ctx.strokeStyle = s.col; ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            s.data.forEach((v, i) => {
+                const px = padL + i / (s.data.length - 1) * (w - padL - padR);
+                const py = mid - (v / scale) * (height / 2 - 6);
+                if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            });
+            ctx.stroke();
+        });
+        return peak;
+    }
+
+    function update() {
+        const th = parseFloat(sTh.value), g = parseFloat(sG.value);
+        document.getElementById('pu-th-val').textContent = th.toFixed(2);
+        document.getElementById('pu-g-val').textContent = g.toFixed(3);
+        const c = Math.cos(th), s = Math.sin(th);
+        const e = [], o = [];
+        for (let m = 0; m * 2 + 1 < N; m++) { e.push(xs[2 * m]); o.push(xs[2 * m + 1]); }
+        const y0 = e.map((v, i) => c * v + s * o[i]);
+        const y1 = e.map((v, i) => -s * v + c * o[i]);
+        const y1g = y1.map(v => v * g);
+        // synthesis: the transpose rotation
+        const eh = y0.map((v, i) => c * v - s * y1g[i]);
+        const oh = y0.map((v, i) => s * v + c * y1g[i]);
+        const xh = [];
+        for (let m = 0; m < eh.length; m++) { xh.push(eh[m]); xh.push(oh[m]); }
+        const err = xh.map((v, i) => v - xs[i]);
+
+        const E0 = y0.reduce((a, b) => a + b * b, 0);
+        const E1 = y1.reduce((a, b) => a + b * b, 0);
+        const Eb = E0 + y1g.reduce((a, b) => a + b * b, 0);
+        const Ee = err.reduce((a, b) => a + b * b, 0);
+        const Ein = xs.reduce((a, b) => a + b * b, 0);
+
+        document.getElementById('pu-ein').textContent = Ein.toFixed(3);
+        document.getElementById('pu-eb').textContent = Eb.toFixed(3);
+        const errDb = 10 * Math.log10(Math.max(Ee / Ein, 1e-32));
+        document.getElementById('pu-err').textContent =
+            (errDb < -290 ? '< −290' : errDb.toFixed(0)) + ' dB';
+        document.getElementById('pu-split').textContent =
+            Math.round(100 * E0 / (E0 + E1)) + ' / ' + Math.round(100 * E1 / (E0 + E1));
+        const v = document.getElementById('pu-verdict');
+        const ok = Math.abs(g - 1) < 1e-6;
+        v.className = 'verdict ' + (ok ? 'ok' : 'bad');
+        v.textContent = ok
+            ? 'paraunitary: energy preserved for every θ, reconstruction is exact'
+            : 'gain g ≠ 1 breaks the structure — energy is no longer preserved and the signal does not come back';
+
+        clear(ctx, w, h);
+        label(ctx, 'input x[n] — unit energy', 52, 16, C.text, 10);
+        strip(0, 0, 22, 76, [{ data: xs, col: C.dim }]);
+        label(ctx, 'subbands after the rotation', 52, 118, C.text, 10);
+        strip(0, 0, 124, 84, [{ data: y0, col: C.accent }, { data: y1g, col: C.cyan }]);
+        const ep = strip(0, 0, 222, 66, [{ data: err, col: C.pink }]);
+        label(ctx, 'reconstruction error  (peak ' +
+              (ep > 0 ? ep.toExponential(1) : '0') + ')', 52, 218, C.text, 10);
+    }
+    [sTh, sG].forEach(s => s.addEventListener('input', update));
+    update();
+})();
+</script>

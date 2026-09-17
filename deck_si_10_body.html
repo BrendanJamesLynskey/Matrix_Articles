@@ -1,0 +1,516 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 10</div>
+    <h1>Measurement, De-embedding and <span class="accent">Correlation</span></h1>
+    <p class="subtitle">Where S-parameters come from, the four ways they arrive damaged,
+    and the uncomfortable demonstration that a model can match insertion loss to a
+    fraction of a decibel and still get the eye wrong.</p>
+
+    <div class="tags">
+        <span class="tag">VNA and TDR</span><span class="tag">calibration</span>
+        <span class="tag">de-embedding</span><span class="tag">passivity</span>
+        <span class="tag">causality</span><span class="tag">correlation</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">instrument</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">calibration</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">de-embedding</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">quality checks</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">a usable channel</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Two instruments, one measurement</a></li>
+        <li><a href="#slide-02">Calibration decides where the measurement begins</a></li>
+        <li><a href="#slide-03">Fixture removal, and getting it wrong</a></li>
+        <li><a href="#slide-04">Passivity: energy the model invents</a></li>
+        <li><a href="#slide-05">Causality, tested two ways</a></li>
+        <li><a href="#slide-06">Interactive: where the measurement stopped</a></li>
+        <li><a href="#slide-07">The point nobody measures</a></li>
+        <li><a href="#slide-08">All four defects, priced in eye height</a></li>
+        <li><a href="#slide-09">Interactive: what correlation honestly means</a></li>
+        <li><a href="#slide-10">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Two Instruments, One Measurement</h2>
+    <p>A vector network analyser sweeps a sinusoid and measures the ratio of what comes
+    back and what goes through to what went in, in magnitude and phase, at each
+    frequency. A time-domain reflectometer launches a step and records the reflection
+    against time. These sound like different experiments and they are the same one: the
+    two data sets are Fourier transforms of each other, and every modern instrument will
+    show you either view of whichever it measured.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>What each is good at</h4>
+            <p>The frequency domain has the better dynamic range and the better defined
+            calibration, so it is where characterisation is done. The time domain is
+            where a human can see <em>which</em> feature is responsible, because position
+            along the trace maps to time, which is why debugging is done there.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Where they genuinely differ</h4>
+            <p>A network analyser measures only the frequencies it sweeps, so everything
+            below the first point and above the last has to be supplied by assumption.
+            Those assumptions are the subject of slides 06 and 07, and they do more
+            damage than most measurement error.</p>
+        </div>
+    </div>
+
+    <p>The channel used throughout this deck is the one from
+    <a href="https://brendanjameslynskey.github.io/SerDes_Equalisation/">SerDes_Equalisation</a>,
+    imported rather than re-fitted, so nothing that article quotes is disturbed by
+    anything done here.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="ch-plot" width="780" height="270"></canvas>
+        <div class="legend">
+            <span><i style="background:#fb923c"></i>insertion loss</span>
+            <span><i style="background:#8b949e"></i>return loss</span>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Calibration Decides Where the Measurement Begins</h2>
+    <p>An instrument measures at its own connectors. Everything between there and the
+    thing you care about &mdash; cables, adapters, launch structures, a length of trace
+    on a test coupon &mdash; is in the measurement unless it is removed, and calibration
+    is how the reference plane gets moved.</p>
+
+    <table>
+        <thead><tr><th>Method</th><th>What it needs</th><th>Where it is used</th></tr></thead>
+        <tbody>
+            <tr><td>SOLT (short, open, load, through)</td><td>Characterised standards, whose behaviour is known as a function of frequency</td><td>Coaxial work; entirely routine well past 20 GHz with good standards</td></tr>
+            <tr><td>TRL (through, reflect, line)</td><td>Only a through, some repeatable reflection, and a line of known length &mdash; the impedance of the line defines the reference</td><td>On-board and on-wafer, where good standards cannot be made; the reference impedance is the line's, not 50 &Omega;</td></tr>
+            <tr><td>2x-thru / automatic fixture removal</td><td>A fixture built as two back-to-back copies of the launch</td><td>The usual method for board-level channels, because the fixture is easy to fabricate alongside the coupon</td></tr>
+        </tbody>
+    </table>
+
+    <div class="callout">
+        <div class="callout-label">A correction worth making</div>
+        <p>It is sometimes said that open and short standards are hopeless at gigahertz
+        frequencies and that this is why scattering parameters exist. Neither half is
+        right. Characterised open, short and load standards are used routinely well into
+        the tens of gigahertz, and TRL goes higher still. Scattering parameters exist
+        because travelling waves are the natural variables of transmission-line theory
+        &mdash; the natural bookkeeping for magnitude and phase from port to port &mdash;
+        and matched terminations are a secondary convenience. The companion deck
+        <a href="https://brendanjameslynskey.github.io/Matrix_Methods_Network_Parameters/">Matrix
+        Methods in Network Parameters</a> makes that argument properly.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Fixture Removal, and Getting It Wrong</h2>
+    <p>De-embedding inverts a model of the fixture and applies the inverse to the
+    measurement. It is exact if the model of the fixture is exact. The fixture, however,
+    is fabricated to the same tolerances as everything else on the board, so its
+    impedance is known to about ten per cent &mdash; and inverting a slightly wrong
+    fixture leaves a residue behind that was never in the device under test.</p>
+
+    <p>Worse, the residue is a reflection, and a reflection is the one kind of error the
+    later slides show to be most damaging, because it lands in the time domain wherever
+    the fixture's electrical length puts it.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="de-table"></table>
+    </div>
+
+    <p class="note" id="de-note"></p>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Passivity: Energy the Model Invents</h2>
+    <p>A passive network cannot deliver more power than it receives. For a reciprocal,
+    symmetric two-port that reduces to a condition testable at every frequency:</p>
+
+    <p>$$|S_{11}|^2 + |S_{21}|^2 \le 1.$$</p>
+
+    <p>Measured data violates this routinely by small amounts, from noise, from
+    calibration residue, and above all from de-embedding, which subtracts a model from a
+    measurement and can easily subtract slightly too much. The consequence is not
+    cosmetic: a time-domain simulator handed a channel that creates energy can oscillate,
+    and a model that gains two per cent in amplitude reports an eye two per cent too
+    open.</p>
+
+    <div class="metric-grid" id="pa-metrics"></div>
+
+    <p class="note">Enforcing passivity is a standard post-processing step and it is not
+    free: it perturbs the data to make it obey the constraint, and where it perturbs it
+    is a choice the algorithm makes rather than one the measurement supports. A data set
+    that needs a large passivity correction should be re-measured rather than repaired.</p>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Causality, Tested Two Ways</h2>
+    <p>A causal network produces no output before its input. Two tests follow from that,
+    and they catch different failures.</p>
+
+    <p>The <strong>time-domain</strong> test transforms the data and looks for energy
+    ahead of the first arrival. It is direct and interpretable. The
+    <strong>minimum-phase</strong> test compares the measured phase against the phase the
+    measured magnitude implies through the Kramers&ndash;Kronig relations &mdash; the same
+    relations that deck 03 applied to a dielectric, here applied to a transfer function.
+    It catches a failure the first test misses: a magnitude that has been edited without
+    the dispersion that must accompany it.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="mp-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#fb923c"></i>departure from minimum phase</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="mp-metrics"></div>
+
+    <p class="note" id="mp-note"></p>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Interactive: Where the Measurement Stopped</h2>
+    <p>An instrument sweeps to some upper frequency and stops. Three things then go wrong
+    at once and it is worth separating them. Removing the high frequencies removes real
+    signal content. Cutting abruptly multiplies the spectrum by a rectangle, whose
+    transform rings. And the sampled spectrum makes the inverse transform periodic, so
+    energy that should have gone off the end of the record wraps round to the beginning.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="tr-table"></table>
+    </div>
+
+    <p class="note" id="tr-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">How far is far enough</div>
+        <p>The usual guidance is to measure to at least three times the Nyquist frequency
+        of the intended data rate, and five times for anything with sharp features such
+        as a via stub resonance. The reason is not that there is much energy up there
+        &mdash; there is not &mdash; but that the pulse response's shape near the cursor
+        depends on the phase relationships across the whole band, and truncation
+        disturbs them.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>The Point Nobody Measures</h2>
+    <p>A vector network analyser cannot measure at direct current. Every S-parameter file
+    therefore begins at some lowest swept frequency and the value at zero has to be
+    supplied. That single missing point sets the baseline the entire time-domain response
+    sits on, because it is the integral of the impulse response.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="dc-table"></table>
+    </div>
+
+    <p class="note" id="dc-note"></p>
+
+    <p>The correct treatment is to extrapolate the measured low-frequency behaviour down
+    to zero, respecting the fact that a passive interconnect has a real, finite
+    transmission at direct current set by its series resistance. Assuming zero &mdash;
+    which some tools do by default, on the reasonable-sounding grounds that no data
+    means no signal &mdash; removes the baseline and produces a response that droops.</p>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>All Four Defects, Priced in Eye Height</h2>
+    <p>Each defect is now applied to the same channel and the equaliser is redesigned
+    against the damaged version, which is the honest comparison: a real receiver adapts
+    to whatever it is given, so the question is not how much the waveform changed but how
+    much margin survives adaptation.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table class="checktab" id="qc-table"></table>
+    </div>
+
+    <p class="note" id="qc-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">Note which one is harmless</div>
+        <p>Moving the reference plane by fifteen picoseconds looks alarming on a phase
+        plot and changes nothing that matters: a pure delay is a perfectly causal
+        operation, and shifting where a measurement begins is what de-embedding is
+        <em>for</em>. A quality check that flagged it would be worse than useless, because
+        it would train its users to ignore it.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>Interactive: What Correlation Honestly Means</h2>
+    <p>Correlation between a model and a measurement is almost always judged on insertion
+    loss, because insertion loss is one curve and it is easy to overlay. Here is why that
+    is not sufficient.</p>
+
+    <p>Give the channel a small internal reflection &mdash; an echo, as an unnoticed
+    impedance step anywhere along the line would produce. Its effect on the magnitude of
+    the transfer function is second order in the reflection coefficient and hides inside
+    the ripple everyone tolerates. Its effect on the pulse response is to put energy at a
+    particular delay, and whether that matters depends entirely on whether the
+    decision-feedback taps can reach it.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="ec-table"></table>
+    </div>
+
+    <p class="note" id="ec-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">What to correlate on instead</div>
+        <p>Correlate on the pulse response, or on something derived from it &mdash; the
+        cursor, the residual intersymbol interference after a defined equaliser, the eye
+        height, or the channel operating margin of deck 11. All of those are sensitive to
+        where in time the energy lands, which is what the receiver is sensitive to.
+        Insertion loss is a useful first check and a poor final one.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Check</th><th>Test</th><th>What failure means</th></tr></thead>
+        <tbody>
+            <tr><td>Passivity</td><td>$|S_{11}|^2+|S_{21}|^2\le 1$</td><td>The model creates energy; simulators may oscillate</td></tr>
+            <tr><td>Reciprocity</td><td>$S_{21}=S_{12}$</td><td>Measurement error, or a genuinely non-reciprocal device</td></tr>
+            <tr><td>Causality, time domain</td><td>Energy before the first arrival</td><td>Phase inconsistent with magnitude somewhere</td></tr>
+            <tr><td>Causality, minimum phase</td><td>Phase against the Hilbert transform of log-magnitude</td><td>Catches magnitude-only edits; baseline is nonzero for a channel with reflections</td></tr>
+            <tr><td>Band</td><td>Three to five times Nyquist</td><td>Truncation rings and distorts the pulse near the cursor</td></tr>
+            <tr><td>DC point</td><td>Extrapolate, do not assume</td><td>Assuming zero removes the baseline</td></tr>
+            <tr><td>Correlation</td><td>On the pulse response, not on insertion loss</td><td>Magnitude agreement does not imply time-domain agreement</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#fb923c',teal:'#34d399',
+         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+function hidpi(id){const c=document.getElementById(id);if(!c)return null;
+  const r=window.devicePixelRatio||1,w=c.width,h=c.height;
+  c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
+  const x=c.getContext('2d');x.scale(r,r);return{ctx:x,w,h};}
+function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
+function label(ctx,t,x,y,c2,s,a){ctx.fillStyle=c2||C.dim;
+  ctx.font=(s||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=a||'left';
+  ctx.fillText(t,x,y);ctx.textAlign='left';}
+function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
+function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+
+  '</div><div class="metric-value">'+v+'</div></div>';}
+function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
+  if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
+  if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
+
+/* ---- 01 channel ---- */
+(function(){
+  const H=hidpi('ch-plot'); if(!H||!SI.channel)return;
+  const d=SI.channel; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:54,r:16,t:20,b:38}, FHI=50;
+  const X=f=>p.l+f/FHI*(w-p.l-p.r);
+  const LO=-80,HI=2, Y=v=>h-p.b-(v-LO)/(HI-LO)*(h-p.t-p.b);
+  axes(ctx,w,h,p,'frequency, GHz','dB');
+  for(let v=LO;v<=HI;v+=20){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');}
+  [0,10,20,30,40,50].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+    label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');});
+  ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
+  ctx.moveTo(X(14),p.t);ctx.lineTo(X(14),h-p.b);ctx.stroke();dashed(ctx,false);
+  label(ctx,'Nyquist',X(14)+5,p.t+14,C.amber,10,'left');
+  function ser(arr,col,wd){ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.beginPath();let st=false;
+    d.f_ghz.forEach(function(f,i){const px=X(f),py=Y(Math.max(LO,Math.min(HI,arr[i])));
+      st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+    ctx.stroke();}
+  ser(d.s21_db,C.accent,2); ser(d.s11_db,C.dim,1.4);
+})();
+
+/* ---- 03 de-embed ---- */
+(function(){
+  const t=document.getElementById('de-table'); if(!t||!SI.deembed)return;
+  const d=SI.deembed;
+  if(d.error){t.innerHTML='<tbody><tr><td>de-embedding study unavailable</td></tr></tbody>';
+    return;}
+  let html='<thead><tr><th>Fixture model used</th><th>Insertion loss agreement</th>'+
+    '<th>Worst return loss</th><th>Equalised eye</th><th>Error</th></tr></thead><tbody>';
+  const truth=d.truth;
+  Object.keys(d).forEach(function(k){
+    if(k==='truth')return; const r=d[k];
+    html+='<tr><td>'+k+'</td><td>'+r.il_rms_err_db.toFixed(4)+' dB rms</td><td>'+
+      r.rl_max_db.toFixed(1)+' dB</td><td>'+r.eye_height.toFixed(4)+'</td><td class="'+
+      (Math.abs(r.eye_err_pct)<1?'ok':'bad')+'">'+(r.eye_err_pct>=0?'+':'')+
+      r.eye_err_pct.toFixed(2)+' %</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  const keys=Object.keys(d).filter(function(k){return k!=='truth';});
+  if(keys.length>1){const a=d[keys[0]],b=d[keys[1]];
+    document.getElementById('de-note').textContent=
+      'De-embedding with the correct fixture model recovers the channel to '+
+      a.il_rms_err_db.toFixed(4)+' dB. Getting the fixture impedance wrong by fifteen '+
+      'ohms — well inside normal fabrication tolerance — leaves '+
+      b.il_rms_err_db.toFixed(3)+' dB of error and a worst return loss of '+
+      b.rl_max_db.toFixed(1)+' dB that belongs to the fixture rather than to the '+
+      'channel. This is why impedance-corrected de-embedding exists.';}
+})();
+
+/* ---- 04 passivity ---- */
+(function(){
+  const el=document.getElementById('pa-metrics'); if(!el||!SI.qc)return;
+  const base=SI.qc[0];
+  const bad=SI.qc.filter(function(r){return r.violates;})[0];
+  el.innerHTML=metric('clean channel, max power',base.max_power.toFixed(4))+
+    (bad?metric('violated case',bad.max_power.toFixed(4)):'')+
+    (bad?metric('energy created',(100*bad.excess).toFixed(1)+' %'):'')+
+    (bad?metric('eye reported too open',(bad.eye_err_pct>=0?'+':'')+
+         bad.eye_err_pct.toFixed(2)+' %'):'');
+})();
+
+/* ---- 05 minimum phase ---- */
+(function(){
+  const H=hidpi('mp-plot'); if(!H||!SI.minphase_sweep)return;
+  const d=SI.minphase_sweep; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:60,r:16,t:20,b:44};
+  const X=i=>p.l+(i+0.5)/d.length*(w-p.l-p.r);
+  let lo=1e9,hi=0; d.forEach(function(r){lo=Math.min(lo,r.rms_phase_err_deg);
+    hi=Math.max(hi,r.rms_phase_err_deg);});
+  const pad=(hi-lo)*0.3||1; lo-=pad; hi+=pad;
+  const Y=v=>h-p.b-(v-lo)/(hi-lo)*(h-p.t-p.b);
+  axes(ctx,w,h,p,'depth of a magnitude-only notch, dB','rms departure, degrees');
+  for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4;ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v.toFixed(1),p.l-6,Y(v)+3,C.dim,9,'right');}
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+  d.forEach(function(r,i){const px=X(i),py=Y(r.rms_phase_err_deg);
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  d.forEach(function(r,i){ctx.fillStyle=C.accent;ctx.beginPath();
+    ctx.arc(X(i),Y(r.rms_phase_err_deg),4,0,6.3);ctx.fill();
+    label(ctx,r.depth_db.toFixed(0)+' dB',X(i),h-p.b+15,C.dim,9,'center');});
+  const base=d[0], worst=d[d.length-1];
+  document.getElementById('mp-metrics').innerHTML=
+    metric('clean channel',base.rms_phase_err_deg.toFixed(2)+'°')+
+    metric('with an 8 dB notch',worst.rms_phase_err_deg.toFixed(2)+'°')+
+    metric('implied delay',base.implied_delay_ps.toFixed(0)+' ps');
+  document.getElementById('mp-note').textContent=
+    'The baseline is '+base.rms_phase_err_deg.toFixed(1)+' degrees rather than zero, '+
+    'and it should be: every internal reflection between a via and a connector '+
+    'contributes an all-pass factor, and an all-pass factor is causal but not minimum '+
+    'phase. The metric is therefore a relative indicator — a file reading a few '+
+    'degrees worse than its peers deserves a look, and one reading two orders of '+
+    'magnitude worse has been cut off at the band edge.';
+})();
+
+/* ---- 06 truncation ---- */
+(function(){
+  const t=document.getElementById('tr-table'); if(!t||!SI.truncation)return;
+  const d=SI.truncation;
+  let html='<thead><tr><th>Measurement stops at</th><th>Cursor error</th>'+
+    '<th>Eye height</th><th>Eye error</th></tr></thead><tbody>';
+  d.rows.forEach(function(r){
+    html+='<tr><td>'+r.band_ghz+' GHz</td><td>'+(r.cursor_err_pct>=0?'+':'')+
+      r.cursor_err_pct.toFixed(2)+' %</td><td>'+r.eye_height.toFixed(5)+
+      '</td><td class="'+(Math.abs(r.eye_err_pct)<0.5?'ok':'bad')+'">'+
+      (r.eye_err_pct>=0?'+':'')+r.eye_err_pct.toFixed(2)+' %</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  const a=d.rows[0];
+  document.getElementById('tr-note').textContent=
+    'Stopping at '+a.band_ghz+' GHz — only '+(a.band_ghz/14).toFixed(1)+
+    ' times the Nyquist frequency of a 28 GBd lane — changes the unequalised eye '+
+    'by '+Math.abs(a.eye_err_pct).toFixed(2)+' per cent. The error is modest here '+
+    'because this channel is smooth; on a channel with a stub resonance just above the '+
+    'cut it would be far larger, because the truncation would remove the resonance '+
+    'entirely and the model would report a channel that works.';
+})();
+
+/* ---- 07 DC ---- */
+(function(){
+  const t=document.getElementById('dc-table'); if(!t||!SI.dc)return;
+  const d=SI.dc;
+  const names={extrapolate:'extrapolated from the lowest measured points',
+    zero:'assumed to be zero',unity:'assumed to be lossless'};
+  let html='<thead><tr><th>Treatment of the DC point</th><th>Eye height</th>'+
+    '<th>Error</th><th>Baseline drift</th></tr></thead><tbody>';
+  d.rows.forEach(function(r){
+    html+='<tr><td>'+(names[r.dc_mode]||r.dc_mode)+'</td><td>'+
+      r.eye_height.toFixed(5)+'</td><td class="'+
+      (Math.abs(r.eye_err_pct)<1?'ok':'bad')+'">'+(r.eye_err_pct>=0?'+':'')+
+      r.eye_err_pct.toFixed(2)+' %</td><td>'+r.baseline_drift.toExponential(2)+
+      '</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  const z=d.rows.filter(function(r){return r.dc_mode==='zero';})[0];
+  if(z)document.getElementById('dc-note').textContent=
+    'Assuming the transmission is zero at direct current costs '+
+    Math.abs(z.eye_err_pct).toFixed(1)+' per cent of the eye and leaves a baseline '+
+    'drift of '+z.baseline_drift.toExponential(1)+' — from one missing point at '+
+    'one end of a sweep with sixteen thousand of them. It is the single highest-leverage '+
+    'number in an S-parameter file.';
+})();
+
+/* ---- 08 QC ---- */
+(function(){
+  const t=document.getElementById('qc-table'); if(!t||!SI.qc)return;
+  let html='<thead><tr><th>Case</th><th>Max power</th><th>Precursor energy</th>'+
+    '<th>Minimum-phase departure</th><th>Equalised eye</th><th>Error</th></tr></thead><tbody>';
+  SI.qc.forEach(function(r){
+    html+='<tr><td>'+r.case+'</td><td class="'+(r.violates?'bad':'ok')+'">'+
+      r.max_power.toFixed(4)+'</td><td>'+r.precursor_energy_db.toFixed(1)+' dB</td><td>'+
+      r.rms_phase_err_deg.toFixed(2)+'°</td><td>'+r.eye_v.toFixed(5)+
+      ' V</td><td class="'+(Math.abs(r.eye_err_pct)<0.5?'ok':'bad')+'">'+
+      (r.eye_err_pct>=0?'+':'')+r.eye_err_pct.toFixed(2)+' %</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  const pass=SI.qc.filter(function(r){return r.violates;})[0];
+  document.getElementById('qc-note').textContent=
+    'The passivity violation is the only one that makes the channel look '+
+    '<em>better</em> than it is, and it is the most dangerous for that reason: a model '+
+    'that gains energy reports margin that does not exist. The truncation and the '+
+    'magnitude-only notch both cost a fraction of a per cent here, and the reference-'+
+    'plane shift costs essentially nothing, as it should.';
+})();
+
+/* ---- 09 echo ---- */
+(function(){
+  const t=document.getElementById('ec-table'); if(!t||!SI.echo)return;
+  const d=SI.echo;
+  let html='<thead><tr><th>Echo delay</th><th>In unit intervals</th>'+
+    '<th>Insertion loss agreement</th><th>Equalised eye</th><th>Eye error</th>'+
+    '</tr></thead><tbody>';
+  d.rows.forEach(function(r){
+    html+='<tr><td>'+r.delay_ps+' ps</td><td>'+r.delay_ui.toFixed(2)+'</td><td>'+
+      r.il_rms_err_db.toFixed(4)+' dB rms</td><td>'+r.eye_v.toFixed(5)+
+      ' V</td><td class="'+(Math.abs(r.eye_err_pct)<1?'ok':'bad')+'">'+
+      (r.eye_err_pct>=0?'+':'')+r.eye_err_pct.toFixed(2)+' %</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  const rows=d.rows;
+  let ilmin=9,ilmax=0,emin=9,emax=-9;
+  rows.forEach(function(r){ilmin=Math.min(ilmin,r.il_rms_err_db);
+    ilmax=Math.max(ilmax,r.il_rms_err_db);
+    emin=Math.min(emin,r.eye_err_pct);emax=Math.max(emax,r.eye_err_pct);});
+  document.getElementById('ec-note').textContent=
+    'Every row has the same reflection magnitude, so every row agrees with the truth '+
+    'on insertion loss to between '+ilmin.toFixed(3)+' and '+ilmax.toFixed(3)+
+    ' dB rms — a spread of '+(ilmax-ilmin).toFixed(3)+
+    ' dB, which no reviewer would notice. The eye error ranges from '+
+    emax.toFixed(1)+' to '+emin.toFixed(1)+' per cent, and the only thing that '+
+    'differs between the rows is where in time the reflection arrives. Within the '+
+    'reach of the decision-feedback taps the receiver simply subtracts it; beyond '+
+    'their span nothing does.';
+})();
+</script>

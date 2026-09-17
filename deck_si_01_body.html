@@ -1,0 +1,894 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 01</div>
+    <h1>The Transmission Line and the <span class="accent">Physical Channel</span></h1>
+    <p class="subtitle">A trace is a waveguide long before anyone intends it to be.
+    Where that threshold lies, why the industry settled on fifty ohms when the
+    physics points at two other numbers, and what an instrument is really showing
+    you when it draws an impedance profile.</p>
+
+    <div class="tags">
+        <span class="tag">telegrapher's equations</span><span class="tag">$Z_0$</span>
+        <span class="tag">reflections</span><span class="tag">TDR</span>
+        <span class="tag">propagation regions</span><span class="tag">termination</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">geometry</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">RLGC</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$Z_0,\gamma$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">reflections</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">what you measure</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">When a trace stops being a wire</a></li>
+        <li><a href="#slide-02">The line as a pair of equations</a></li>
+        <li><a href="#slide-03">Characteristic impedance is not a resistance</a></li>
+        <li><a href="#slide-04">Interactive: where fifty ohms comes from</a></li>
+        <li><a href="#slide-05">Why a circuit board is not fifty ohms</a></li>
+        <li><a href="#slide-06">Interactive: one mismatch, repeated</a></li>
+        <li><a href="#slide-07">Termination, and what each scheme costs</a></li>
+        <li><a href="#slide-08">Interactive: reading a channel with TDR</a></li>
+        <li><a href="#slide-09">What TDR cannot resolve</a></li>
+        <li><a href="#slide-10">The six regions a line passes through</a></li>
+        <li><a href="#slide-11">Checking the model against a published example</a></li>
+        <li><a href="#slide-12">The channel this series keeps returning to</a></li>
+        <li><a href="#slide-13">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>When a Trace Stops Being a Wire</h2>
+    <p>A wire, in the sense the schematic means, is a component with the same voltage
+    everywhere along it at every instant. Nothing on a circuit board is that. A copper
+    trace carries a disturbance at a finite speed, so while the disturbance is in
+    transit the two ends genuinely hold different voltages, and the question is never
+    whether that is true but whether it matters over the timescale you care about.</p>
+
+    <p>The timescale that matters is the <strong>rise time</strong> of the edge, not the
+    clock frequency. A hundred-megahertz clock with a two-hundred-picosecond edge is a
+    fast signal; it contains energy well past ten gigahertz whatever its repetition rate
+    is. The useful comparison is between the rise time and the <strong>round trip</strong>
+    &mdash; the time for the edge to reach the far end and for the reflection to come
+    back &mdash; because if the reflection returns while the driver is still moving, the
+    driver and the line settle together and the net behaves like a lumped circuit. If it
+    returns afterwards, the far end has already made a decision based on a voltage that
+    is about to change.</p>
+
+    <div class="callout">
+        <div class="callout-label">The criterion, and why it is a convention</div>
+        <p>The rule most houses use is that a net may be treated as lumped while the
+        round trip is below about a sixth of the rise time. The sixth is a choice, not a
+        theorem: it corresponds to holding the reflection-induced error to a few per
+        cent. What is not a choice is the scaling. The critical length is proportional
+        to rise time and inversely proportional to the square root of the dielectric
+        constant, so halving the edge rate halves the length at which the problem
+        begins, regardless of which threshold anyone prefers.</p>
+    </div>
+
+    <div class="metric-grid" id="m01"></div>
+    <p class="note" id="n01"></p>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>The Line as a Pair of Equations</h2>
+    <p>Model a short length of the line as a series resistance and inductance with a
+    shunt conductance and capacitance, all per unit length, and let that length go to
+    zero. What comes out is a pair of coupled first-order equations relating the
+    gradient of the voltage to the current and the gradient of the current to the
+    voltage. These are the <strong>telegrapher's equations</strong>, and their
+    sinusoidal steady-state solution is a wave travelling in each direction:</p>
+
+    <p>$$\frac{\partial V}{\partial z} = -(R + j\omega L)\,I,$$</p>
+    <p>$$\frac{\partial I}{\partial z} = -(G + j\omega C)\,V.$$</p>
+
+    <p>Eliminating one variable gives a wave equation whose solutions propagate with a
+    complex <strong>propagation constant</strong> $\gamma = \alpha + j\beta =
+    \sqrt{(R+j\omega L)(G+j\omega C)}$, where $\alpha$ is attenuation in nepers per
+    metre and $\beta$ is phase shift in radians per metre. The ratio of voltage to
+    current in a single travelling wave is the <strong>characteristic impedance</strong></p>
+
+    <p>$$Z_0 = \sqrt{\frac{R + j\omega L}{G + j\omega C}}.$$</p>
+
+    <p>Those four parameters are where the geometry enters. Nothing else about the
+    cross-section matters to the signal: two lines with the same $R$, $L$, $G$ and $C$
+    per unit length behave identically however differently they are drawn. That is why
+    the next three decks are, in effect, four separate investigations into how a
+    cross-section and a material set those four numbers.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>The lossless idealisation</h4>
+            <p>Set $R$ and $G$ to zero and the algebra collapses: $Z_0 = \sqrt{L/C}$,
+            real and frequency-independent, and $\beta = \omega\sqrt{LC}$, so every
+            frequency travels at the same speed and a pulse keeps its shape. This is the
+            picture most people carry, and it is a good approximation at the frequencies
+            where digital design used to live.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Why it stops being enough</h4>
+            <p>$R$ grows as $\sqrt{f}$ once current crowds into a skin thinner than the
+            conductor, and $G$ grows roughly as $f$. Both are negligible at a hundred
+            megahertz and neither is at ten gigahertz. Once they matter, $Z_0$ acquires
+            an imaginary part, the velocity becomes frequency-dependent, and the pulse
+            spreads. Deck 03 is about exactly that.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Characteristic Impedance Is Not a Resistance</h2>
+    <p>A fifty-ohm line made of copper measures a fraction of an ohm end to end with a
+    meter, and yet it presents fifty ohms to a driver. The two statements are not in
+    conflict because they are about different things. The meter measures the series
+    resistance of the metal. The driver sees the ratio of voltage to current in the wave
+    it has just launched, and that ratio is set by how much charge the line demands per
+    unit length and how quickly the wavefront advances &mdash; that is, by $L$ and $C$,
+    not by $R$.</p>
+
+    <p>The consequence worth internalising is that a line consumes energy from the
+    driver <em>before anything has reached the far end</em>. The driver has no way of
+    knowing what is at the other end; it simply charges the capacitance in front of the
+    wavefront, and the current it must supply to do so is exactly $V/Z_0$. Only when the
+    reflection returns does the far end's existence become known. A transmission line is,
+    in this sense, a device that makes a distant load look like a fixed resistor for as
+    long as the round trip lasts.</p>
+
+    <div class="callout">
+        <div class="callout-label">A distinction worth keeping</div>
+        <p>The characteristic impedance is a property of the line. The <em>input</em>
+        impedance is a property of the line together with whatever terminates it, and
+        equals the characteristic impedance only when the termination does. Conflating
+        the two is how a half-wavelength of badly terminated cable ends up described as
+        "fifty ohms" in a report, and it is the reason the impedance profile in slide 08
+        has to be read with care.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Interactive: Where Fifty Ohms Comes From</h2>
+    <p>Fifty ohms is so universal that it is easy to assume it was derived. It was
+    negotiated. Take a coaxial line whose outer radius is fixed &mdash; the connector
+    shell and the hole in the bulkhead decide that &mdash; and vary the inner conductor.
+    Two quantities have optima, and they are not in the same place.</p>
+
+    <p>Conductor loss per unit length goes as the surface resistance divided by the
+    perimeter of each conductor, summed over both and divided by the impedance, which
+    makes it proportional to $(x+1)/\ln x$ with $x = b/a$. Power handling is limited by
+    breakdown at the inner conductor, where the field is strongest; holding the peak
+    field fixed makes the transmissible power proportional to $\ln x / x^2$. Each has a
+    single, well-defined optimum, and the two disagree by a factor of two and a half.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="cx-er">dielectric</label>
+            <select id="cx-er" style="flex:1;min-width:150px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="cx-metrics"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="cx-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#f472b6"></i>reciprocal of attenuation &mdash; peaks at minimum loss</span>
+            <span><i style="background:#34d399"></i>power handling &mdash; peaks at maximum power</span>
+            <span><i style="background:#fbbf24"></i>the geometric mean of the two</span>
+        </div>
+    </div>
+
+    <p class="note" id="cx-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">And seventy-five ohms</div>
+        <p>The other standard impedance is not a second compromise; it is one of the two
+        optima taken neat. A cable with a mostly-air dielectric has its minimum
+        attenuation within a whisker of seventy-five ohms, which is why the impedance
+        that carries television signals down long runs of coaxial cable is the
+        lowest-loss one and the impedance that carries test signals around a laboratory
+        is the one that also handles power.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Why a Circuit Board Is Not Fifty Ohms</h2>
+    <p>None of the reasoning on the previous slide applies to a trace on a circuit board.
+    There is no breakdown limit anywhere near the operating voltage, the geometry is not
+    free to vary because the layer thicknesses are set by the stackup, and minimum loss
+    would call for a wide trace that the escape from a ball-grid array cannot accommodate.
+    Boards ended up near fifty ohms single-ended largely because the instruments and
+    connectors were already there.</p>
+
+    <p>What high-speed digital design actually standardised on is a
+    <strong>differential</strong> impedance, and the usual values &mdash; eighty-five,
+    ninety, one hundred ohms &mdash; come from the standards bodies rather than from
+    physics. They represent a workable compromise between three pressures: a lower
+    impedance needs wider traces and more layers, a higher impedance needs the traces
+    further from the plane which makes them couple to each other, and the driver has to
+    push the current the chosen impedance demands, which costs power on every lane.</p>
+
+    <table>
+        <thead><tr><th>Interface</th><th>Differential impedance</th><th>What set it</th></tr></thead>
+        <tbody>
+            <tr><td>PCI Express</td><td>85 &Omega;</td><td>A deliberate reduction from 100 &Omega; to ease escape routing under dense packages</td></tr>
+            <tr><td>USB, Ethernet backplanes, most SerDes</td><td>100 &Omega;</td><td>Inherited from twisted-pair practice and kept for continuity of test equipment</td></tr>
+            <tr><td>DDR and LPDDR command/address</td><td>40&ndash;50 &Omega; single-ended</td><td>A parallel bus with a shared reference; see deck 09</td></tr>
+            <tr><td>Laboratory instrumentation</td><td>50 &Omega; single-ended</td><td>The coaxial compromise on the previous slide</td></tr>
+        </tbody>
+    </table>
+
+    <p>The practical point is that the number is a target with a tolerance, usually ten
+    per cent, and that tolerance is consumed by things the designer does not control.
+    Deck 05 computes one of them: giving the copper its real thickness rather than the
+    zero thickness every closed-form formula assumes moves a hundred-ohm pair by nearly
+    ten per cent on its own.</p>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Interactive: One Mismatch, Repeated</h2>
+    <p>A reflection is not an exotic event. When a wave meets an impedance change, some
+    of it continues and some returns, in the proportion set by the
+    <strong>reflection coefficient</strong> $\Gamma = (Z_L - Z_0)/(Z_L + Z_0)$. There is
+    nothing more to it than that. What makes reflections confusing is that the returned
+    wave meets the source, reflects again, and comes back &mdash; so a single mismatch
+    produces an unbounded series of arrivals, each smaller than the last by the product
+    of the two reflection coefficients.</p>
+
+    <p>The line below is driven from a source of adjustable impedance into a
+    high-impedance receiver, which is the usual arrangement inside a chip. Watch what the
+    source impedance does to the shape of the settling rather than to its eventual
+    value: every case converges on the same final voltage, and they differ entirely in
+    how they get there.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="bo-zs">source impedance</label>
+            <input type="range" id="bo-zs" min="2" max="120" step="1" value="25">
+            <span class="val" id="bo-zs-val">25 &Omega;</span>
+        </div>
+        <div class="control-row">
+            <button class="btn" data-zs="50">series terminated</button>
+            <button class="btn" data-zs="8">strong driver</button>
+            <button class="btn secondary" data-zs="95">weak driver</button>
+        </div>
+        <div class="metric-grid" id="bo-metrics"></div>
+        <div id="bo-verdict" class="verdict ok"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="bo-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#22d3ee"></i>voltage at the receiver</span>
+            <span><i style="background:#8b949e"></i>final value</span>
+            <span><i style="background:#fbbf24"></i>receiver threshold band</span>
+        </div>
+    </div>
+
+    <p class="note">A source impedance equal to the line impedance is the special case
+    worth knowing: the wave reflects off the open receiver, returns to the source and is
+    absorbed there, so the settling completes in exactly one round trip with no
+    overshoot. That is series termination, and it is the cheapest correct answer for a
+    point-to-point net.</p>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Termination, and What Each Scheme Costs</h2>
+    <p>Terminating a line means arranging that a wave arriving somewhere is absorbed
+    rather than returned. There are only a few ways to do it and they differ mainly in
+    where the power goes.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Series, at the source</h4>
+            <p>A resistor in series with the driver brings the source impedance up to the
+            line impedance. The launched wave is half amplitude, doubles at the open
+            receiver, and the return is absorbed at the source. It dissipates nothing in
+            the steady state, which is why it dominated CMOS board design, but it works
+            only for a single receiver at the far end: anything tapped off part-way sees
+            the half-amplitude wave first.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Parallel, at the load</h4>
+            <p>A resistor to a reference at the far end absorbs the incident wave
+            outright. It works with multiple loads and gives a clean full-amplitude edge,
+            and it draws direct current whenever the line is driven &mdash; which for a
+            hundred-ohm differential pair at four hundred millivolts is a few milliwatts
+            per lane, multiplied by every lane in the system.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Thevenin and AC</h4>
+            <p>A pair of resistors to the two supplies sets both the termination
+            impedance and the idle level; an added series capacitor removes the static
+            current at the cost of a low-frequency droop that the data coding then has to
+            respect. The run-length limits in line codes exist partly to keep that droop
+            bounded.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>On-die, calibrated</h4>
+            <p>What every modern SerDes actually uses. The termination is inside the
+            receiver, trimmed against an external precision resistor, so it tracks
+            process and temperature and adds no package parasitics of its own. It is the
+            reason the interesting discontinuities in a modern channel are the vias and
+            the connectors rather than the terminations.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Interactive: Reading a Channel with TDR</h2>
+    <p><strong>Time-domain reflectometry</strong> launches a step into the channel and
+    records what comes back. Because a reflection arrives at a time set by how far away
+    the discontinuity is, and with an amplitude set by how severe it is, the returned
+    waveform can be redrawn as impedance against distance. It is the most directly
+    interpretable measurement in signal integrity and the easiest to over-read.</p>
+
+    <p>The conversion uses $Z = Z_0(1+\rho)/(1-\rho)$ applied sample by sample. That
+    relation is exact for the <em>first</em> discontinuity and approximate thereafter,
+    because everything past the first is being probed by a wave that has already been
+    partly reflected and re-reflected. The traces below are computed from a cascade of
+    transmission-line sections, so the model knows the true impedance of each and the
+    plot shows what an instrument would report.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="td-case">channel</label>
+            <select id="td-case" style="flex:1;min-width:180px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="td-metrics"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="td-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#22d3ee"></i>impedance the instrument reports</span>
+            <span><i style="background:#8b949e"></i>reference impedance</span>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>What TDR Cannot Resolve</h2>
+    <p>A discontinuity shorter than the rise time of the step does not get reported at
+    its true impedance. The reflection from its start and the reflection from its end
+    overlap and partly cancel, so the instrument shows something shallower and wider than
+    the reality. The table below is the same thirty-eight-ohm section, of varying length,
+    inserted into a fifty-ohm line and probed with a twenty-picosecond edge.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="tr-plot" width="780" height="270"></canvas>
+        <div class="legend">
+            <span><i style="background:#22d3ee"></i>impedance the instrument reports</span>
+            <span><i style="background:#f472b6"></i>true impedance, 38 &Omega;</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="tr-metrics"></div>
+
+    <p>The practical reading is that TDR is trustworthy for features longer than roughly
+    half the spatial extent of the edge and progressively optimistic below that. A via,
+    which is a few tens of thousandths of an inch of discontinuity, is well inside the
+    optimistic region for any realistic instrument, which is why vias are characterised
+    in the frequency domain instead &mdash; the subject of deck 04.</p>
+
+    <div class="callout">
+        <div class="callout-label">The second limitation</div>
+        <p>A large discontinuity <em>masks</em> what lies behind it. The wave reaching
+        the second feature has already been attenuated by the first, and the reflection
+        from the second is attenuated again on the way back, so its apparent severity is
+        reduced by the square of the first feature's transmission. The third channel in
+        the previous slide's selector shows this: the second discontinuity is genuinely
+        larger than it appears.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>The Six Regions a Line Passes Through</h2>
+    <p>Johnson and Graham's most useful organising idea is that a transmission line does
+    not have one behaviour but six, and which one applies depends on frequency, length
+    and the conductor's own parameters. Each region has a boundary that can be computed
+    from the line's per-unit-length parameters.</p>
+
+    <table>
+        <thead><tr><th>Region</th><th>What dominates</th><th>What the designer sees</th></tr></thead>
+        <tbody>
+            <tr><td>Lumped element</td><td>The line is shorter than the signal cares about</td><td>A single RC or pi network models it; reflections are invisible</td></tr>
+            <tr><td>RC</td><td>Series resistance against shunt capacitance</td><td>Diffusive spreading, delay growing as the square of length. On-chip interconnect lives here; boards mostly do not</td></tr>
+            <tr><td>LC</td><td>Inductance against capacitance, losses negligible</td><td>The textbook transmission line: constant impedance, constant velocity, undistorted pulses</td></tr>
+            <tr><td>Skin effect</td><td>Series resistance rising as $\sqrt{f}$</td><td>Loss in decibels growing as $\sqrt{f}$; the first real dispersion</td></tr>
+            <tr><td>Dielectric loss</td><td>Shunt conductance rising as $f$</td><td>Loss growing in proportion to frequency; the dominant term for modern channels</td></tr>
+            <tr><td>Waveguide</td><td>Geometry comparable with a wavelength</td><td>Non-TEM modes appear; the whole two-conductor picture stops applying</td></tr>
+        </tbody>
+    </table>
+
+    <div class="canvas-wrap">
+        <canvas id="rg-plot" width="780" height="250"></canvas>
+    </div>
+
+    <p class="note" id="rg-note"></p>
+</section>
+
+<section class="slide" id="slide-11">
+    <div class="slide-number">11</div>
+    <h2>Checking the Model Against a Published Example</h2>
+    <p>A model that agrees with nothing but itself is not worth much, so the region
+    boundaries computed here are checked against Johnson and Graham's own worked example
+    &mdash; a hundred-ohm differential stripline, six-mil traces, half-ounce copper,
+    twenty-mil plate separation, six hundred millimetres long on FR&#8209;4. It is close
+    enough to the backplane channel this series keeps returning to that agreement is
+    worth having for two reasons rather than one.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table class="checktab" id="ck-table"></table>
+    </div>
+
+    <p class="note" id="ck-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">What the example itself says</div>
+        <p>On this line the skin-effect region begins at twenty-seven megahertz and the
+        dielectric-loss region at four hundred and ninety-eight, a spread of less than a
+        factor of twenty. The two mechanisms therefore overlap across most of the usable
+        band, and the loss never settles into a clean square-root slope before the linear
+        one takes over. Anyone fitting a measured channel to a single power law is
+        fitting the blend rather than either mechanism, which is the subject of deck 03.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-12">
+    <div class="slide-number">12</div>
+    <h2>The Channel This Series Keeps Returning To</h2>
+    <p>Most of the decks that follow are worked against one channel: the
+    twenty-eight-point-eight inches of differential stripline across two line cards and
+    an eighteen-inch backplane that
+    <a href="https://brendanjameslynskey.github.io/SerDes_Equalisation/">SerDes_Equalisation</a>
+    characterises and equalises. Using the same channel throughout means the numbers in
+    one deck can be set against the numbers in another without an argument about whether
+    the comparison is fair.</p>
+
+    <p>In the vocabulary of this deck, that channel is firmly in the overlap of the
+    skin-effect and dielectric-loss regions across its whole band, it is many
+    wavelengths long at Nyquist so the lumped and RC pictures are both useless, and it is
+    comfortably below the onset of waveguide behaviour &mdash; a hundred and
+    forty-two gigahertz on Johnson's example, and similar here &mdash; so two-conductor
+    transmission-line theory remains valid throughout. Everything this series computes
+    about it is within the region where the equations on slide 02 hold.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Where it goes next</h4>
+            <p>Deck 02 asks where the return current in these equations physically flows,
+            because $L$ and $C$ per unit length are properties of a loop rather than of a
+            trace.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>And then</h4>
+            <p>Deck 03 takes $R$ and $G$ seriously, which turns the clean travelling wave
+            of slide 02 into the smeared pulse that makes equalisation necessary.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>And the algebra</h4>
+            <p><a href="https://brendanjameslynskey.github.io/Matrix_Methods_Network_Parameters/">Matrix
+            Methods in Network Parameters</a> is the companion for the S-, Z- and
+            Y-parameter machinery this series uses to cascade these sections together.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-13">
+    <div class="slide-number">13</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Quantity</th><th>Expression</th><th>Worth remembering</th></tr></thead>
+        <tbody>
+            <tr><td>Propagation constant</td><td>$\gamma=\sqrt{(R+j\omega L)(G+j\omega C)}$</td><td>Real part attenuates, imaginary part delays</td></tr>
+            <tr><td>Characteristic impedance</td><td>$Z_0=\sqrt{(R+j\omega L)/(G+j\omega C)}$</td><td>Tends to $\sqrt{L/C}$ once the line is inductive rather than resistive</td></tr>
+            <tr><td>Propagation delay</td><td>$t_{pd}=\sqrt{\varepsilon_{\text{eff}}}/c$</td><td>About 170 ps/inch in stripline on a Dk of 4; about 140&ndash;150 ps/inch in microstrip, because half the field is in air</td></tr>
+            <tr><td>Reflection coefficient</td><td>$\Gamma=(Z_L-Z_0)/(Z_L+Z_0)$</td><td>$+1$ open, $-1$ short, $0$ matched</td></tr>
+            <tr><td>Critical length</td><td>$\ell_{\text{crit}}\approx v\,t_r/12$</td><td>Round trip below a sixth of the rise time; a convention, but the scaling is not</td></tr>
+            <tr><td>Minimum-loss coax</td><td>$b/a=3.591$</td><td>76.7 &Omega; in air &mdash; hence 75 &Omega; cable</td></tr>
+            <tr><td>Maximum-power coax</td><td>$b/a=\sqrt{e}=1.649$</td><td>30 &Omega; in air; the geometric mean with the above is 48 &Omega;</td></tr>
+            <tr><td>TDR conversion</td><td>$Z=Z_0(1+\rho)/(1-\rho)$</td><td>Exact for the first discontinuity only</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+/* ---------- shared canvas helpers -------------------------------------- */
+const C = { bg:'#0d1117', panel:'#161b22', grid:'#21262d', dim:'#8b949e',
+            accent:'#22d3ee', teal:'#34d399', cyan:'#22d3ee', pink:'#f472b6',
+            amber:'#fbbf24', text:'#e6edf3' };
+
+function hidpi(id) {
+    const c = document.getElementById(id);
+    if (!c) return null;
+    const r = window.devicePixelRatio || 1;
+    const w = c.width, h = c.height;
+    c.style.width = w + 'px'; c.style.height = h + 'px';
+    c.width = Math.round(w * r); c.height = Math.round(h * r);
+    const ctx = c.getContext('2d'); ctx.scale(r, r);
+    return { ctx, w, h };
+}
+function clear(ctx, w, h) { ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h); }
+function label(ctx, t, x, y, col, size, align) {
+    ctx.fillStyle = col || C.dim;
+    ctx.font = (size || 10) + "px 'JetBrains Mono', monospace";
+    ctx.textAlign = align || 'left'; ctx.fillText(t, x, y); ctx.textAlign = 'left';
+}
+function dashed(ctx, on) { ctx.setLineDash(on ? [4, 4] : []); }
+function metric(lab, val) {
+    return '<div class="metric"><div class="metric-label">' + lab +
+           '</div><div class="metric-value">' + val + '</div></div>';
+}
+function axes(ctx, w, h, pad, xlab, ylab) {
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, h - pad.b);
+    ctx.lineTo(w - pad.r, h - pad.b); ctx.stroke();
+    if (xlab) label(ctx, xlab, (pad.l + w - pad.r) / 2, h - 6, C.dim, 10, 'center');
+    if (ylab) label(ctx, ylab, pad.l, pad.t - 10, C.dim, 10, 'left');
+}
+
+/* ---------- 01 : the lumped criterion ---------------------------------- */
+(function () {
+    const el = document.getElementById('m01');
+    if (!el || !SI.regions) return;
+    const v = 2.998e8 / Math.sqrt(4.0);
+    const rows = [[20, '20 ps'], [100, '100 ps'], [500, '500 ps']];
+    let html = '';
+    rows.forEach(function (r) {
+        const crit = v * r[0] * 1e-12 / 12.0;
+        html += metric('critical length, ' + r[1] + ' edge',
+                       (crit * 1000 / 25.4).toFixed(2) + ' in');
+    });
+    el.innerHTML = html;
+    document.getElementById('n01').textContent =
+        'Computed for a dielectric constant of 4, giving a propagation delay of ' +
+        (1e12 * 0.0254 / v).toFixed(1) + ' picoseconds per inch. A 500 ps edge ' +
+        'tolerates most of a board; a 20 ps edge does not tolerate a package escape.';
+})();
+
+/* ---------- 04 : why fifty ohms ---------------------------------------- */
+(function () {
+    const H = hidpi('cx-plot');
+    if (!H || !SI.coax) return;
+    const sel = document.getElementById('cx-er');
+    Object.keys(SI.coax).forEach(function (k) {
+        const o = document.createElement('option');
+        o.value = k; o.textContent = k; sel.appendChild(o);
+    });
+    sel.value = 'air';
+
+    function draw(key) {
+        const d = SI.coax[key];
+        const { ctx, w, h } = H;
+        clear(ctx, w, h);
+        const pad = { l: 52, r: 16, t: 22, b: 40 };
+        const X = x => pad.l + (Math.log(x) - Math.log(1.2)) /
+                       (Math.log(12) - Math.log(1.2)) * (w - pad.l - pad.r);
+        const Y = y => h - pad.b - y * (h - pad.t - pad.b);
+        axes(ctx, w, h, pad, 'outer / inner radius  b/a', 'normalised');
+
+        [1.2, 2, 3, 5, 8, 12].forEach(function (g) {
+            ctx.strokeStyle = C.grid; ctx.beginPath();
+            ctx.moveTo(X(g), pad.t); ctx.lineTo(X(g), h - pad.b); ctx.stroke();
+            label(ctx, g + '', X(g), h - pad.b + 14, C.dim, 9, 'center');
+        });
+
+        function series(arr, col, invert) {
+            ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath();
+            let started = false;
+            for (let i = 0; i < d.x.length; i++) {
+                const yv = invert ? 1 / Math.max(arr[i], 1e-9) : arr[i];
+                const px = X(d.x[i]), py = Y(Math.min(yv, 1.02));
+                if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+        }
+        series(d.atten, C.pink, true);
+        series(d.power, C.teal, false);
+
+        [[d.x_min_atten, d.z_min_atten, C.pink, 'min loss'],
+         [d.x_max_power, d.z_max_power, C.teal, 'max power']].forEach(function (m) {
+            ctx.strokeStyle = m[2]; dashed(ctx, true); ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(X(m[0]), pad.t); ctx.lineTo(X(m[0]), h - pad.b);
+            ctx.stroke(); dashed(ctx, false);
+            label(ctx, m[3] + '  ' + m[1].toFixed(1) + ' Ω', X(m[0]) + 4,
+                  pad.t + 14, m[2], 10, 'left');
+        });
+        const xg = Math.sqrt(d.x_min_atten * d.x_max_power);
+        ctx.strokeStyle = C.amber; dashed(ctx, true);
+        ctx.beginPath(); ctx.moveTo(X(xg), pad.t); ctx.lineTo(X(xg), h - pad.b);
+        ctx.stroke(); dashed(ctx, false);
+
+        document.getElementById('cx-metrics').innerHTML =
+            metric('minimum loss at', d.z_min_atten.toFixed(1) + ' Ω') +
+            metric('maximum power at', d.z_max_power.toFixed(1) + ' Ω') +
+            metric('geometric mean', d.z_geometric_mean.toFixed(1) + ' Ω') +
+            metric('ratio of the two', (d.z_min_atten / d.z_max_power).toFixed(2) + '×');
+
+        document.getElementById('cx-note').textContent =
+            'With ' + key + ' as the dielectric the two optima sit at ' +
+            d.z_min_atten.toFixed(1) + ' and ' + d.z_max_power.toFixed(1) +
+            ' ohms, a factor of ' + (d.z_min_atten / d.z_max_power).toFixed(2) +
+            ' apart, and their geometric mean is ' + d.z_geometric_mean.toFixed(1) +
+            ' ohms. The optimum ratios themselves, 3.591 and the square root of e, ' +
+            'do not depend on the dielectric at all — only the impedances they ' +
+            'correspond to do.';
+    }
+    sel.addEventListener('input', () => draw(sel.value));
+    draw('air');
+})();
+
+/* ---------- 06 : the bounce series ------------------------------------- */
+(function () {
+    const H = hidpi('bo-plot');
+    if (!H) return;
+    const sl = document.getElementById('bo-zs');
+    const Z0 = 50, ZL = 1e6, TPD = 1.0;
+
+    function draw(zs) {
+        const { ctx, w, h } = H;
+        clear(ctx, w, h);
+        const pad = { l: 52, r: 16, t: 20, b: 36 };
+        const gl = (ZL - Z0) / (ZL + Z0), gs = (zs - Z0) / (zs + Z0);
+        const a0 = Z0 / (Z0 + zs);
+        const vf = ZL / (ZL + zs);
+        const N = 14;
+        let v = 0, amp = a0;
+        const pts = [[0, 0]];
+        for (let k = 0; k < N; k++) {
+            const t = (2 * k + 1) * TPD;
+            pts.push([t, v]);
+            v += amp * (1 + gl);
+            pts.push([t, v]);
+            amp *= gl * gs;
+        }
+        const TMAX = (2 * N) * TPD;
+        const VMAX = Math.max(1.6, v * 1.25, a0 * 2.4);
+        const X = t => pad.l + t / TMAX * (w - pad.l - pad.r);
+        const Y = y => h - pad.b - (y / VMAX) * (h - pad.t - pad.b);
+        axes(ctx, w, h, pad, 'time, in one-way delays', 'volts');
+
+        for (let y = 0; y <= VMAX; y += 0.5) {
+            ctx.strokeStyle = C.grid; ctx.beginPath();
+            ctx.moveTo(pad.l, Y(y)); ctx.lineTo(w - pad.r, Y(y)); ctx.stroke();
+            label(ctx, y.toFixed(1), pad.l - 6, Y(y) + 3, C.dim, 9, 'right');
+        }
+        ctx.fillStyle = 'rgba(251,191,36,.10)';
+        ctx.fillRect(pad.l, Y(vf * 0.7), w - pad.l - pad.r, Y(vf * 0.3) - Y(vf * 0.7));
+
+        ctx.strokeStyle = C.dim; dashed(ctx, true); ctx.beginPath();
+        ctx.moveTo(pad.l, Y(vf)); ctx.lineTo(w - pad.r, Y(vf)); ctx.stroke();
+        dashed(ctx, false);
+
+        ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.beginPath();
+        pts.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])));
+        ctx.stroke();
+
+        let settle = null;
+        for (let k = 0; k < N; k++) {
+            let vv = 0, aa = a0;
+            for (let j = 0; j <= k; j++) { vv += aa * (1 + gl); aa *= gl * gs; }
+            if (settle === null && Math.abs(vv - vf) < 0.02 * vf) settle = 2 * k + 1;
+        }
+        const over = (Math.max.apply(null, pts.map(p => p[1])) / vf - 1) * 100;
+        document.getElementById('bo-metrics').innerHTML =
+            metric('source reflection', gs.toFixed(3)) +
+            metric('first step', (a0 * (1 + gl)).toFixed(3) + ' V') +
+            metric('overshoot', over.toFixed(0) + ' %') +
+            metric('settles within 2%', settle === null ? '> ' + (2 * N) + ' delays'
+                                                        : settle + ' delays');
+        const vd = document.getElementById('bo-verdict');
+        if (Math.abs(zs - Z0) < 3) {
+            vd.className = 'verdict ok';
+            vd.textContent = 'series terminated — one round trip, no overshoot, ' +
+                             'nothing dissipated in the steady state';
+        } else if (zs < Z0) {
+            vd.className = 'verdict bad';
+            vd.textContent = 'source below the line impedance — ' + over.toFixed(0) +
+                             '% overshoot and a long ring-down';
+        } else {
+            vd.className = 'verdict bad';
+            vd.textContent = 'source above the line impedance — the receiver ' +
+                             'climbs in steps and may cross its threshold late or twice';
+        }
+        document.getElementById('bo-zs-val').textContent = zs + ' Ω';
+    }
+    sl.addEventListener('input', () => draw(+sl.value));
+    document.querySelectorAll('[data-zs]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            sl.value = b.dataset.zs; draw(+sl.value);
+        });
+    });
+    draw(25);
+})();
+
+/* ---------- 08 : TDR ---------------------------------------------------- */
+(function () {
+    const H = hidpi('td-plot');
+    if (!H || !SI.tdr) return;
+    const sel = document.getElementById('td-case');
+    Object.keys(SI.tdr).forEach(function (k) {
+        const o = document.createElement('option');
+        o.value = k; o.textContent = k; sel.appendChild(o);
+    });
+
+    function draw(key) {
+        const d = SI.tdr[key];
+        const { ctx, w, h } = H;
+        clear(ctx, w, h);
+        const pad = { l: 52, r: 16, t: 20, b: 38 };
+        const TMAX = 2.0, ZLO = 20, ZHI = 80;
+        const X = t => pad.l + t / TMAX * (w - pad.l - pad.r);
+        const Y = z => h - pad.b - (z - ZLO) / (ZHI - ZLO) * (h - pad.t - pad.b);
+        axes(ctx, w, h, pad, 'time, ns (two-way)', 'impedance, Ω');
+        for (let z = ZLO; z <= ZHI; z += 10) {
+            ctx.strokeStyle = C.grid; ctx.beginPath();
+            ctx.moveTo(pad.l, Y(z)); ctx.lineTo(w - pad.r, Y(z)); ctx.stroke();
+            label(ctx, z + '', pad.l - 6, Y(z) + 3, C.dim, 9, 'right');
+        }
+        ctx.strokeStyle = C.dim; dashed(ctx, true); ctx.beginPath();
+        ctx.moveTo(pad.l, Y(50)); ctx.lineTo(w - pad.r, Y(50)); ctx.stroke();
+        dashed(ctx, false);
+        ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.beginPath();
+        let started = false;
+        for (let i = 0; i < d.t_ns.length; i++) {
+            if (d.t_ns[i] > TMAX) break;
+            const px = X(d.t_ns[i]), py = Y(Math.max(ZLO, Math.min(ZHI, d.z[i])));
+            if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+        let lo = 99, hi = 0;
+        for (let i = 0; i < d.t_ns.length; i++) {
+            if (d.t_ns[i] < 0.05 || d.t_ns[i] > TMAX) continue;
+            lo = Math.min(lo, d.z[i]); hi = Math.max(hi, d.z[i]);
+        }
+        document.getElementById('td-metrics').innerHTML =
+            metric('lowest reported', lo.toFixed(1) + ' Ω') +
+            metric('highest reported', hi.toFixed(1) + ' Ω') +
+            metric('excursion', (hi - lo).toFixed(1) + ' Ω');
+    }
+    sel.addEventListener('input', () => draw(sel.value));
+    draw(Object.keys(SI.tdr)[0]);
+})();
+
+/* ---------- 09 : TDR resolution ---------------------------------------- */
+(function () {
+    const H = hidpi('tr-plot');
+    if (!H || !SI.tdr_resolution) return;
+    const { ctx, w, h } = H;
+    const d = SI.tdr_resolution.filter(r => r.reads_ohm !== null);
+    clear(ctx, w, h);
+    const pad = { l: 52, r: 16, t: 20, b: 42 };
+    const X = i => pad.l + (i + 0.5) / d.length * (w - pad.l - pad.r);
+    const ZLO = 34, ZHI = 52;
+    const Y = z => h - pad.b - (z - ZLO) / (ZHI - ZLO) * (h - pad.t - pad.b);
+    axes(ctx, w, h, pad, 'length of the 38 Ω section, inches', 'impedance, Ω');
+    for (let z = ZLO; z <= ZHI; z += 4) {
+        ctx.strokeStyle = C.grid; ctx.beginPath();
+        ctx.moveTo(pad.l, Y(z)); ctx.lineTo(w - pad.r, Y(z)); ctx.stroke();
+        label(ctx, z + '', pad.l - 6, Y(z) + 3, C.dim, 9, 'right');
+    }
+    ctx.strokeStyle = C.pink; dashed(ctx, true); ctx.beginPath();
+    ctx.moveTo(pad.l, Y(38)); ctx.lineTo(w - pad.r, Y(38)); ctx.stroke();
+    dashed(ctx, false);
+    ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.beginPath();
+    d.forEach((r, i) => i ? ctx.lineTo(X(i), Y(r.reads_ohm)) : ctx.moveTo(X(i), Y(r.reads_ohm)));
+    ctx.stroke();
+    d.forEach(function (r, i) {
+        ctx.fillStyle = C.accent; ctx.beginPath();
+        ctx.arc(X(i), Y(r.reads_ohm), 3.5, 0, 6.3); ctx.fill();
+        label(ctx, r.length_in + '"', X(i), h - pad.b + 15, C.dim, 9, 'center');
+    });
+    let html = '';
+    d.forEach(function (r) {
+        html += metric(r.length_in + ' in section',
+                       r.reads_ohm.toFixed(1) + ' Ω');
+    });
+    document.getElementById('tr-metrics').innerHTML = html;
+})();
+
+/* ---------- 10 : the regions ------------------------------------------- */
+(function () {
+    const H = hidpi('rg-plot');
+    if (!H || !SI.regions) return;
+    const { ctx, w, h } = H;
+    const r = SI.regions;
+    clear(ctx, w, h);
+    const pad = { l: 20, r: 20, t: 40, b: 48 };
+    const FLO = 1e5, FHI = 5e11;
+    const X = f => pad.l + (Math.log10(f) - Math.log10(FLO)) /
+                   (Math.log10(FHI) - Math.log10(FLO)) * (w - pad.l - pad.r);
+    const bands = [
+        [FLO, r.f_lc, 'lumped', '#3b4252'],
+        [r.f_lc, r.f_skin, 'LC', '#1f6feb'],
+        [r.f_skin, r.f_diel, 'skin effect', '#238636'],
+        [r.f_diel, r.f_wg, 'dielectric loss', '#9e6a03'],
+        [r.f_wg, FHI, 'waveguide', '#8b2252']];
+    bands.forEach(function (b) {
+        ctx.fillStyle = b[3];
+        ctx.fillRect(X(b[0]), pad.t, X(b[1]) - X(b[0]), h - pad.t - pad.b);
+        const mid = (X(b[0]) + X(b[1])) / 2;
+        if (X(b[1]) - X(b[0]) > 55) label(ctx, b[2], mid, pad.t + 26, '#e6edf3', 11, 'center');
+    });
+    [[r.f_lc, 'LC'], [r.f_skin, 'skin'], [r.f_diel, 'dielectric'], [r.f_wg, 'waveguide']]
+        .forEach(function (m) {
+            ctx.strokeStyle = C.text; ctx.lineWidth = 1; ctx.beginPath();
+            ctx.moveTo(X(m[0]), pad.t); ctx.lineTo(X(m[0]), h - pad.b + 6); ctx.stroke();
+            const t = m[0] >= 1e9 ? (m[0] / 1e9).toFixed(0) + ' GHz'
+                                  : (m[0] / 1e6).toFixed(0) + ' MHz';
+            label(ctx, t, X(m[0]), h - pad.b + 20, C.text, 9, 'center');
+        });
+    [1e6, 1e8, 1e10].forEach(function (g) {
+        label(ctx, (g >= 1e9 ? (g / 1e9) + ' GHz' : (g / 1e6) + ' MHz'),
+              X(g), h - 8, C.dim, 9, 'center');
+    });
+    label(ctx, 'Johnson’s 100 Ω differential stripline example, 0.6 m of FR-4',
+          pad.l, 22, C.dim, 10, 'left');
+    document.getElementById('rg-note').textContent =
+        'The skin-effect and dielectric-loss regions are separated by a factor of only ' +
+        (r.f_diel / r.f_skin).toFixed(1) + ' on this line, so neither ever appears in ' +
+        'isolation; and the waveguide boundary at ' + (r.f_wg / 1e9).toFixed(0) +
+        ' GHz is set by the plate separation alone, which is why thinner cores buy ' +
+        'headroom that no change of material can.';
+})();
+
+/* ---------- 11 : verification table ------------------------------------ */
+(function () {
+    const t = document.getElementById('ck-table');
+    if (!t || !SI.johnson) return;
+    const names = {
+        v0: 'propagation velocity', L: 'inductance per metre',
+        C: 'capacitance per metre', r_dc: 'DC resistance',
+        r_ac_f0: 'AC resistance at 1 GHz', critical_length_m: 'critical length',
+        f_lc: 'onset of the LC region', f_skin: 'onset of the skin-effect region',
+        f_diel: 'onset of the dielectric-loss region',
+        f_wg: 'onset of the waveguide region' };
+    function fmt(v) {
+        const a = Math.abs(v);
+        if (a >= 1e9) return (v / 1e9).toPrecision(4) + 'e9';
+        if (a >= 1e6) return (v / 1e6).toPrecision(4) + 'e6';
+        if (a < 1e-6) return v.toExponential(3);
+        if (a < 1) return v.toPrecision(4);
+        return v.toPrecision(5);
+    }
+    let html = '<thead><tr><th>Quantity</th><th>This model</th>' +
+               '<th>Johnson &amp; Graham</th><th>Difference</th></tr></thead><tbody>';
+    let worst = 0;
+    Object.keys(names).forEach(function (k) {
+        const r = SI.johnson[k];
+        if (!r) return;
+        worst = Math.max(worst, Math.abs(r.err_pct));
+        const cls = Math.abs(r.err_pct) < 1 ? 'ok' : 'bad';
+        html += '<tr><td>' + names[k] + '</td><td>' + fmt(r.ours) + '</td><td>' +
+                fmt(r.johnson) + '</td><td class="' + cls + '">' +
+                (r.err_pct >= 0 ? '+' : '') + r.err_pct.toFixed(2) + ' %</td></tr>';
+    });
+    html += '</tbody>';
+    t.innerHTML = html;
+    document.getElementById('ck-note').textContent =
+        'Every quantity agrees to better than ' + worst.toFixed(2) +
+        ' per cent. The published values are quoted to three significant figures, ' +
+        'so agreement at this level is as close as the comparison can establish; ' +
+        'what it rules out is a wrong formula or a units error, which is what a ' +
+        'check of this kind is for.';
+})();
+</script>

@@ -1,0 +1,680 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 04</div>
+    <h1>Vias, Connectors and <span class="accent">Discontinuities</span></h1>
+    <p class="subtitle">The only part of a channel that is manufactured by drilling, and
+    the part that decides whether a backplane runs at twenty-eight gigabaud. A capacitor,
+    an inductor and a resonator, depending entirely on which frequency you ask about.</p>
+
+    <div class="tags">
+        <span class="tag">barrel</span><span class="tag">antipad</span>
+        <span class="tag">stub resonance</span><span class="tag">back-drilling</span>
+        <span class="tag">launch</span><span class="tag">via crosstalk</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">pad</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">barrel</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">antipad</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">stub</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">a notch, or not</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">The part of the channel made by drilling</a></li>
+        <li><a href="#slide-02">A via does not have an inductance</a></li>
+        <li><a href="#slide-03">Interactive: three models, and where each fails</a></li>
+        <li><a href="#slide-04">Interactive: the antipad, and the via as a coaxial line</a></li>
+        <li><a href="#slide-05">The stub, and why it is fatal</a></li>
+        <li><a href="#slide-06">Interactive: how much back-drilling is enough</a></li>
+        <li><a href="#slide-07">Interactive: designing the whole transition at once</a></li>
+        <li><a href="#slide-08">Board thickness, and the half-wave escape</a></li>
+        <li><a href="#slide-09">Via-to-via crosstalk, and the shared return</a></li>
+        <li><a href="#slide-10">Connectors and launches</a></li>
+        <li><a href="#slide-11">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>The Part of the Channel Made by Drilling</h2>
+    <p>Everything else in a channel is defined photographically, to tolerances of a few
+    micrometres, in two dimensions. A via is a hole, drilled mechanically through a stack
+    of laminate, plated, and then possibly drilled again from the other side to remove
+    part of what was just plated. Its tolerances are an order of magnitude looser than
+    anything else on the board, and it is the only feature that goes the third way &mdash;
+    vertically, through every plane in the stackup.</p>
+
+    <p>That vertical passage is the problem. The barrel is a conductor threading through
+    a series of copper planes, each of which has to have a clearance hole &mdash; an
+    <strong>antipad</strong> &mdash; punched in it so that the barrel does not short to
+    it. Between the barrel and the edge of each antipad there is capacitance. Along the
+    barrel there is inductance, whose value depends on where the return current is
+    allowed to flow. And if the signal enters at the top and leaves half way down, the
+    remaining barrel hangs off the signal path as an open-circuited stub.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>As a capacitor</h4>
+            <p>Pad and barrel facing the antipad edges. Dominant at low frequency, and
+            the reason an unoptimised via pulls the impedance down.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>As an inductor</h4>
+            <p>A thin vertical conductor whose return has to find its way between planes.
+            Dominant once the capacitance has been designed away.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>As a resonator</h4>
+            <p>An unused length of barrel is a quarter-wave stub. It does not degrade the
+            channel; it removes a band of it entirely.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>A Via Does Not Have an Inductance</h2>
+    <p>Handbooks give a formula for the inductance of a via: about $5.08\,h\,[\ln(4h/d)
+    + 1]$ nanohenries with the dimensions in inches. It is a useful number and it is
+    routinely misapplied, because it assumes the return current is far away. Inductance
+    is a property of a loop, and a via does not have one until its return path is
+    named.</p>
+
+    <p>The difference is not marginal. The same hundred-and-twenty-thousandth barrel is
+    worth three nanohenries in isolation and a few tenths of a nanohenry with ground vias
+    beside it, and the design decision that moves it between those values is where the
+    ground vias go &mdash; which is deck 02's argument arriving in a different form.</p>
+
+    <div class="metric-grid" id="in-metrics"></div>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="in-table"></table>
+    </div>
+
+    <p class="note">Computed with the isolated-barrel expression and with Johnson's
+    interplane expressions for one, two and four return vias. Quoting the first without
+    the second is the most common way to get a via budget wrong, and it is pessimistic
+    rather than optimistic &mdash; which is its own hazard, because it leads designers to
+    avoid vias they could afford.</p>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Interactive: Three Models, and Where Each Fails</h2>
+    <p>Three lumped descriptions of a via are in common use: a shunt capacitance alone, a
+    series inductance alone, and a pi network with half the capacitance either side of
+    the inductance. Which is adequate depends on frequency and on the via's own
+    $\sqrt{L/C}$ relative to the channel impedance, and the ranges can be computed rather
+    than guessed.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="vm-sel">via</label>
+            <select id="vm-sel" style="flex:1;min-width:220px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="vm-metrics"></div>
+        <div id="vm-verdict" class="verdict ok"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="vm-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#f59e0b"></i>return loss, pi model</span>
+            <span><i style="background:#34d399"></i>insertion loss, pi model</span>
+        </div>
+    </div>
+
+    <p class="note">Validity is judged on the reflection coefficient in linear terms
+    rather than in decibels, because at low frequency both a right and a wrong model
+    predict a reflection too small to matter and a decibel comparison would call the
+    simplification wrong for no useful reason.</p>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Interactive: The Antipad, and the Via as a Coaxial Line</h2>
+    <p>Between two planes, a barrel surrounded by an antipad is a coaxial transmission
+    line: an inner conductor, an outer conductor at the antipad edge, and dielectric
+    between. It therefore has a characteristic impedance, $\left(60/\sqrt{\varepsilon_r}
+    \right)\ln(D_{\text{anti}}/D_{\text{barrel}})$ per barrel, and if that impedance
+    matches the channel the via stops being a discontinuity and becomes a short length of
+    line.</p>
+
+    <p>This is the insight that made hundred-gigabit vias possible, and it points in a
+    direction that surprises people: the answer is to make the clearance holes
+    <em>much</em> larger than mechanical clearance requires. Opening the antipad raises
+    the impedance towards the target and cuts the capacitance at the same time.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="ap-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#f59e0b"></i>differential impedance of the barrel pair</span>
+            <span><i style="background:#f472b6"></i>via capacitance</span>
+            <span><i style="background:#8b949e"></i>100 &Omega; target</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="ap-metrics"></div>
+
+    <div class="callout">
+        <div class="callout-label">And what it costs</div>
+        <p>Every antipad is a hole in a reference plane. A dense array of them under a
+        connector or a large package removes so much copper that the return paths of deck
+        02 are obstructed and the plane pair of deck 07 stops behaving like a plane pair.
+        Via design is therefore not a local optimisation: the antipad that makes one
+        transition transparent can be the antipad that ruins the power delivery.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>The Stub, and Why It Is Fatal</h2>
+    <p>A through-hole via is drilled through the whole board whether or not the signal
+    needs to travel that far. A signal entering on layer two and leaving on layer four of
+    a twenty-layer backplane leaves most of the barrel connected to the signal path at
+    one end and connected to nothing at the other. That is an open-circuited stub, and an
+    open-circuited stub a quarter of a wavelength long presents a short circuit at its
+    base.</p>
+
+    <p>$$f_{\text{notch}} = \frac{c}{4\,\ell\,\sqrt{\varepsilon_r}}.$$</p>
+
+    <p>The distinction that matters is between attenuation and a notch. Attenuation
+    removes amplitude and an equaliser can put it back, at the cost of amplifying noise
+    along with it. A notch removes the information at those frequencies altogether, and
+    nothing recovers it. This is the single most important reason a modern backplane is
+    back-drilled.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="sn-table"></table>
+    </div>
+
+    <p class="note" id="sn-note"></p>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Interactive: How Much Back-Drilling Is Enough</h2>
+    <p>Back-drilling removes the unused barrel with a larger drill from the far side. It
+    cannot remove all of it: the drill must stop short of the signal layer by a
+    manufacturing allowance, typically eight to twelve thousandths of an inch, or it will
+    cut the connection it is supposed to preserve. A residual stub always remains, and
+    the question is how much it costs.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="bd-res">residual stub</label>
+            <input type="range" id="bd-res" min="0" max="100" step="1" value="10">
+            <span class="val" id="bd-res-val"></span>
+        </div>
+        <div class="control-row">
+            <button class="btn" data-bd="0">perfect</button>
+            <button class="btn" data-bd="10">typical back-drill</button>
+            <button class="btn secondary" data-bd="100">not back-drilled</button>
+        </div>
+        <div class="metric-grid" id="bd-metrics"></div>
+        <div id="bd-verdict" class="verdict ok"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="bd-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#f59e0b"></i>excess loss at Nyquist</span>
+            <span><i style="background:#f472b6"></i>your setting</span>
+        </div>
+    </div>
+
+    <p class="note" id="bd-note"></p>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Interactive: Designing the Whole Transition at Once</h2>
+    <p>Here is the result that changes how a via is designed. A barrel whose own
+    impedance equals the channel impedance is <em>not</em> the best via. The launch
+    &mdash; the pad, the clearance in the signal layer, the short run of trace reaching
+    the barrel &mdash; is capacitive, and a capacitive discontinuity reflects with the
+    opposite sign to nothing at all. A barrel slightly <em>below</em> the channel
+    impedance reflects with the same sign as the launch capacitance in a way that partly
+    cancels it.</p>
+
+    <p>Optimising the two together rather than separately is worth many decibels of
+    return loss, and it comes with a trade-off the sweep makes visible: the cancellation
+    is narrowband, so the antipad that minimises reflection at Nyquist is not the antipad
+    that gives the widest usable bandwidth.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="op-sel">launch capacitance</label>
+            <select id="op-sel" style="flex:1;min-width:160px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="op-metrics"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="op-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#f59e0b"></i>return loss at 14 GHz</span>
+            <span><i style="background:#34d399"></i>bandwidth to the 10 dB line</span>
+            <span><i style="background:#8b949e"></i>barrel matched to 100 &Omega;</span>
+        </div>
+    </div>
+
+    <p class="note" id="op-note"></p>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Board Thickness, and the Half-Wave Escape</h2>
+    <p>The lumped picture says a via gets monotonically worse as the board gets thicker,
+    because the capacitance and the inductance both grow. The transmission-line picture
+    says something more interesting: a mismatched section is invisible when it is a half
+    wavelength long, and worst when it is a quarter. Thickness therefore does not degrade
+    a via steadily &mdash; it moves the via along a periodic curve.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="th-plot" width="780" height="270"></canvas>
+        <div class="legend">
+            <span><i style="background:#f59e0b"></i>return loss at 14 GHz</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="th-metrics"></div>
+
+    <p class="note">This is a real effect and a fragile one. Depending on a half-wave
+    resonance to hide a mismatch ties the design to a particular thickness, a particular
+    dielectric constant and a particular frequency, all of which move with the fabricator
+    and the temperature. It is worth knowing about mainly so that a surprisingly good
+    measurement on a thick board is not mistaken for a well-designed via.</p>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>Via-to-Via Crosstalk, and the Shared Return</h2>
+    <p>Two signal vias passing through the same plane stack couple to each other, and the
+    mechanism is not the one people assume. The direct field between the two barrels is
+    the smaller part. The larger part is that they share a return via, and current from
+    one signal flowing through that shared return develops a voltage that the other
+    signal sees.</p>
+
+    <p>Johnson's result for the mutual inductance makes the structure of the problem
+    explicit:</p>
+
+    <p>$$L_m = 5.08\,h\,\ln\!\left(\frac{s_1 s_3}{s_2 r}\right)\ \text{nH},$$</p>
+
+    <p>where $s_1$ and $s_3$ are the distances from the shared return via to the two
+    signal vias and $s_2$ is the distance between the signal vias themselves. Note what
+    the expression says: bringing the two signal vias further apart increases $s_2$ and
+    <em>reduces</em> the coupling, but so does bringing the shared return via closer to
+    both. Giving each signal via its own return via removes the mechanism entirely.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="vx-plot" width="780" height="260"></canvas>
+        <div class="legend">
+            <span><i style="background:#f472b6"></i>mutual inductance through the shared return</span>
+        </div>
+    </div>
+
+    <p class="note" id="vx-note"></p>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>Connectors and Launches</h2>
+    <p>A connector is a via problem with mechanical constraints. Its pins pass through
+    the board as press-fit through-holes, which cannot be back-drilled below the press-fit
+    region, and its footprint perforates every plane it passes. The good high-speed
+    connectors solve this by controlling the impedance of the pin field itself and by
+    allocating a large fraction of the pins to ground, so that every signal pin has a
+    return beside it.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>The launch is the hard part</h4>
+            <p>Most of a connector's reflection comes not from the connector but from the
+            transition between its footprint and the board's traces, where the impedance,
+            the reference plane and the geometry all change within a few millimetres. It
+            is the same optimisation as slide 07 with less freedom.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Ground allocation</h4>
+            <p>A connector with one ground pin per differential pair behaves quite
+            differently from one with a ground pin on every side of every pair, and the
+            difference appears as crosstalk rather than as insertion loss. Deck 06's
+            integrated crosstalk noise is the figure that captures it.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Press-fit stubs</h4>
+            <p>A press-fit pin needs a certain barrel length to retain itself, which sets
+            a floor on the stub that back-drilling can leave. On a thick backplane this
+            floor, rather than the drill tolerance, is what limits the achievable
+            residual.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Measuring one</h4>
+            <p>A connector cannot be measured in isolation; it is always measured with
+            two launches attached, and removing them is the de-embedding problem deck 10
+            is about. A connector datasheet is therefore a statement about a connector
+            plus somebody else's fixture.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-11">
+    <div class="slide-number">11</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Quantity</th><th>Expression</th><th>Worth remembering</th></tr></thead>
+        <tbody>
+            <tr><td>Via capacitance</td><td>$1.41\,\varepsilon_r T D_{\text{pad}}/(D_{\text{anti}}-D_{\text{pad}})$</td><td>Inches and picofarads; falls fast as the antipad opens</td></tr>
+            <tr><td>Isolated barrel inductance</td><td>$5.08\,h[\ln(4h/d)+1]$ nH</td><td>Assumes a remote return; usually pessimistic by several times</td></tr>
+            <tr><td>Interplane inductance</td><td>$\mu_0 h \ln(s/r)/\pi$</td><td>The number that actually applies once ground vias exist</td></tr>
+            <tr><td>Via as coax</td><td>$(60/\sqrt{\varepsilon_r})\ln(D_{\text{anti}}/D_{\text{barrel}})$</td><td>Per barrel; double it for a differential pair</td></tr>
+            <tr><td>Stub resonance</td><td>$c/(4\ell\sqrt{\varepsilon_r})$</td><td>A notch, not attenuation &mdash; unrecoverable by equalisation</td></tr>
+            <tr><td>Via-to-via coupling</td><td>$5.08\,h\ln(s_1 s_3/s_2 r)$ nH</td><td>Through the shared return, not directly between barrels</td></tr>
+            <tr><td>Design rule</td><td>&mdash;</td><td>Optimise launch and barrel together; a barrel matched alone is not the best via</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#f59e0b',teal:'#34d399',
+         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+function hidpi(id){const c=document.getElementById(id);if(!c)return null;
+  const r=window.devicePixelRatio||1,w=c.width,h=c.height;
+  c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
+  const x=c.getContext('2d');x.scale(r,r);return{ctx:x,w,h};}
+function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
+function label(ctx,t,x,y,c2,s,a){ctx.fillStyle=c2||C.dim;
+  ctx.font=(s||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=a||'left';
+  ctx.fillText(t,x,y);ctx.textAlign='left';}
+function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
+function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+
+  '</div><div class="metric-value">'+v+'</div></div>';}
+function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
+  if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
+  if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
+function logx(p,w,lo,hi){return f=>p.l+(Math.log10(f)-Math.log10(lo))/(Math.log10(hi)-Math.log10(lo))*(w-p.l-p.r);}
+
+/* ---- 02 inductance ---- */
+(function(){
+  const el=document.getElementById('in-metrics'); if(!el||!SI.params)return;
+  const p=SI.params;
+  el.innerHTML=metric('isolated barrel',p.l_isolated.toFixed(2)+' nH')+
+    metric('capacitance, 30 mil antipad',p.c_tight.toFixed(3)+' pF')+
+    metric('capacitance, 50 mil antipad',p.c_open.toFixed(3)+' pF')+
+    metric('coax Z, 50 mil antipad',(2*p.z_coax_50).toFixed(0)+' Ω diff');
+  const t=document.getElementById('in-table');
+  let html='<thead><tr><th>Return path</th><th>Loop inductance</th>'+
+    '<th>Relative to the isolated figure</th></tr></thead><tbody>';
+  html+='<tr><td>none named (isolated-barrel formula)</td><td>'+
+    p.l_isolated.toFixed(3)+' nH</td><td>1.00×</td></tr>';
+  p.l_with_return.forEach(function(r){
+    html+='<tr><td>'+r.n+' ground via'+(r.n>1?'s':'')+' at '+r.distance_mm+
+      ' mm</td><td>'+r.l_nh.toFixed(3)+' nH</td><td>'+
+      (r.l_nh/p.l_isolated).toFixed(2)+'×</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+
+/* ---- 03 models ---- */
+(function(){
+  const H=hidpi('vm-plot'); if(!H||!SI.models)return;
+  const sel=document.getElementById('vm-sel');
+  Object.keys(SI.models).forEach(function(k){const o=document.createElement('option');
+    o.value=k;o.textContent=k;sel.appendChild(o);});
+  function draw(key){
+    const d=SI.models[key]; const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:52,r:16,t:20,b:38}, FLO=0.2,FHI=100;
+    const X=logx(p,w,FLO,FHI);
+    const DLO=-45,DHI=2, Y=v=>h-p.b-(v-DLO)/(DHI-DLO)*(h-p.t-p.b);
+    axes(ctx,w,h,p,'frequency, GHz','dB');
+    for(let v=DLO;v<=DHI;v+=10){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+      label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');}
+    [1,10,100].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+      label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');});
+    function ser(arr,col){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();let st=false;
+      d.f_ghz.forEach(function(f,i){if(f<FLO||f>FHI)return;
+        const px=X(f),py=Y(Math.max(DLO,Math.min(DHI,arr[i])));
+        st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+      ctx.stroke();}
+    ser(d.s11_pi_db,C.accent); ser(d.s21_pi_db,C.teal);
+    ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.beginPath();
+    ctx.moveTo(X(d.self_resonance_ghz),p.t);ctx.lineTo(X(d.self_resonance_ghz),h-p.b);
+    ctx.stroke();dashed(ctx,false);
+    label(ctx,'self-resonance',X(d.self_resonance_ghz)+5,p.t+14,C.dim,10,'left');
+    document.getElementById('vm-metrics').innerHTML=
+      metric('√(L/C)',d.z_via_ohm.toFixed(1)+' Ω')+
+      metric('self-resonance',d.self_resonance_ghz.toFixed(2)+' GHz')+
+      metric('capacitance model good to',d.cap_model_valid_to_ghz.toFixed(2)+' GHz')+
+      metric('inductance model good to',d.ind_model_valid_to_ghz.toFixed(2)+' GHz');
+    const v=document.getElementById('vm-verdict');
+    v.className='verdict '+(d.dominant==='capacitive'?'bad':'ok');
+    v.textContent='√(L/C) is '+d.z_via_ohm.toFixed(0)+
+      ' Ω against a 100 Ω channel, so this via is '+d.dominant+
+      ' — and only the pi model is right above '+
+      Math.max(d.cap_model_valid_to_ghz,d.ind_model_valid_to_ghz).toFixed(1)+' GHz.';
+  }
+  sel.addEventListener('input',function(){draw(sel.value);});
+  draw(Object.keys(SI.models)[0]);
+})();
+
+/* ---- 04 antipad ---- */
+(function(){
+  const H=hidpi('ap-plot'); if(!H||!SI.antipad)return;
+  const d=SI.antipad; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:54,r:56,t:20,b:38};
+  const x0=d.d_anti_mil[0], x1=d.d_anti_mil[d.d_anti_mil.length-1];
+  const X=v=>p.l+(v-x0)/(x1-x0)*(w-p.l-p.r);
+  const ZHI=200, Y1=z=>h-p.b-z/ZHI*(h-p.t-p.b);
+  let cm=0; d.c_pf.forEach(function(v){cm=Math.max(cm,v);});
+  const Y2=c=>h-p.b-c/cm*(h-p.t-p.b);
+  axes(ctx,w,h,p,'antipad diameter, mil','differential impedance, Ω');
+  for(let z=0;z<=ZHI;z+=50){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y1(z));ctx.lineTo(w-p.r,Y1(z));ctx.stroke();
+    label(ctx,z+'',p.l-6,Y1(z)+3,C.accent,9,'right');}
+  for(let i=0;i<=4;i++){label(ctx,(cm*i/4).toFixed(2),w-p.r+6,Y2(cm*i/4)+3,C.pink,9,'left');}
+  ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.beginPath();
+  ctx.moveTo(p.l,Y1(100));ctx.lineTo(w-p.r,Y1(100));ctx.stroke();dashed(ctx,false);
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+  d.d_anti_mil.forEach(function(v,i){const px=X(v),py=Y1(Math.min(d.z_diff[i],ZHI));
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  ctx.strokeStyle=C.pink;ctx.lineWidth=2;ctx.beginPath();
+  d.d_anti_mil.forEach(function(v,i){const px=X(v),py=Y2(d.c_pf[i]);
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  for(let g=20;g<=90;g+=10){if(g<x0||g>x1)continue;
+    label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');}
+  document.getElementById('ap-metrics').innerHTML=
+    metric('antipad for 100 Ω',d.d_anti_for_target_mil.toFixed(0)+' mil')+
+    metric('capacitance there',d.c_at_target_pf.toFixed(3)+' pF')+
+    metric('versus a 30 mil antipad',(SI.params.c_tight/d.c_at_target_pf).toFixed(1)+'× less');
+})();
+
+/* ---- 05 stub notch table ---- */
+(function(){
+  const t=document.getElementById('sn-table'); if(!t||!SI.stub_notch)return;
+  let html='<thead><tr><th>Stub length</th><th>Quarter-wave notch</th>'+
+    '<th>Relative to 14 GHz Nyquist</th></tr></thead><tbody>';
+  SI.stub_notch.forEach(function(r){
+    const rel=r.ghz/14;
+    const cls=rel<2?'bad':'ok';
+    html+='<tr><td>'+r.mil+' mil</td><td>'+r.ghz.toFixed(1)+' GHz</td>'+
+      '<td class="'+cls+'">'+rel.toFixed(2)+'×</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  document.getElementById('sn-note').textContent=
+    'A 110 mil stub — what a signal leaving on layer four of a 120 mil backplane '+
+    'leaves behind — puts its notch at '+
+    SI.stub_notch.filter(function(r){return r.mil===110;})[0].ghz.toFixed(1)+
+    ' GHz, within a few per cent of the Nyquist frequency of a 28 GBd lane. That is '+
+    'not a coincidence of this example; it is why back-drilling became mandatory at '+
+    'exactly the rates it did.';
+})();
+
+/* ---- 06 back-drill ---- */
+(function(){
+  const H=hidpi('bd-plot'); if(!H||!SI.stub)return;
+  const d=SI.stub, sw=d.sweep;
+  const sl=document.getElementById('bd-res');
+  function draw(pct){
+    const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:54,r:16,t:20,b:40};
+    const xmax=d.full_stub_mil;
+    const X=v=>p.l+v/xmax*(w-p.l-p.r);
+    let ym=0; sw.forEach(function(r){ym=Math.max(ym,r.excess_db);}); ym*=1.12;
+    const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+    axes(ctx,w,h,p,'residual stub, mil','excess loss at 14 GHz, dB');
+    for(let i=0;i<=5;i++){const v=ym*i/5;ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+      label(ctx,v.toFixed(1),p.l-6,Y(v)+3,C.dim,9,'right');}
+    for(let g=0;g<=xmax;g+=15){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+      label(ctx,g.toFixed(0),X(g),h-p.b+14,C.dim,9,'center');}
+    ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+    sw.forEach(function(r,i){const px=X(r.stub_mil),py=Y(r.excess_db);
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    const idx=Math.min(sw.length-1,Math.round(pct/100*(sw.length-1)));
+    const cur=sw[idx];
+    ctx.strokeStyle=C.pink;ctx.lineWidth=1;dashed(ctx,true);ctx.beginPath();
+    ctx.moveTo(X(cur.stub_mil),p.t);ctx.lineTo(X(cur.stub_mil),h-p.b);ctx.stroke();
+    dashed(ctx,false);
+    ctx.fillStyle=C.pink;ctx.beginPath();ctx.arc(X(cur.stub_mil),Y(cur.excess_db),4.5,0,6.3);ctx.fill();
+    document.getElementById('bd-res-val').textContent=cur.stub_mil.toFixed(0)+' mil';
+    document.getElementById('bd-metrics').innerHTML=
+      metric('residual stub',cur.stub_mil.toFixed(1)+' mil')+
+      metric('notch frequency',cur.notch_ghz?cur.notch_ghz.toFixed(1)+' GHz':'—')+
+      metric('excess loss at Nyquist',cur.excess_db.toFixed(2)+' dB')+
+      metric('full stub would cost',sw[sw.length-1].excess_db.toFixed(1)+' dB');
+    const v=document.getElementById('bd-verdict');
+    v.className='verdict '+(cur.excess_db<1?'ok':'bad');
+    v.textContent=cur.excess_db<1
+      ? 'under a decibel at Nyquist — the stub is no longer the limiting feature'
+      : 'costs '+cur.excess_db.toFixed(1)+' dB at Nyquist, which is a large share of '+
+        'any backplane’s equalisation budget';
+    document.getElementById('bd-note').textContent=
+      'The curve is steep near the top and shallow near the bottom, which is the useful '+
+      'part: taking the stub from '+sw[sw.length-1].stub_mil.toFixed(0)+' mil to about '+
+      (0.25*xmax).toFixed(0)+' mil recovers most of the loss, and grinding the last few '+
+      'thousandths out recovers very little. Back-drilling is worth specifying and not '+
+      'worth over-specifying.';
+  }
+  sl.addEventListener('input',function(){draw(+sl.value);});
+  document.querySelectorAll('[data-bd]').forEach(function(b){
+    b.addEventListener('click',function(){sl.value=b.dataset.bd;draw(+sl.value);});});
+  draw(10);
+})();
+
+/* ---- 07 optimise ---- */
+(function(){
+  const H=hidpi('op-plot'); if(!H||!SI.optimise)return;
+  const sel=document.getElementById('op-sel');
+  Object.keys(SI.optimise).forEach(function(k){const o=document.createElement('option');
+    o.value=k;o.textContent=k;sel.appendChild(o);});
+  function draw(key){
+    const d=SI.optimise[key], sw=d.sweep; const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:54,r:56,t:20,b:40};
+    const x0=sw[0].d_anti_mil, x1=sw[sw.length-1].d_anti_mil;
+    const X=v=>p.l+(v-x0)/(x1-x0)*(w-p.l-p.r);
+    const SLO=-40,SHI=0, Y1=v=>h-p.b-(v-SLO)/(SHI-SLO)*(h-p.t-p.b);
+    const BHI=32, Y2=v=>h-p.b-v/BHI*(h-p.t-p.b);
+    axes(ctx,w,h,p,'antipad diameter, mil','return loss at 14 GHz, dB');
+    for(let v=SLO;v<=SHI;v+=10){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y1(v));ctx.lineTo(w-p.r,Y1(v));ctx.stroke();
+      label(ctx,v+'',p.l-6,Y1(v)+3,C.accent,9,'right');}
+    for(let i=0;i<=4;i++)label(ctx,(BHI*i/4).toFixed(0),w-p.r+6,Y2(BHI*i/4)+3,C.teal,9,'left');
+    ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+    sw.forEach(function(r,i){const px=X(r.d_anti_mil),py=Y1(Math.max(SLO,r.s11_nyq_db));
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    ctx.strokeStyle=C.teal;ctx.lineWidth=2;ctx.beginPath();
+    sw.forEach(function(r,i){const px=X(r.d_anti_mil),py=Y2(Math.min(BHI,r.bw_10db_ghz));
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.beginPath();
+    ctx.moveTo(X(d.matched.d_anti_mil),p.t);ctx.lineTo(X(d.matched.d_anti_mil),h-p.b);
+    ctx.stroke();dashed(ctx,false);
+    label(ctx,'barrel matched',X(d.matched.d_anti_mil)+5,p.t+14,C.dim,10,'left');
+    for(let g=20;g<=80;g+=10){if(g<x0||g>x1)continue;
+      label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');}
+    document.getElementById('op-metrics').innerHTML=
+      metric('best at 14 GHz',d.best.d_anti_mil.toFixed(0)+' mil')+
+      metric('its return loss',d.best.s11_nyq_db.toFixed(1)+' dB')+
+      metric('barrel-matched instead',d.matched.s11_nyq_db.toFixed(1)+' dB')+
+      metric('improvement',d.gain_db.toFixed(1)+' dB');
+    document.getElementById('op-note').textContent=
+      'With '+key+', the antipad that minimises reflection at Nyquist is '+
+      d.best.d_anti_mil.toFixed(0)+' mil, giving a barrel impedance of '+
+      d.best.z_diff.toFixed(0)+' ohms differential — well below the 100 ohm channel. '+
+      'It beats the barrel-matched design by '+d.gain_db.toFixed(1)+
+      ' dB at that frequency, and it is narrowband: the widest 10 dB bandwidth comes '+
+      'from '+d.widest.d_anti_mil.toFixed(0)+' mil instead, reaching '+
+      d.widest.bw_10db_ghz.toFixed(1)+' GHz. Which of the two is right depends on '+
+      'whether the lane rate is fixed or the board has to serve several.';
+  }
+  sel.addEventListener('input',function(){draw(sel.value);});
+  draw(Object.keys(SI.optimise)[0]);
+})();
+
+/* ---- 08 thickness ---- */
+(function(){
+  const H=hidpi('th-plot'); if(!H||!SI.thickness)return;
+  const d=SI.thickness; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:54,r:16,t:20,b:42};
+  const X=i=>p.l+(i+0.5)/d.length*(w-p.l-p.r);
+  const SLO=-30,SHI=0, Y=v=>h-p.b-(v-SLO)/(SHI-SLO)*(h-p.t-p.b);
+  axes(ctx,w,h,p,'board thickness, mil','return loss at 14 GHz, dB');
+  for(let v=SLO;v<=SHI;v+=5){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');}
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+  d.forEach(function(r,i){const px=X(i),py=Y(Math.max(SLO,r.s11_14));
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  d.forEach(function(r,i){ctx.fillStyle=C.accent;ctx.beginPath();
+    ctx.arc(X(i),Y(Math.max(SLO,r.s11_14)),3.5,0,6.3);ctx.fill();
+    label(ctx,r.t_mil.toFixed(0),X(i),h-p.b+15,C.dim,9,'center');});
+  let html='';
+  d.forEach(function(r){html+=metric(r.t_mil.toFixed(0)+' mil board',
+    r.s11_14.toFixed(1)+' dB');});
+  document.getElementById('th-metrics').innerHTML=html;
+})();
+
+/* ---- 09 via crosstalk ---- */
+(function(){
+  const H=hidpi('vx-plot'); if(!H||!SI.via_xtalk)return;
+  const d=SI.via_xtalk; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:60,r:16,t:20,b:42};
+  const X=i=>p.l+(i+0.5)/d.length*(w-p.l-p.r);
+  let ym=0; d.forEach(function(r){ym=Math.max(ym,r.lm_nh);}); ym*=1.15;
+  const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+  axes(ctx,w,h,p,'spacing between the two signal vias, mil','mutual inductance, nH');
+  for(let i=0;i<=5;i++){const v=ym*i/5;ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v.toFixed(2),p.l-6,Y(v)+3,C.dim,9,'right');}
+  ctx.strokeStyle=C.pink;ctx.lineWidth=2;ctx.beginPath();
+  d.forEach(function(r,i){const px=X(i),py=Y(r.lm_nh);i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  d.forEach(function(r,i){ctx.fillStyle=C.pink;ctx.beginPath();
+    ctx.arc(X(i),Y(r.lm_nh),3.5,0,6.3);ctx.fill();
+    label(ctx,r.s2_mil.toFixed(0),X(i),h-p.b+15,C.dim,9,'center');});
+  document.getElementById('vx-note').textContent=
+    'Moving the two signal vias from '+d[0].s2_mil.toFixed(0)+' to '+
+    d[d.length-1].s2_mil.toFixed(0)+' thousandths apart reduces the shared-return '+
+    'coupling from '+d[0].lm_nh.toFixed(3)+' to '+d[d.length-1].lm_nh.toFixed(3)+
+    ' nH — a factor of '+(d[0].lm_nh/d[d.length-1].lm_nh).toFixed(1)+
+    '. Giving each pair its own return via removes the term entirely, which is why '+
+    'high-speed connector footprints spend so many pins on ground.';
+})();
+</script>

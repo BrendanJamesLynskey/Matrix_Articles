@@ -1,0 +1,609 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 02</div>
+    <h1>Return Paths and <span class="accent">Reference Planes</span></h1>
+    <p class="subtitle">Every signal current is a loop, and only half of it appears on
+    the schematic. Where the other half flows, how narrow a band it occupies, and what
+    it costs when the board refuses to let it follow.</p>
+
+    <div class="tags">
+        <span class="tag">return current</span><span class="tag">loop inductance</span>
+        <span class="tag">plane gaps</span><span class="tag">stitching vias</span>
+        <span class="tag">cavity modes</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">signal</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">return path</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">loop area</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">inductance</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">reflection, crosstalk, emissions</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">The half of the circuit nobody draws</a></li>
+        <li><a href="#slide-02">Interactive: where the return current actually is</a></li>
+        <li><a href="#slide-03">Checking the profile against a field solve</a></li>
+        <li><a href="#slide-04">Resistance below, inductance above</a></li>
+        <li><a href="#slide-05">Interactive: a gap in the plane</a></li>
+        <li><a href="#slide-06">Changing layers, and the stitching via</a></li>
+        <li><a href="#slide-07">When the two planes are not the same net</a></li>
+        <li><a href="#slide-08">The planes are a cavity</a></li>
+        <li><a href="#slide-09">Interactive: the impedance between two planes</a></li>
+        <li><a href="#slide-10">What all this asks of a layout</a></li>
+        <li><a href="#slide-11">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>The Half of the Circuit Nobody Draws</h2>
+    <p>Charge is conserved, so current flows in loops. A driver that pushes current down
+    a trace is also pulling an identical current back through something, and on a
+    circuit board that something is the copper plane the trace is routed over. This is
+    not a subtlety: the inductance and capacitance per unit length that deck 01 built
+    everything on are properties of the <em>loop</em> formed by the trace and its return,
+    not of the trace.</p>
+
+    <p>The consequence is that a great many signal-integrity failures are not failures of
+    the signal conductor at all. The trace is the right width, the right length and the
+    right distance from the plane; the plane underneath it has a gap, or a change of
+    net, or a field of antipads punched through it, and the return current has to go
+    somewhere else. What the signal then sees is extra inductance in series with itself,
+    and extra coupling to whatever else is forced through the same detour.</p>
+
+    <div class="callout">
+        <div class="callout-label">Why the word "ground" is unhelpful here</div>
+        <p>The plane's job in this context has nothing to do with being at zero volts. A
+        power plane works exactly as well as a return path as a ground plane does,
+        because at signal frequencies the two are tied together by the decoupling
+        capacitance and are the same conductor as far as the wave is concerned. What
+        matters is continuity, not name. Deck 07 is about the frequencies where that
+        tying-together stops working.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Interactive: Where the Return Current Actually Is</h2>
+    <p>At low frequency the return current spreads across the plane to minimise
+    resistance. At high frequency it does something different: it arranges itself to
+    minimise the <em>inductance</em> of the loop, which means hugging the signal trace as
+    closely as the geometry allows. The distribution it settles into is the image
+    solution for a conductor at height $h$ above a plane,</p>
+
+    <p>$$J(x) = \frac{I}{\pi h}\cdot\frac{1}{1 + (x/h)^2},$$</p>
+
+    <p>a Lorentzian centred under the trace whose width is set by the height above the
+    plane and by nothing else &mdash; not by the trace width, not by the frequency, not
+    by the current. Integrating it gives the fraction of the return within any distance,
+    and that integral is where the familiar rule of thumb comes from.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="rp-k">band half-width</label>
+            <input type="range" id="rp-k" min="2" max="200" step="1" value="30">
+            <span class="val" id="rp-k-val">3.0 h</span>
+        </div>
+        <div class="metric-grid" id="rp-metrics"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="rp-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#34d399"></i>return-current density</span>
+            <span><i style="background:#fbbf24"></i>the band you are keeping</span>
+        </div>
+    </div>
+
+    <p class="note" id="rp-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">The tail is fatter than the rule suggests</div>
+        <p>Three heights either side captures about eighty per cent, which is the number
+        everyone quotes. Ninety per cent needs about six heights and ninety-nine per
+        cent needs about sixty-four, because a Lorentzian's tails fall off only as the
+        square of distance. A void in the plane well away from the trace is therefore
+        not automatically harmless, and the "keep the plane solid for three trace
+        heights" guideline is a statement about the bulk of the current rather than all
+        of it.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Checking the Profile Against a Field Solve</h2>
+    <p>The Lorentzian above is an analytic result derived from an image charge. The
+    curve below it is the charge distribution computed on the reference plane by the
+    two-dimensional electrostatic solver this series uses throughout, which knows nothing
+    about images and simply relaxes a potential on a grid until it stops changing. They
+    should agree, and the extent to which they do is a check on both.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="sv-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#34d399"></i>analytic Lorentzian</span>
+            <span><i style="background:#22d3ee"></i>field solver</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="sv-metrics"></div>
+
+    <p class="note">The solver's trace has finite width and finite thickness where the
+    analytic result assumes an infinitely thin filament, so the computed profile is
+    slightly flatter across the middle. The integrated fraction within three heights is
+    the quantity the rule of thumb is about, and the two methods agree on it closely.</p>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Resistance Below, Inductance Above</h2>
+    <p>The narrow band is a high-frequency phenomenon, and it is worth being precise
+    about what "high" means here, because the changeover is lower than most people
+    expect. Current distributes itself to minimise the total impedance of the path. At
+    low frequency that means minimising resistance, which argues for spreading out over
+    as much copper as possible. At high frequency the reactance of the loop dominates
+    the resistance, and minimising inductance argues for staying directly under the
+    trace.</p>
+
+    <p>Setting the two contributions equal gives the crossover. For a trace two hundred
+    micrometres above a one-ounce plane it falls in the region of a few hundred
+    kilohertz &mdash; far below any frequency a high-speed designer thinks about. For
+    every signal in this series, the return current is already in its narrow band.</p>
+
+    <div class="metric-grid" id="cx-metrics"></div>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>What follows for layout</h4>
+            <p>Because the return is directly beneath the trace and only a few trace
+            heights wide, it is easy to protect and easy to break. Keeping the copper
+            under a high-speed trace continuous costs nothing if it is planned and is
+            frequently impossible to retrofit.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>And for crosstalk</h4>
+            <p>Two traces whose return bands overlap share return path, and shared return
+            path is a coupling mechanism in its own right &mdash; usually a stronger one
+            than the direct field between the traces. Deck 06 separates the two.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Interactive: A Gap in the Plane</h2>
+    <p>Now break it. A slot in the reference plane &mdash; a deliberate split between
+    analogue and digital sections, a row of through-hole pads, a clearance for a
+    connector &mdash; forces the return current to run to the end of the slot and back.
+    That detour is a loop, the loop has inductance, and the inductance is in series with
+    the signal.</p>
+
+    <p>A series inductance $L$ in a line of impedance $Z_0$ has the transfer function
+    $S_{21} = 1/(1 + j\omega L/2Z_0)$, so the penalty is a low-pass filter whose corner
+    falls as the slot gets longer. The model computes the loop inductance from the
+    detour geometry and turns it into insertion loss.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="sl-case">slot length</label>
+            <select id="sl-case" style="flex:1;min-width:150px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="sl-metrics"></div>
+        <div id="sl-verdict" class="verdict bad"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="sl-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#34d399"></i>insertion loss</span>
+            <span><i style="background:#f472b6"></i>return loss</span>
+        </div>
+    </div>
+
+    <p class="note" id="sl-note"></p>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Changing Layers, and the Stitching Via</h2>
+    <p>A signal via that carries a trace from one layer to another usually changes which
+    plane it is referenced to on the way. The signal has a via to travel down; the return
+    current does not, unless one is provided. If the two planes are the same net, or are
+    tied together by decoupling capacitance at the frequency in question, a
+    <strong>stitching via</strong> placed near the signal via gives the return somewhere
+    to go, and the penalty is the inductance of the loop between the two.</p>
+
+    <p>That inductance grows as the logarithm of the separation, which has a useful
+    practical consequence: the first stitching via matters enormously and the tenth
+    hardly at all, and moving the one you have closer is worth more than adding more
+    further away. Symmetry helps too, because return paths on opposite sides of the
+    signal via cancel part of each other's flux.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="st-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#34d399"></i>one return via</span>
+            <span><i style="background:#22d3ee"></i>two return vias</span>
+            <span><i style="background:#fbbf24"></i>four return vias</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="st-metrics"></div>
+
+    <p class="note">Computed from the fitted expressions in Johnson and Graham for one,
+    two and four return vias. The single-via case is also derivable directly as
+    $\mu_0 h \ln(s/r)/\pi$, and the two agree exactly &mdash; a useful reassurance that
+    the imperial-unit form quoted in the literature is the expression it claims to be.</p>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>When the Two Planes Are Not the Same Net</h2>
+    <p>If the signal crosses from a layer referenced to ground to one referenced to a
+    supply rail, a stitching via is not available &mdash; it would short the rail. The
+    only route for the return current is through the capacitance between the planes and
+    through whatever decoupling capacitor happens to be nearby, and that capacitor brings
+    its own series inductance.</p>
+
+    <p>Above its series resonance a capacitor is an inductor, so a stitching capacitor
+    helps over a band and stops helping above it. The resonant frequency is set almost
+    entirely by the mounting &mdash; the loop from the pads down to the planes &mdash;
+    rather than by the capacitance value, which is why a ten-nanofarad part and a
+    hundred-nanofarad part mounted identically stop working at frequencies within a
+    factor of three of each other rather than a factor of ten.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="sc-table"></table>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">The design rule that follows</div>
+        <p>Plan the layer transitions of a high-speed net so that the reference plane
+        either does not change or changes between two layers of the same net. That is a
+        stackup decision, made before any routing happens, and it is close to impossible
+        to repair afterwards. Where a change of reference is unavoidable, the stitching
+        capacitor goes immediately beside the signal via &mdash; its usefulness is
+        decided by the millimetres of its mounting loop, not by its value.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>The Planes Are a Cavity</h2>
+    <p>Two parallel planes separated by a thin dielectric form a parallel-plate
+    waveguide. Its edges are neither open nor shorted but behave approximately as open
+    circuits, so the structure resonates, and the frequencies at which it does are set by
+    the board outline:</p>
+
+    <p>$$f_{mn} = \frac{c}{2\sqrt{\varepsilon_r}}\sqrt{\left(\frac{m}{W}\right)^2 +
+        \left(\frac{n}{L}\right)^2}.$$</p>
+
+    <p>These are not a small effect and they cannot be decoupled away, because no
+    capacitor placed at a point can suppress a mode whose wavelength is comparable with
+    the board. They are the reason a power-plane impedance measurement, smooth and
+    obedient up to a few hundred megahertz, breaks into a comb of peaks above it.</p>
+
+    <div class="metric-grid" id="cv-metrics"></div>
+
+    <p class="note" id="cv-note"></p>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>Interactive: The Impedance Between Two Planes</h2>
+    <p>Below the first cavity mode a plane pair is simply a capacitor and its impedance
+    falls with frequency as one would expect. Above it, the modes take over and the
+    impedance becomes a series of peaks separated by nulls. The transition is abrupt and
+    its position depends only on the outline.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="pz-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#34d399"></i>impedance between the planes</span>
+            <span><i style="background:#8b949e"></i>the capacitance alone</span>
+        </div>
+    </div>
+
+    <p class="note" id="pz-note"></p>
+
+    <p>This is the point at which this deck hands over to deck 07. A signal via passing
+    through a resonant plane pair couples into it, and the energy it injects appears
+    across the supply at every other via in the same cavity. The route from a signal
+    transition to supply noise, and from supply noise back to jitter on another lane,
+    is the subject of that deck.</p>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>What All This Asks of a Layout</h2>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Never cross a split</h4>
+            <p>The single most expensive mistake in this deck, and the one that produces
+            the largest number. A twenty-millimetre slot adds enough series inductance to
+            take more than fifteen decibels out of a ten-gigahertz signal, and no amount
+            of equalisation at the far end recovers it.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Plan reference continuity into the stackup</h4>
+            <p>Decide before routing which layer pairs a high-speed net may transition
+            between. A net that stays referenced to the same plane needs no stitching at
+            all; one that changes between two ground layers needs a via; one that changes
+            between a ground and a rail needs a capacitor and a compromise.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Stitch close, not often</h4>
+            <p>Loop inductance goes as the logarithm of the distance to the return, so
+            halving the distance buys more than doubling the count. Symmetric placement
+            buys more again, because opposing return currents cancel flux.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Watch the antipad field</h4>
+            <p>A dense connector footprint or a large ball-grid array perforates the
+            planes so thoroughly that the return path is obstructed even though no one
+            drew a split. Deck 04 computes the antipad sizes this needs, and they are
+            large.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-11">
+    <div class="slide-number">11</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Quantity</th><th>Expression</th><th>Worth remembering</th></tr></thead>
+        <tbody>
+            <tr><td>Return-current density</td><td>$J(x)=\dfrac{I}{\pi h}\dfrac{1}{1+(x/h)^2}$</td><td>Width set by height above the plane, nothing else</td></tr>
+            <tr><td>Fraction within $\pm kh$</td><td>$\frac{2}{\pi}\arctan k$</td><td>80% at $3h$, 90% at $6.3h$, 99% at $64h$</td></tr>
+            <tr><td>Stitching-via inductance</td><td>$\mu_0 h \ln(s/r)/\pi$</td><td>Logarithmic in distance: move it closer rather than adding more</td></tr>
+            <tr><td>Slot-crossing penalty</td><td>$S_{21}=1/(1+j\omega L/2Z_0)$</td><td>A 20 mm slot is a low-pass filter with a corner around 1 GHz</td></tr>
+            <tr><td>Cavity modes</td><td>$f_{mn}=\frac{c}{2\sqrt{\varepsilon_r}}\sqrt{(m/W)^2+(n/L)^2}$</td><td>Set by the outline; decoupling cannot remove them</td></tr>
+            <tr><td>Resistive-to-inductive crossover</td><td>$f \approx R_\square/(2\pi L_{\text{loop}})$</td><td>A few hundred kilohertz; every signal here is above it</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+const C = { bg:'#0d1117', grid:'#21262d', dim:'#8b949e', accent:'#34d399',
+            teal:'#34d399', cyan:'#22d3ee', pink:'#f472b6', amber:'#fbbf24',
+            text:'#e6edf3' };
+function hidpi(id){const c=document.getElementById(id); if(!c)return null;
+  const r=window.devicePixelRatio||1,w=c.width,h=c.height;
+  c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
+  const ctx=c.getContext('2d');ctx.scale(r,r);return{ctx,w,h};}
+function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
+function label(ctx,t,x,y,col,size,align){ctx.fillStyle=col||C.dim;
+  ctx.font=(size||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=align||'left';
+  ctx.fillText(t,x,y);ctx.textAlign='left';}
+function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
+function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+
+  '</div><div class="metric-value">'+v+'</div></div>';}
+function axes(ctx,w,h,pad,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,h-pad.b);ctx.lineTo(w-pad.r,h-pad.b);ctx.stroke();
+  if(xl)label(ctx,xl,(pad.l+w-pad.r)/2,h-6,C.dim,10,'center');
+  if(yl)label(ctx,yl,pad.l,pad.t-10,C.dim,10,'left');}
+
+/* ---- 02 : return current profile ---- */
+(function(){
+  const H=hidpi('rp-plot'); if(!H||!SI.profile) return;
+  const sl=document.getElementById('rp-k');
+  function draw(k){
+    const {ctx,w,h}=H; clear(ctx,w,h);
+    const pad={l:50,r:16,t:20,b:38}, XM=8;
+    const X=x=>pad.l+(x+XM)/(2*XM)*(w-pad.l-pad.r);
+    const YM=0.34, Y=y=>h-pad.b-y/YM*(h-pad.t-pad.b);
+    axes(ctx,w,h,pad,'lateral distance, in trace heights h','current density');
+    for(let x=-8;x<=8;x+=2){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(X(x),pad.t);ctx.lineTo(X(x),h-pad.b);ctx.stroke();
+      label(ctx,x+'',X(x),h-pad.b+14,C.dim,9,'center');}
+    ctx.fillStyle='rgba(251,191,36,.13)';
+    ctx.fillRect(X(-k),pad.t,X(k)-X(-k),h-pad.t-pad.b);
+    ctx.strokeStyle=C.teal;ctx.lineWidth=2;ctx.beginPath();
+    SI.profile.x_over_h.forEach((x,i)=>{const px=X(x),py=Y(SI.profile.j[i]);
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    const frac=2/Math.PI*Math.atan(k);
+    document.getElementById('rp-k-val').textContent=k.toFixed(1)+' h';
+    document.getElementById('rp-metrics').innerHTML=
+      metric('band half-width',k.toFixed(1)+' h')+
+      metric('current captured',(100*frac).toFixed(1)+' %')+
+      metric('current outside',(100*(1-frac)).toFixed(2)+' %');
+    const f=SI.fraction;
+    document.getElementById('rp-note').textContent=
+      'Keeping the plane solid for '+k.toFixed(1)+' trace heights either side retains '+
+      (100*frac).toFixed(1)+' per cent of the return current. Holding 90 per cent needs '+
+      f.half_width_for_90pct.toFixed(1)+' heights and 99 per cent needs '+
+      f.half_width_for_99pct.toFixed(0)+', because the distribution has algebraic rather '+
+      'than exponential tails.';
+  }
+  sl.addEventListener('input',()=>draw(+sl.value/10));
+  draw(3.0);
+})();
+
+/* ---- 03 : solver check ---- */
+(function(){
+  const H=hidpi('sv-plot'); if(!H) return;
+  const s=SI.solver||{};
+  const {ctx,w,h}=H; clear(ctx,w,h);
+  if(!s.x_over_h){ label(ctx,'solver data unavailable',w/2,h/2,C.dim,12,'center'); return; }
+  const pad={l:50,r:16,t:20,b:38}, XM=6;
+  const X=x=>pad.l+(x+XM)/(2*XM)*(w-pad.l-pad.r);
+  let ym=0; s.lorentzian.forEach(v=>ym=Math.max(ym,v)); s.solver.forEach(v=>ym=Math.max(ym,v));
+  ym*=1.12;
+  const Y=y=>h-pad.b-y/ym*(h-pad.t-pad.b);
+  axes(ctx,w,h,pad,'lateral distance, in trace heights h','normalised density');
+  for(let x=-6;x<=6;x+=2){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(X(x),pad.t);ctx.lineTo(X(x),h-pad.b);ctx.stroke();
+    label(ctx,x+'',X(x),h-pad.b+14,C.dim,9,'center');}
+  function ser(arr,col,wd){ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.beginPath();
+    let st=false;
+    s.x_over_h.forEach((x,i)=>{if(x<-XM||x>XM)return;const px=X(x),py=Y(arr[i]);
+      st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+    ctx.stroke();}
+  ser(s.lorentzian,C.teal,2.5); ser(s.solver,C.cyan,1.8);
+  document.getElementById('sv-metrics').innerHTML=
+    metric('within 3h, analytic',(100*s.frac_3h_lorentzian).toFixed(1)+' %')+
+    metric('within 3h, solver',(100*s.frac_3h_solver).toFixed(1)+' %')+
+    metric('difference',(100*Math.abs(s.frac_3h_solver-s.frac_3h_lorentzian)).toFixed(2)+' pts');
+})();
+
+/* ---- 04 : crossover ---- */
+(function(){
+  const el=document.getElementById('cx-metrics'); if(!el||!SI.crossover) return;
+  const c=SI.crossover;
+  el.innerHTML=metric('crossover frequency',(c.f_hz/1e3).toFixed(0)+' kHz')+
+    metric('loop inductance',(c.l_loop_h_per_m*1e9).toFixed(0)+' nH/m')+
+    metric('plane resistance',(c.r_per_m*1e3).toFixed(1)+' mΩ/m');
+})();
+
+/* ---- 05 : slot ---- */
+(function(){
+  const H=hidpi('sl-plot'); if(!H||!SI.slots) return;
+  const sel=document.getElementById('sl-case');
+  Object.keys(SI.slots).forEach(k=>{const o=document.createElement('option');
+    o.value=k;o.textContent=k;sel.appendChild(o);});
+  function draw(key){
+    const d=SI.slots[key]; const {ctx,w,h}=H; clear(ctx,w,h);
+    const pad={l:52,r:16,t:20,b:38};
+    const FLO=0.01,FHI=50;
+    const X=f=>pad.l+(Math.log10(f)-Math.log10(FLO))/(Math.log10(FHI)-Math.log10(FLO))*(w-pad.l-pad.r);
+    const DLO=-40,DHI=2, Y=y=>h-pad.b-(y-DLO)/(DHI-DLO)*(h-pad.t-pad.b);
+    axes(ctx,w,h,pad,'frequency, GHz','dB');
+    for(let y=DLO;y<=DHI;y+=10){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(pad.l,Y(y));ctx.lineTo(w-pad.r,Y(y));ctx.stroke();
+      label(ctx,y+'',pad.l-6,Y(y)+3,C.dim,9,'right');}
+    [0.01,0.1,1,10].forEach(g=>{ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(X(g),pad.t);ctx.lineTo(X(g),h-pad.b);ctx.stroke();
+      label(ctx,(g<1?g:g+'')+'',X(g),h-pad.b+14,C.dim,9,'center');});
+    function ser(arr,col){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();
+      let st=false;
+      d.f_ghz.forEach((f,i)=>{if(f<FLO||f>FHI)return;
+        const px=X(f),py=Y(Math.max(DLO,Math.min(DHI,arr[i])));
+        st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+      ctx.stroke();}
+    ser(d.s21_db,C.teal); ser(d.s11_db,C.pink);
+    function at(g){let best=0;for(let i=0;i<d.f_ghz.length;i++)
+      if(Math.abs(d.f_ghz[i]-g)<Math.abs(d.f_ghz[best]-g))best=i;return d.s21_db[best];}
+    document.getElementById('sl-metrics').innerHTML=
+      metric('loop inductance',d.l_gap_nh.toFixed(1)+' nH')+
+      metric('versus intact plane','×'+d.ratio.toFixed(0))+
+      metric('loss at 1 GHz',at(1).toFixed(1)+' dB')+
+      metric('loss at 10 GHz',at(10).toFixed(1)+' dB');
+    const v=document.getElementById('sl-verdict');
+    v.className='verdict '+(at(10)>-1?'ok':'bad');
+    v.textContent=at(10)>-1 ? 'tolerable at ten gigahertz'
+      : 'at ten gigahertz this slot removes '+Math.abs(at(10)).toFixed(0)+
+        ' dB — more than the entire equalisation budget of a backplane link';
+    document.getElementById('sl-note').textContent=
+      'The same trace over intact copper has a return loop inductance of about '+
+      d.l_intact_nh.toFixed(2)+' nH; the detour raises it by a factor of '+
+      d.ratio.toFixed(0)+'. The reactance at the signal’s knee frequency, '+
+      d.f_knee_ghz.toFixed(1)+' GHz, is '+d.xl_at_knee_ohm.toFixed(0)+' ohms, which is '+
+      'comparable with or larger than the line impedance — the line is effectively '+
+      'open at those frequencies rather than merely degraded.';
+  }
+  sel.addEventListener('input',()=>draw(sel.value));
+  draw(Object.keys(SI.slots)[0]);
+})();
+
+/* ---- 06 : stitching vias ---- */
+(function(){
+  const H=hidpi('st-plot'); if(!H||!SI.stitch) return;
+  const {ctx,w,h}=H; clear(ctx,w,h);
+  const d=SI.stitch;
+  const pad={l:54,r:16,t:20,b:40};
+  const DM=5.2, X=x=>pad.l+x/DM*(w-pad.l-pad.r);
+  let ym=0; d.forEach(r=>ym=Math.max(ym,r.n1)); ym*=1.15;
+  const Y=y=>h-pad.b-y/ym*(h-pad.t-pad.b);
+  axes(ctx,w,h,pad,'distance from signal via to return via, mm','loop inductance, nH');
+  for(let y=0;y<=ym;y+=0.05){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(pad.l,Y(y));ctx.lineTo(w-pad.r,Y(y));ctx.stroke();
+    label(ctx,y.toFixed(2),pad.l-6,Y(y)+3,C.dim,9,'right');}
+  [['n1',C.teal],['n2',C.cyan],['n4',C.amber]].forEach(s=>{
+    ctx.strokeStyle=s[1];ctx.lineWidth=2;ctx.beginPath();
+    d.forEach((r,i)=>{const px=X(r.distance_mm),py=Y(r[s[0]]);
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    d.forEach(r=>{ctx.fillStyle=s[1];ctx.beginPath();
+      ctx.arc(X(r.distance_mm),Y(r[s[0]]),3,0,6.3);ctx.fill();});});
+  [0,1,2,3,4,5].forEach(g=>label(ctx,g+'',X(g),h-pad.b+14,C.dim,9,'center'));
+  const near=d[0], far=d[d.length-1];
+  document.getElementById('st-metrics').innerHTML=
+    metric('one via at 0.5 mm',near.n1.toFixed(3)+' nH')+
+    metric('one via at 5 mm',far.n1.toFixed(3)+' nH')+
+    metric('four vias at 0.5 mm',near.n4.toFixed(3)+' nH')+
+    metric('moving in beats adding',
+      ((far.n1-near.n1)/(near.n1-near.n4)).toFixed(1)+'×');
+})();
+
+/* ---- 07 : stitching capacitors ---- */
+(function(){
+  const t=document.getElementById('sc-table'); if(!t||!SI.stitch_cap) return;
+  let html='<thead><tr><th>Capacitor</th><th>Series resonance</th>' +
+    '<th>Total loop inductance</th><th>Impedance at 10 GHz</th></tr></thead><tbody>';
+  const names=['1 nF','10 nF','100 nF'];
+  SI.stitch_cap.forEach((r,i)=>{
+    html+='<tr><td>'+names[i]+'</td><td>'+r.f_series_res_mhz.toFixed(0)+' MHz</td><td>'+
+      r.l_total_nh.toFixed(2)+' nH</td><td>'+r.z_at_10ghz.toFixed(0)+' Ω</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+
+/* ---- 08 : cavity modes ---- */
+(function(){
+  const el=document.getElementById('cv-metrics'); if(!el||!SI.cavity) return;
+  let html='';
+  SI.cavity.slice(0,4).forEach(m=>{
+    html+=metric('mode ('+m.m+','+m.n+')',m.f_ghz.toFixed(3)+' GHz');});
+  el.innerHTML=html;
+  document.getElementById('cv-note').textContent=
+    'For a 150 by 100 millimetre plane pair on a dielectric constant of 4, the lowest '+
+    'mode sits at '+SI.cavity[0].f_ghz.toFixed(0)*1000/1000+' GHz. Halving the board '+
+    'dimension doubles that frequency; changing the decoupling does not move it at all.';
+})();
+
+/* ---- 09 : plane impedance ---- */
+(function(){
+  const H=hidpi('pz-plot'); if(!H||!SI.plane_z) return;
+  const d=SI.plane_z; const {ctx,w,h}=H; clear(ctx,w,h);
+  const pad={l:54,r:16,t:20,b:40};
+  const FLO=0.001,FHI=10;
+  const X=f=>pad.l+(Math.log10(f)-Math.log10(FLO))/(Math.log10(FHI)-Math.log10(FLO))*(w-pad.l-pad.r);
+  const ZLO=-3,ZHI=2;
+  const Y=z=>h-pad.b-(Math.log10(Math.max(z,1e-4))-ZLO)/(ZHI-ZLO)*(h-pad.t-pad.b);
+  axes(ctx,w,h,pad,'frequency, GHz','impedance, Ω');
+  for(let e=ZLO;e<=ZHI;e++){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(pad.l,Y(Math.pow(10,e)));ctx.lineTo(w-pad.r,Y(Math.pow(10,e)));ctx.stroke();
+    label(ctx,(e<0?'1e'+e:Math.pow(10,e)+''),pad.l-6,Y(Math.pow(10,e))+3,C.dim,9,'right');}
+  [0.001,0.01,0.1,1,10].forEach(g=>{ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(X(g),pad.t);ctx.lineTo(X(g),h-pad.b);ctx.stroke();
+    label(ctx,(g<1?g+'':g+''),X(g),h-pad.b+14,C.dim,9,'center');});
+  ctx.strokeStyle=C.teal;ctx.lineWidth=2;ctx.beginPath();
+  let st=false;
+  d.f_ghz.forEach((f,i)=>{if(f<FLO||f>FHI)return;const px=X(f),py=Y(d.z_ohm[i]);
+    st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+  ctx.stroke();
+  const cp=d.c_plane_nf*1e-9;
+  ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.lineWidth=1;ctx.beginPath();st=false;
+  d.f_ghz.forEach(f=>{if(f<FLO||f>FHI)return;
+    const z=1/(2*Math.PI*f*1e9*cp);const px=X(f),py=Y(z);
+    st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+  ctx.stroke();dashed(ctx,false);
+  ctx.strokeStyle=C.pink;dashed(ctx,true);ctx.beginPath();
+  ctx.moveTo(X(d.f_first_mode_ghz),pad.t);ctx.lineTo(X(d.f_first_mode_ghz),h-pad.b);
+  ctx.stroke();dashed(ctx,false);
+  label(ctx,'first cavity mode',X(d.f_first_mode_ghz)+5,pad.t+14,C.pink,10,'left');
+  document.getElementById('pz-note').textContent=
+    'The plane pair holds '+d.c_plane_nf.toFixed(1)+' nF of capacitance, and behaves as '+
+    'that capacitor up to the first cavity mode at '+d.f_first_mode_ghz.toFixed(2)+
+    ' GHz. Above it the two descriptions part company entirely.';
+})();
+</script>

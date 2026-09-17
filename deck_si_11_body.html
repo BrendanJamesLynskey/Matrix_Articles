@@ -1,0 +1,526 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 11</div>
+    <h1>Channel Operating Margin and <span class="accent">Compliance</span></h1>
+    <p class="subtitle">How a standard decides a channel is legal without knowing which
+    transceiver will be plugged into it &mdash; run on the same backplane the
+    equalisation deck could not close, and giving a different verdict for a reason worth
+    understanding.</p>
+
+    <div class="tags">
+        <span class="tag">COM</span><span class="tag">reference receiver</span>
+        <span class="tag">ILD</span><span class="tag">return loss</span>
+        <span class="tag">FEC</span><span class="tag">detector error ratio</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">S-parameters</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">reference Tx/Rx</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">optimise</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">signal / noise</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">pass or fail</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">The problem a standard actually has to solve</a></li>
+        <li><a href="#slide-02">What is implemented here, and what is not</a></li>
+        <li><a href="#slide-03">The result on the backplane channel</a></li>
+        <li><a href="#slide-04">Two verdicts on one channel</a></li>
+        <li><a href="#slide-05">Back-drilling, priced in margin</a></li>
+        <li><a href="#slide-06">Interactive: the verdict depends on the receiver</a></li>
+        <li><a href="#slide-07">Insertion-loss deviation, and why it is separated out</a></li>
+        <li><a href="#slide-08">The frequency-domain masks</a></li>
+        <li><a href="#slide-09">What COM hides</a></li>
+        <li><a href="#slide-10">Where the series ends up</a></li>
+        <li><a href="#slide-11">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>The Problem a Standard Actually Has to Solve</h2>
+    <p>A standards body has to publish a test that decides whether a channel is legal. It
+    cannot simulate the receiver that will eventually be plugged in, because that receiver
+    is proprietary, differs between vendors, and in many cases has not been designed yet.
+    Nor can it simply set a limit on insertion loss, because deck 10 has just shown that
+    insertion loss does not determine the eye.</p>
+
+    <p>The resolution is to define a <strong>reference receiver</strong> &mdash; a
+    specific, published, deliberately unambitious equaliser &mdash; run it against the
+    measured scattering parameters of the channel, and report a single number.
+    <strong>Channel operating margin</strong> is that number. A channel that works with
+    the reference receiver is assumed to work with any real receiver, because any real
+    receiver is at least as good.</p>
+
+    <div class="callout">
+        <div class="callout-label">Why this is cleverer than it looks</div>
+        <p>The reference receiver is allowed to <em>adapt</em>. It optimises its own
+        equaliser settings, its sampling phase and its transmit preset against each
+        channel, because a fixed setting would fail channels that work perfectly well. So
+        the test is not "does this channel suit our assumed receiver" but "is there any
+        setting of a modest receiver that closes this channel", which is a much better
+        proxy for the real question.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>What Is Implemented Here, and What Is Not</h2>
+    <p>The published method &mdash; annex 93A of IEEE 802.3 and its descendants &mdash;
+    is long and detailed, and it is worth stating plainly which parts are reproduced here
+    so that the numbers on the following slides are read correctly.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel g">
+            <h4>Implemented</h4>
+            <p>A three-tap transmit equaliser chosen from a grid of presets; a
+            continuous-time equaliser chosen from a grid of settings and normalised at
+            Nyquist so the grid trades shape rather than gain; a decision-feedback section
+            of limited length with limited tap magnitude; optimisation over sampling
+            phase; and noise terms for residual intersymbol interference, crosstalk,
+            jitter and receiver noise. Residual interference is treated statistically,
+            because the data is random and the residual taps contribute a variance.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Not implemented</h4>
+            <p>Explicit convolution of probability distributions rather than addition of
+            variances; the published transmitter and package models; the full set of
+            compliance masks; the specific numerical constants and grids of any one
+            standard. A certification laboratory needs all of those and this is not one.</p>
+        </div>
+    </div>
+
+    <p>What survives the simplification is the structure of the argument, which is what
+    this deck is about: a compliance verdict is a joint statement about a channel and a
+    reference receiver, and reading it as a property of the channel alone is a mistake.</p>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>The Result on the Backplane Channel</h2>
+    <p>Run against the twenty-eight-point-eight-inch backplane channel from
+    <a href="https://brendanjameslynskey.github.io/SerDes_Equalisation/">SerDes_Equalisation</a>,
+    back-drilled, the reference receiver finds the following settings and the following
+    margin.</p>
+
+    <div class="metric-grid" id="cm-metrics"></div>
+
+    <div class="canvas-wrap">
+        <canvas id="nb-plot" width="780" height="270"></canvas>
+        <div class="legend">
+            <span><i style="background:#4ade80"></i>signal</span>
+            <span><i style="background:#f472b6"></i>residual ISI</span>
+            <span><i style="background:#fbbf24"></i>crosstalk</span>
+            <span><i style="background:#22d3ee"></i>receiver noise</span>
+        </div>
+    </div>
+
+    <p class="note" id="cm-note"></p>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Two Verdicts on One Channel</h2>
+    <p>Here is the result that makes this deck worth writing. The equalisation deck
+    worked the same channel by hand, with a fuller equaliser, and concluded that it falls
+    one and a third decibels short of an error ratio of one in a million million. The
+    channel operating margin computed here says the channel passes comfortably. Both are
+    right, and the reason they differ is the most useful thing in this series to
+    understand about compliance.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table class="checktab" id="tv-table"></table>
+    </div>
+
+    <p class="note" id="tv-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">The reconciliation</div>
+        <p>A margin of three decibels is a pass because the threshold is calibrated
+        against a <em>detector</em> error ratio in the region of one in ten thousand to
+        one in a hundred thousand &mdash; the error rate at the slicer, before forward
+        error correction. Every standard that uses this method also mandates coding, and
+        the coding carries the link from there to one in a million million and beyond.
+        The hand budget in the equalisation deck asked for one in a million million
+        <em>uncoded</em>. Two different questions, two different answers, one channel.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Back-Drilling, Priced in Margin</h2>
+    <p>Deck 04 argued that an un-backdrilled stub is fatal and computed the excess loss
+    it causes. Here is the same change expressed in the currency a standard uses.</p>
+
+    <div class="metric-grid" id="bd-metrics"></div>
+
+    <p class="note" id="bd-note"></p>
+
+    <p>This is what makes the channel operating margin useful as a design tool rather
+    than only as a gate. It converts every physical decision in the preceding ten decks
+    &mdash; the laminate, the copper foil, the antipad, the back-drill depth, the lane
+    spacing &mdash; into a single number in a single currency, so that they can be
+    compared against each other and against the cost of more silicon.</p>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Interactive: The Verdict Depends on the Receiver</h2>
+    <p>The channel does not change between the rows below. Only the reference receiver's
+    assumptions change, and each variation is within the range real silicon actually
+    spans.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="sn-plot" width="780" height="330"></canvas>
+        <div class="legend">
+            <span><i style="background:#4ade80"></i>margin, dB</span>
+            <span><i style="background:#f472b6"></i>the 3 dB threshold</span>
+        </div>
+    </div>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="sn-table"></table>
+    </div>
+
+    <p class="note" id="sn-note"></p>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Insertion-Loss Deviation, and Why It Is Separated Out</h2>
+    <p>The standards fit a smooth curve to the insertion loss and specify a limit on the
+    deviation from it rather than on the loss itself. The reason is exactly the argument
+    of deck 10. The smooth part of the loss is what the equaliser is designed to remove
+    and a channel is allowed a great deal of it. The wiggle on top is caused by
+    reflections, reflections put energy at particular delays, and the equaliser may not
+    reach them.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="il-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#4ade80"></i>insertion loss</span>
+            <span><i style="background:#8b949e"></i>the fitted smooth curve</span>
+            <span><i style="background:#f472b6"></i>the deviation</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="il-metrics"></div>
+
+    <p class="note" id="il-note"></p>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>The Frequency-Domain Masks</h2>
+    <p>Alongside the margin calculation, a handful of limits are applied directly to the
+    scattering parameters. They are cheaper to check, they catch gross errors before
+    anything is simulated, and each one corresponds to a mechanism from an earlier deck.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table class="checktab" id="mk-table"></table>
+    </div>
+
+    <p class="note" id="mk-note"></p>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>What COM Hides</h2>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel r">
+            <h4>It is a statement about a pair, not a channel</h4>
+            <p>Slide 06 showed the number moving by several decibels under variations in
+            the reference receiver that no channel change accompanied. A channel that
+            passes has passed <em>with that receiver</em>, and interoperability arguments
+            between vendors are very often arguments about which reference is
+            authoritative rather than about any measurement.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>It assumes coding</h4>
+            <p>The threshold corresponds to a pre-correction error ratio. A link designed
+            without forward error correction, or with a weaker code than the standard
+            assumes, does not inherit the verdict &mdash; as slide 04 demonstrates on
+            this very channel.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Crosstalk dominates it</h4>
+            <p>On slide 06 the crosstalk variation moves the margin further than any of
+            the receiver parameters. A compliance figure computed with optimistic
+            crosstalk is optimistic by more than the margin it reports, and crosstalk is
+            the hardest term to measure honestly because it needs every aggressor
+            driven.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>It says nothing about why</h4>
+            <p>A single number cannot tell a designer which of the eleven mechanisms in
+            this series is responsible. That is what the preceding decks are for, and it
+            is why a failing margin should send you back to the pulse response rather
+            than to a bigger equaliser.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>Where the Series Ends Up</h2>
+    <p>Eleven decks have taken one physical question &mdash; can this signal get from
+    that chip to this one intact &mdash; and decomposed it into mechanisms that can each
+    be computed. It is worth collecting what each contributed to the channel they all
+    share.</p>
+
+    <table>
+        <thead><tr><th>Deck</th><th>What it establishes about this channel</th></tr></thead>
+        <tbody>
+            <tr><td>01 Transmission lines</td><td>It is many wavelengths long, in the overlap of the skin-effect and dielectric-loss regions, and well below waveguide onset</td></tr>
+            <tr><td>02 Return paths</td><td>Its return current runs in a band a few trace heights wide, and a plane gap would cost more than the entire equalisation budget</td></tr>
+            <tr><td>03 Materials</td><td>The laminate choice is worth tens of decibels over this length, and a constant-Dk model of it is not physically realisable</td></tr>
+            <tr><td>04 Vias</td><td>Back-drilling is the difference between a working channel and a notch at Nyquist</td></tr>
+            <tr><td>05 Differential signalling</td><td>Tight coupling would cost over a decibel here to buy something worth less</td></tr>
+            <tr><td>06 Crosstalk</td><td>Its contribution cannot be equalised and is worth more than extra decision-feedback taps</td></tr>
+            <tr><td>07 Power integrity</td><td>Supply ripple reaches the eye through the loop's rejection, worst just above the loop bandwidth</td></tr>
+            <tr><td>08 Jitter</td><td>The dominant timing term is data-dependent, so it is the equaliser's problem and not the oscillator's</td></tr>
+            <tr><td>09 Timing</td><td>The reason this is a serial link at all, rather than thirty-two slower wires</td></tr>
+            <tr><td>10 Measurement</td><td>Whether any of the above can be believed depends on four properties of the data file</td></tr>
+            <tr><td>11 Compliance</td><td>And the verdict depends on which question was asked</td></tr>
+        </tbody>
+    </table>
+
+    <div class="seriesnav">__NAV__</div>
+</section>
+
+<section class="slide" id="slide-11">
+    <div class="slide-number">11</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Quantity</th><th>Meaning</th><th>Worth remembering</th></tr></thead>
+        <tbody>
+            <tr><td>COM</td><td>$20\log_{10}(A_s/\sigma_{\text{total}})$</td><td>A ratio of signal to noise after a reference receiver has adapted</td></tr>
+            <tr><td>Pass threshold</td><td>3 dB</td><td>Calibrated against a pre-correction error ratio, not against $10^{-12}$</td></tr>
+            <tr><td>Detector error ratio</td><td>The slicer's error rate</td><td>Forward error correction takes it the rest of the way</td></tr>
+            <tr><td>ILD</td><td>Insertion loss minus a smooth fit</td><td>Isolates reflections from loss, because only the loss is equalisable</td></tr>
+            <tr><td>Return loss mask</td><td>$|S_{11}|$ limit over the band</td><td>Bounds the reflections that produce the ILD</td></tr>
+            <tr><td>ICR / ICN</td><td>Crosstalk against insertion loss</td><td>The term that moves the verdict most</td></tr>
+            <tr><td>The caveat</td><td>&mdash;</td><td>A verdict is a joint statement about a channel and a reference receiver</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#4ade80',teal:'#34d399',
+         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+function hidpi(id){const c=document.getElementById(id);if(!c)return null;
+  const r=window.devicePixelRatio||1,w=c.width,h=c.height;
+  c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
+  const x=c.getContext('2d');x.scale(r,r);return{ctx:x,w,h};}
+function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
+function label(ctx,t,x,y,c2,s,a){ctx.fillStyle=c2||C.dim;
+  ctx.font=(s||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=a||'left';
+  ctx.fillText(t,x,y);ctx.textAlign='left';}
+function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
+function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+
+  '</div><div class="metric-value">'+v+'</div></div>';}
+function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
+  if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
+  if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
+
+/* ---- 03 the result ---- */
+(function(){
+  const el=document.getElementById('cm-metrics'); if(!el||!SI.com)return;
+  const c=SI.com;
+  el.innerHTML=metric('channel operating margin',c.com_db.toFixed(2)+' dB')+
+    metric('verdict',c.com_db>=3?'pass':'fail')+
+    metric('CTLE chosen',c.ctle_db.toFixed(0)+' dB')+
+    metric('Tx preset','['+c.tx_preset.map(function(v){return v.toFixed(2);}).join(', ')+']')+
+    metric('DFE taps',c.n_dfe)+
+    metric('signal at the sampler',c.cursor_mv.toFixed(1)+' mV');
+  const H=hidpi('nb-plot'); if(!H)return;
+  const {ctx,w,h}=H; clear(ctx,w,h);
+  const items=[['signal',c.cursor_mv,C.accent],['residual ISI',c.isi_mv,C.pink],
+    ['crosstalk',c.xt_mv,C.amber],['receiver noise',c.rx_mv,C.cyan],
+    ['jitter',c.jitter_mv,C.dim]];
+  const p={l:110,r:60,t:26,b:30};
+  let mx=0; items.forEach(function(i){mx=Math.max(mx,i[1]);}); mx*=1.15;
+  const bh=(h-p.t-p.b)/items.length;
+  items.forEach(function(it,i){
+    const y=p.t+i*bh+4, bw=(it[1]/mx)*(w-p.l-p.r);
+    ctx.fillStyle=it[2]; ctx.fillRect(p.l,y,Math.max(bw,1),bh-10);
+    label(ctx,it[0],p.l-8,y+bh/2-1,C.text,10,'right');
+    label(ctx,it[1].toFixed(2)+' mV',p.l+bw+6,y+bh/2-1,it[2],10,'left');});
+  label(ctx,'signal against each noise contribution, millivolts',p.l-100,16,C.dim,10,'left');
+  document.getElementById('cm-note').textContent=
+    'The reference receiver takes the deepest continuous-time setting available, '+
+    c.ctle_db.toFixed(0)+' dB, which is what a channel losing thirty-three decibels at '+
+    'Nyquist demands. After it, residual intersymbol interference at '+
+    c.isi_mv.toFixed(1)+' millivolts still dominates the noise, with crosstalk at '+
+    c.xt_mv.toFixed(1)+' and receiver noise at '+c.rx_mv.toFixed(1)+
+    '. The margin is '+c.com_db.toFixed(2)+' dB.';
+})();
+
+/* ---- 04 two verdicts ---- */
+(function(){
+  const t=document.getElementById('tv-table'); if(!t||!SI.interpret)return;
+  const i=SI.interpret, hb=SI.hand_budget;
+  let html='<thead><tr><th>Question asked</th><th>Method</th><th>Result</th>'+
+    '<th>Verdict</th></tr></thead><tbody>';
+  html+='<tr><td>Is this channel compliant?</td><td>Reference receiver, margin against a 3 dB threshold</td><td>'+
+    i.com_db.toFixed(2)+' dB</td><td class="ok">'+i.verdict.toUpperCase()+'</td></tr>';
+  html+='<tr><td>What error ratio does that imply at the slicer?</td><td>Same calculation, read as a detector error ratio</td><td>'+
+    i.detector_error_ratio.toExponential(2)+'</td><td>before any coding</td></tr>';
+  html+='<tr><td>Would it reach $10^{-12}$ with no coding?</td><td>Same reference receiver, uncoded target</td><td>Q = '+
+    i.q_equivalent.toFixed(2)+' against '+i.q_for_1e12.toFixed(2)+'</td><td class="bad">'+
+    i.uncoded_1e12_verdict.toUpperCase()+', short by '+i.shortfall_to_1e12_db.toFixed(2)+' dB</td></tr>';
+  html+='<tr><td>And with a full receive equaliser?</td><td>The hand budget in SerDes_Equalisation</td><td>Q = '+
+    hb.q.toFixed(2)+'</td><td class="bad">short by '+hb.shortfall_db.toFixed(2)+' dB</td></tr>';
+  html+='</tbody>'; t.innerHTML=html;
+  document.getElementById('tv-note').textContent=
+    'All four rows describe the same twenty-eight-point-eight inches of copper. The '+
+    'margin passes because it is measured against a threshold that assumes forward '+
+    'error correction; the uncoded budget fails because it does not. The difference '+
+    'between rows three and four is the equaliser: the reference receiver has a '+
+    'three-tap transmit filter and '+SI.com.n_dfe+' feedback taps, while the hand '+
+    'budget adds a receive feed-forward equaliser as well, which is worth '+
+    (i.shortfall_to_1e12_db-hb.shortfall_db).toFixed(2)+' dB.';
+})();
+
+/* ---- 05 back-drill ---- */
+(function(){
+  const el=document.getElementById('bd-metrics'); if(!el||!SI.com_with_stub)return;
+  el.innerHTML=metric('back-drilled',SI.com.com_db.toFixed(2)+' dB')+
+    metric('110 mil stub left in',SI.com_with_stub.com_db.toFixed(2)+' dB')+
+    metric('back-drilling is worth',SI.backdrill_gain_db.toFixed(2)+' dB')+
+    metric('both verdicts',(SI.com.com_db>=3?'pass':'fail')+' / '+
+      (SI.com_with_stub.com_db>=3?'pass':'fail'));
+  document.getElementById('bd-note').textContent=
+    'Removing the stub is worth '+SI.backdrill_gain_db.toFixed(2)+
+    ' decibels of margin on this channel. For comparison, the remedies priced in '+
+    'SerDes_Equalisation found that changing the board bought between one and a half '+
+    'and two and a half decibels and that more silicon bought around a quarter of a '+
+    'decibel. Back-drilling is the largest single item any of these calculations has '+
+    'identified, and it is a drilling operation rather than a design change.';
+})();
+
+/* ---- 06 sensitivity ---- */
+(function(){
+  const H=hidpi('sn-plot'); if(!H||!SI.sensitivity)return;
+  const rows=SI.sensitivity; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:16,r:60,t:26,b:26};
+  const bh=(h-p.t-p.b)/rows.length;
+  let mx=0; rows.forEach(function(r){mx=Math.max(mx,r.com_db);}); mx*=1.12;
+  const X=v=>p.l+220+(v/mx)*(w-p.l-p.r-220);
+  rows.forEach(function(r,i){
+    const y=p.t+i*bh+2;
+    ctx.fillStyle=r.com_db>=3?C.accent:C.pink;
+    ctx.fillRect(X(0),y,Math.max(X(r.com_db)-X(0),1),bh-6);
+    label(ctx,r.variant,p.l+214,y+bh/2,C.text,10,'right');
+    label(ctx,r.com_db.toFixed(2),X(r.com_db)+6,y+bh/2,C.dim,10,'left');});
+  ctx.strokeStyle=C.pink;dashed(ctx,true);ctx.lineWidth=1.5;ctx.beginPath();
+  ctx.moveTo(X(3),p.t);ctx.lineTo(X(3),h-p.b);ctx.stroke();dashed(ctx,false);
+  label(ctx,'3 dB threshold',X(3)+4,18,C.pink,9,'left');
+
+  const t=document.getElementById('sn-table');
+  let html='<thead><tr><th>Reference receiver variant</th><th>Margin</th>'+
+    '<th>Signal</th><th>Residual ISI</th><th>CTLE chosen</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    html+='<tr><td>'+r.variant+'</td><td class="'+(r.com_db>=3?'ok':'bad')+'">'+
+      r.com_db.toFixed(2)+' dB</td><td>'+r.cursor_mv.toFixed(1)+' mV</td><td>'+
+      r.isi_mv.toFixed(2)+' mV</td><td>'+r.ctle_db.toFixed(0)+' dB</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  let lo=99,hi=-99,loN='',hiN='';
+  rows.forEach(function(r){if(r.com_db<lo){lo=r.com_db;loN=r.variant;}
+    if(r.com_db>hi){hi=r.com_db;hiN=r.variant;}});
+  const xt=rows.filter(function(r){return /crosstalk/.test(r.variant);});
+  let xr=0; if(xt.length){let a=99,b=-99;xt.forEach(function(r){a=Math.min(a,r.com_db);
+    b=Math.max(b,r.com_db);}); xr=b-a;}
+  const df=rows.filter(function(r){return /feedback/.test(r.variant);});
+  let dr=0; if(df.length){let a=99,b=-99;df.forEach(function(r){a=Math.min(a,r.com_db);
+    b=Math.max(b,r.com_db);}); dr=b-a;}
+  document.getElementById('sn-note').textContent=
+    'The verdict spans '+lo.toFixed(2)+' to '+hi.toFixed(2)+
+    ' dB across these variations, on an unchanging channel. The crosstalk assumption '+
+    'alone moves it by '+xr.toFixed(2)+' dB, while going from one decision-feedback tap '+
+    'to sixteen moves it by '+dr.toFixed(2)+
+    ' dB. Whoever sets the crosstalk figure in the reference model therefore has more '+
+    'influence over the outcome than the receiver architecture does.';
+})();
+
+/* ---- 07 ILD ---- */
+(function(){
+  const H=hidpi('il-plot'); if(!H||!SI.ild)return;
+  const d=SI.ild; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:56,r:56,t:20,b:38};
+  const FHI=d.f_ghz[d.f_ghz.length-1];
+  const X=f=>p.l+f/FHI*(w-p.l-p.r);
+  const LO=-60,HI=2, Y1=v=>h-p.b-(v-LO)/(HI-LO)*(h-p.t-p.b);
+  const DM=Math.max(1.2,d.ild_max_db*1.2);
+  const Y2=v=>h-p.b-(v+DM)/(2*DM)*(h-p.t-p.b);
+  axes(ctx,w,h,p,'frequency, GHz','insertion loss, dB');
+  for(let v=LO;v<=HI;v+=10){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y1(v));ctx.lineTo(w-p.r,Y1(v));ctx.stroke();
+    label(ctx,v+'',p.l-6,Y1(v)+3,C.accent,9,'right');}
+  [-DM,-DM/2,0,DM/2,DM].forEach(function(v){
+    label(ctx,v.toFixed(1),w-p.r+6,Y2(v)+3,C.pink,9,'left');});
+  for(let g=0;g<=FHI;g+=5){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+    label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');}
+  function ser(arr,col,wd,yf){ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.beginPath();
+    let st=false;
+    d.f_ghz.forEach(function(f,i){const px=X(f),py=yf(arr[i]);
+      st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+    ctx.stroke();}
+  ser(d.il_db,C.accent,2,Y1); ser(d.fit_db,C.dim,1.5,Y1);
+  ctx.strokeStyle=C.grid;ctx.beginPath();ctx.moveTo(p.l,Y2(0));ctx.lineTo(w-p.r,Y2(0));ctx.stroke();
+  ser(d.ild_db,C.pink,1.6,Y2);
+  document.getElementById('il-metrics').innerHTML=
+    metric('deviation, rms',d.ild_rms_db.toFixed(3)+' dB')+
+    metric('deviation, peak',d.ild_max_db.toFixed(2)+' dB')+
+    (SI.ild_stub?metric('with the stub, rms',SI.ild_stub.ild_rms_db.toFixed(3)+' dB'):'')+
+    (SI.ild_stub?metric('with the stub, peak',SI.ild_stub.ild_max_db.toFixed(2)+' dB'):'');
+  if(SI.ild_stub)document.getElementById('il-note').textContent=
+    'The back-drilled channel deviates from its smooth fit by '+
+    d.ild_rms_db.toFixed(3)+' dB rms and '+d.ild_max_db.toFixed(2)+
+    ' dB at worst. Leaving the stub in raises those to '+
+    SI.ild_stub.ild_rms_db.toFixed(3)+' and '+SI.ild_stub.ild_max_db.toFixed(2)+
+    ' dB — the smooth part of the loss barely changes, and the mask that catches '+
+    'the stub is the one on deviation rather than the one on loss.';
+})();
+
+/* ---- 08 masks ---- */
+(function(){
+  const t=document.getElementById('mk-table'); if(!t||!SI.masks)return;
+  const a=SI.masks, b=SI.masks_with_stub;
+  let html='<thead><tr><th>Mask</th><th>Limit</th><th>Back-drilled</th>'+
+    '<th>With the stub</th><th>Mechanism it catches</th></tr></thead><tbody>';
+  function row(n,lim,va,ok1,vb,ok2,mech){
+    html+='<tr><td>'+n+'</td><td>'+lim+'</td><td class="'+(ok1?'ok':'bad')+'">'+va+
+      '</td><td class="'+(ok2?'ok':'bad')+'">'+vb+'</td><td>'+mech+'</td></tr>';}
+  row('insertion loss at Nyquist',a.il_limit_db.toFixed(0)+' dB',
+      a.il_at_nyquist_db.toFixed(2)+' dB',a.il_pass,
+      b.il_at_nyquist_db.toFixed(2)+' dB',b.il_pass,
+      'conductor and dielectric loss, deck 03');
+  row('worst return loss',a.rl_limit_db.toFixed(0)+' dB',
+      a.rl_worst_db.toFixed(2)+' dB',a.rl_pass,
+      b.rl_worst_db.toFixed(2)+' dB',b.rl_pass,
+      'impedance discontinuities, decks 01 and 04');
+  row('insertion-loss deviation, peak',a.ild_limit_db.toFixed(1)+' dB',
+      a.ild_max_db.toFixed(2)+' dB',a.ild_pass,
+      b.ild_max_db.toFixed(2)+' dB',b.ild_pass,
+      'reflections and stub resonance, deck 04');
+  html+='</tbody>'; t.innerHTML=html;
+  document.getElementById('mk-note').textContent=
+    'This channel fails the insertion-loss mask in both conditions, which is correct '+
+    'and expected — twenty-eight inches of backplane at twenty-eight gigabaud is '+
+    'past what an uncoded standard would admit, and it is precisely why '+
+    'SerDes_Equalisation chose it as a worked example. What the masks distinguish is '+
+    'the stub: the deviation limit catches it, and the insertion-loss limit alone '+
+    'would not have.';
+})();
+</script>

@@ -1,0 +1,590 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 05</div>
+    <h1>Differential <span class="accent">Signalling</span></h1>
+    <p class="subtitle">Every fast link is differential and almost nobody asks why. The
+    rejection is a number rather than a property, tight coupling costs decibels that can
+    be computed, and symmetry is lost in ways the schematic cannot show.</p>
+
+    <div class="tags">
+        <span class="tag">odd and even modes</span><span class="tag">$Z_{\text{diff}}$</span>
+        <span class="tag">coupling</span><span class="tag">skew</span>
+        <span class="tag">mode conversion</span><span class="tag">termination</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">two lines</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">odd / even modes</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$Z_{\text{diff}}, Z_{\text{comm}}$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">asymmetry</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$S_{cd21}$</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">What differential signalling actually buys</a></li>
+        <li><a href="#slide-02">Two lines, two modes</a></li>
+        <li><a href="#slide-03">Checking the solver against the exact result</a></li>
+        <li><a href="#slide-04">What real copper thickness does to the impedance</a></li>
+        <li><a href="#slide-05">Interactive: what tight coupling costs</a></li>
+        <li><a href="#slide-06">Common-mode rejection is a number, not a property</a></li>
+        <li><a href="#slide-07">Interactive: skew, and the conversion it causes</a></li>
+        <li><a href="#slide-08">Conversion with no skew at all</a></li>
+        <li><a href="#slide-09">Terminating both modes</a></li>
+        <li><a href="#slide-10">Where the asymmetry comes from</a></li>
+        <li><a href="#slide-11">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>What Differential Signalling Actually Buys</h2>
+    <p>The standard list of advantages is well known and partly misleading, so it is
+    worth separating what differential signalling genuinely provides from what it is
+    often credited with.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Real: a defined return current</h4>
+            <p>The two conductors carry equal and opposite currents, so each is the
+            other's return. The loop is small, known and local, and it does not depend on
+            the state of the plane underneath. After deck 02, this is the largest single
+            benefit, and it is the one least often cited.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Real: rejection of what is common to both</h4>
+            <p>A disturbance that reaches both conductors equally &mdash; a supply shift,
+            a distant aggressor, a ground offset between two boards &mdash; cancels at
+            the receiver to the extent that the receiver is balanced. That is genuinely
+            valuable and it is a finite number, computed on slide 06.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Real: twice the signal for the same swing</h4>
+            <p>The receiver sees the difference, so a given single-ended swing yields
+            twice the decision voltage, worth six decibels of signal-to-noise before
+            anything else is done. This is why differential survives at four hundred
+            millivolts where single-ended would not.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Overstated: immunity to crosstalk</h4>
+            <p>A differential pair rejects an aggressor only to the extent that the
+            aggressor couples equally to both conductors, and a neighbouring trace does
+            not: it is closer to one than the other. Deck 06 computes what is left.</p>
+        </div>
+    </div>
+
+    <p>What it costs is twice the conductors, twice the package pins, twice the escape
+    routing and the whole of the symmetry problem this deck is mostly about.</p>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Two Lines, Two Modes</h2>
+    <p>A pair of coupled lines does not have one characteristic impedance, it has two,
+    corresponding to the two ways the pair can be excited. Drive both conductors with the
+    same voltage and the fields between them vanish; that is the <strong>even</strong>
+    mode, with impedance $Z_{0e}$. Drive them oppositely and the field between them is
+    maximal; that is the <strong>odd</strong> mode, with impedance $Z_{0o}$.</p>
+
+    <p>The numbers the specification quotes follow directly. The differential impedance
+    a receiver terminates is the impedance across the pair, which is twice the odd-mode
+    impedance; the common-mode impedance is the even-mode impedance of the two in
+    parallel, which is half of it:</p>
+
+    <p>$$Z_{\text{diff}} = 2 Z_{0o}, \qquad Z_{\text{comm}} = Z_{0e}/2.$$</p>
+
+    <p>The coupling coefficient $k = (Z_{0e} - Z_{0o})/(Z_{0e} + Z_{0o})$ measures how
+    different the two modes are, and it is the same quantity as the ratio of mutual to
+    self inductance and, in a uniform dielectric, of mutual to self capacitance. That
+    coincidence is the subject of deck 06 and it is why stripline has no far-end
+    crosstalk.</p>
+
+    <div class="metric-grid" id="md-metrics"></div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Checking the Solver Against the Exact Result</h2>
+    <p>Cohn solved the edge-coupled stripline exactly in 1955, by conformal mapping, for
+    conductors of zero thickness. That closed form is the right thing to check a
+    numerical field solver against, because it is exact rather than fitted &mdash; and
+    the check has to be run at matched assumptions, which means giving the solver the
+    thinnest conductor its grid can represent.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table class="checktab" id="cv-table"></table>
+    </div>
+
+    <p class="note" id="cv-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">Why the solver is kept at all</div>
+        <p>If the closed form is exact, the numerical solver looks redundant. It is not,
+        because Cohn's result covers one cross-section: two identical rectangles of zero
+        thickness, centred between two planes, in a uniform dielectric. It says nothing
+        about a pair beside a guard trace, a pair on an outer layer with air above it, an
+        asymmetric stackup, or copper with a thickness. Those are the cases the rest of
+        this series needs, and the agreement above is what licenses trusting the solver
+        on them.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>What Real Copper Thickness Does to the Impedance</h2>
+    <p>Every closed-form stripline expression in the literature, Cohn's included, assumes
+    an infinitely thin conductor. Real copper is between twelve and seventy micrometres
+    thick, and the extra metal adds capacitance both to the planes and to the neighbouring
+    trace. The impedance falls, and it falls by more than the ten per cent tolerance a
+    stackup is usually asked to hold.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="tk-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#a78bfa"></i>differential impedance</span>
+            <span><i style="background:#8b949e"></i>Cohn, zero thickness</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="tk-metrics"></div>
+
+    <p class="note">This is not an error in either calculation; it is a real effect that
+    a zero-thickness formula cannot see. It is also why an impedance coupon is measured
+    rather than calculated, and why a stackup that changes copper weight has to be
+    re-solved rather than scaled.</p>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Interactive: What Tight Coupling Costs</h2>
+    <p>There is a persistent belief that a differential pair should be coupled as tightly
+    as the technology allows. It is worth testing, and the test has to hold the
+    differential impedance constant, because otherwise it compares geometries that are
+    not alternatives to each other.</p>
+
+    <p>Doing that changes the question. Bringing the traces together raises the coupling,
+    which lowers the odd-mode impedance, so the traces must be made <em>narrower</em> to
+    bring it back to a hundred ohms. Narrower traces have a smaller perimeter, and
+    conductor loss goes inversely with perimeter. Tight coupling is therefore paid for in
+    decibels at Nyquist, and the model prices it.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="cc-sp">edge-to-edge spacing</label>
+            <input type="range" id="cc-sp" min="0" max="6" step="1" value="2">
+            <span class="val" id="cc-sp-val"></span>
+        </div>
+        <div class="metric-grid" id="cc-metrics"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="cc-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#a78bfa"></i>trace width needed for 100 &Omega;</span>
+            <span><i style="background:#f472b6"></i>extra loss over 10 in at 14 GHz</span>
+        </div>
+    </div>
+
+    <p class="note" id="cc-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">So when is tight coupling right?</div>
+        <p>When routing density forces it, which on a modern escape it frequently does;
+        and when the pair has to survive a broken reference plane, because a tightly
+        coupled pair carries more of its own return and cares less about what is
+        underneath. Both are real reasons. Neither is "tighter coupling is better
+        signal integrity", which is what the loss column contradicts.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Common-Mode Rejection Is a Number, Not a Property</h2>
+    <p>The textbook statement is that a differential receiver rejects common-mode noise.
+    It rejects it in proportion to how identical the two halves of the system are, and
+    they are never identical. The two traces differ in length and in width, the two
+    terminations differ by their tolerance, and the receiver's two input devices differ
+    by their mismatch.</p>
+
+    <p>What survives is the residual, and the residual is what appears in the noise
+    budget alongside crosstalk and receiver noise. The table shows what a fifty-millivolt
+    common-mode disturbance becomes for three levels of balance.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="cm-table"></table>
+    </div>
+
+    <p class="note">Fifty millivolts of common-mode disturbance is not a pessimistic
+    figure on a board with switching regulators and a shared chassis. Against a
+    differential eye that deck 11 computes at a few tens of millivolts, even a well
+    balanced receiver's residual is a term that has to be carried rather than neglected.</p>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Interactive: Skew, and the Conversion It Causes</h2>
+    <p>The most important asymmetry is <strong>intra-pair skew</strong>: a difference in
+    arrival time between the two legs. It comes from length mismatch, from the glass
+    weave of deck 03, from a via on one leg and not the other, and from any bend that
+    makes the inside of the turn shorter than the outside.</p>
+
+    <p>Its effect is to move energy out of the differential mode and into the common
+    mode. For a skew $\tau$ the conversion follows $|S_{cd21}| = |\sin(\pi f \tau)|$ and
+    the differential transmission falls as $|\cos(\pi f\tau)|$, so the process is a
+    transfer rather than a loss &mdash; the energy is not dissipated, it is moved into a
+    mode the receiver ignores and the chassis radiates.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="sk-sel">intra-pair skew</label>
+            <select id="sk-sel" style="flex:1;min-width:150px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="sk-metrics"></div>
+        <div id="sk-verdict" class="verdict ok"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="sk-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#f472b6"></i>differential to common, $S_{cd21}$</span>
+            <span><i style="background:#a78bfa"></i>differential through, $S_{dd21}$</span>
+            <span><i style="background:#fbbf24"></i>Nyquist, 14 GHz</span>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Conversion With No Skew at All</h2>
+    <p>There is a source of mode conversion that survives perfect length matching. In a
+    <em>uniform</em> dielectric the even and odd modes travel at the same speed, because
+    both are governed by the same permittivity. On an outer layer they do not: the odd
+    mode keeps more of its field in the laminate between the traces and the even mode
+    keeps more of it in the air above, so the two modes have different effective
+    permittivities and different velocities.</p>
+
+    <p>A pair that is perfectly symmetric, perfectly length-matched and perfectly
+    fabricated will therefore still convert, purely because it is microstrip. The model
+    computes the conversion for a two per cent velocity difference, which is typical.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="mv-plot" width="780" height="270"></canvas>
+        <div class="legend">
+            <span><i style="background:#f472b6"></i>conversion from modal velocity difference</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="mv-metrics"></div>
+
+    <div class="callout">
+        <div class="callout-label">Which is why the fast pairs are on inner layers</div>
+        <p>Stripline is homogeneous, so its two modes travel at the same speed and this
+        mechanism vanishes identically &mdash; the field solver confirms it to five
+        decimal places, in deck 06. Between that, the absence of far-end crosstalk and
+        the shielding from external fields, the case for routing a high-speed pair on an
+        inner layer is close to unanswerable, and the cost is the vias needed to get
+        there, which is deck 04.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>Terminating Both Modes</h2>
+    <p>A single resistor across the pair terminates the differential mode perfectly and
+    the common mode not at all. Since the previous two slides have established that there
+    <em>will</em> be a common-mode signal, leaving it unterminated means letting it
+    reflect up and down the pair, and a resonant common-mode current on a cable or a long
+    trace is an efficient antenna.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="tm-table"></table>
+    </div>
+
+    <p>The tee network &mdash; two resistors of the odd-mode impedance in series with a
+    shunt resistor to the reference at their midpoint &mdash; terminates both, and the
+    shunt element is usually built as a resistor and capacitor in series so that it
+    absorbs the common mode without drawing direct current. It costs a component and a
+    little board area, and it is the difference between an electromagnetic-compatibility
+    result that passes and one that does not.</p>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>Where the Asymmetry Comes From</h2>
+    <table>
+        <thead><tr><th>Source</th><th>Typical size</th><th>What it takes to control</th></tr></thead>
+        <tbody>
+            <tr><td>Length mismatch from routing</td><td>A few picoseconds; the only term the router reports</td><td>Matching within a few thousandths of an inch; cheap and usually already done</td></tr>
+            <tr><td>Bends and serpentines</td><td>Sub-picosecond each, but they accumulate</td><td>Matching within the bend rather than after it</td></tr>
+            <tr><td>Glass weave</td><td>Up to about 5 ps per inch worst case &mdash; deck 03</td><td>Routing angle or spread glass; not visible to the router at all</td></tr>
+            <tr><td>Via on one leg only</td><td>Tens of picoseconds</td><td>Never do it; transition both legs together</td></tr>
+            <tr><td>Package and connector</td><td>Vendor-specified, often the largest single term</td><td>Budget it; compensate in the receiver if the silicon allows</td></tr>
+            <tr><td>Modal velocity difference</td><td>Present on every microstrip pair</td><td>Route on inner layers</td></tr>
+        </tbody>
+    </table>
+
+    <p>Notice the ordering. The term every layout tool measures and every reviewer checks
+    &mdash; routed length mismatch &mdash; is among the smallest. The terms that dominate
+    are invisible to the tool: the weave is a property of the laminate, the package skew
+    is in a datasheet, and the modal velocity difference is a consequence of which layer
+    the pair is on.</p>
+</section>
+
+<section class="slide" id="slide-11">
+    <div class="slide-number">11</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Quantity</th><th>Expression</th><th>Worth remembering</th></tr></thead>
+        <tbody>
+            <tr><td>Differential impedance</td><td>$Z_{\text{diff}} = 2Z_{0o}$</td><td>What the receiver terminates</td></tr>
+            <tr><td>Common-mode impedance</td><td>$Z_{\text{comm}} = Z_{0e}/2$</td><td>What a single resistor across the pair leaves unterminated</td></tr>
+            <tr><td>Coupling coefficient</td><td>$k=(Z_{0e}-Z_{0o})/(Z_{0e}+Z_{0o})$</td><td>Equals $L_m/L$ and, in a uniform dielectric, $C_m/C$</td></tr>
+            <tr><td>Skew conversion</td><td>$|S_{cd21}|=|\sin(\pi f\tau)|$</td><td>Complete at half a period of skew</td></tr>
+            <tr><td>Signal advantage</td><td>6 dB</td><td>Twice the decision voltage for the same single-ended swing</td></tr>
+            <tr><td>Copper thickness</td><td>&mdash;</td><td>Half-ounce copper lowers a 100 &Omega; pair by about 10%</td></tr>
+            <tr><td>Coupling cost</td><td>&mdash;</td><td>Holding 100 &Omega; while tightening from 1.0 to 0.1 mm costs over a decibel in ten inches</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#a78bfa',teal:'#34d399',
+         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+function hidpi(id){const c=document.getElementById(id);if(!c)return null;
+  const r=window.devicePixelRatio||1,w=c.width,h=c.height;
+  c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
+  const x=c.getContext('2d');x.scale(r,r);return{ctx:x,w,h};}
+function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
+function label(ctx,t,x,y,c2,s,a){ctx.fillStyle=c2||C.dim;
+  ctx.font=(s||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=a||'left';
+  ctx.fillText(t,x,y);ctx.textAlign='left';}
+function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
+function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+
+  '</div><div class="metric-value">'+v+'</div></div>';}
+function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
+  if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
+  if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
+
+/* ---- 02 modal metrics ---- */
+(function(){
+  const el=document.getElementById('md-metrics'); if(!el||!SI.solver_check)return;
+  const r=SI.solver_check[0];
+  el.innerHTML=metric('example geometry','0.15 / 0.15 mm on 0.4 mm')+
+    metric('Z even (Cohn)',(r.zdiff_cohn*0).toFixed(0)==='0'?'—':'')+
+    metric('Z differential',r.zdiff_solver.toFixed(1)+' Ω')+
+    metric('coupling k',(100*r.k_solver).toFixed(1)+' %');
+})();
+
+/* ---- 03 verification ---- */
+(function(){
+  const t=document.getElementById('cv-table'); if(!t||!SI.solver_check)return;
+  let html='<thead><tr><th>Geometry (w / s, on 0.4 mm)</th><th>Cohn exact</th>'+
+    '<th>Field solver</th><th>Difference</th><th>k, Cohn / solver</th></tr></thead><tbody>';
+  let worst=0;
+  SI.solver_check.forEach(function(r){
+    worst=Math.max(worst,Math.abs(r.err_pct));
+    html+='<tr><td>'+r.w_mm.toFixed(2)+' / '+r.s_mm.toFixed(2)+' mm</td><td>'+
+      r.zdiff_cohn.toFixed(2)+' Ω</td><td>'+r.zdiff_solver.toFixed(2)+' Ω</td>'+
+      '<td class="'+(Math.abs(r.err_pct)<1?'ok':'bad')+'">'+(r.err_pct>=0?'+':'')+
+      r.err_pct.toFixed(2)+' %</td><td>'+r.k_cohn.toFixed(4)+' / '+
+      r.k_solver.toFixed(4)+'</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  document.getElementById('cv-note').textContent=
+    'Worst disagreement '+worst.toFixed(2)+' per cent on the differential impedance, '+
+    'with the coupling coefficients agreeing to three decimal places. That is the '+
+    'accuracy of the numerical method, and it is what licenses using the solver on '+
+    'cross-sections Cohn does not cover.';
+})();
+
+/* ---- 04 thickness ---- */
+(function(){
+  const H=hidpi('tk-plot'); if(!H||!SI.thickness)return;
+  const d=SI.thickness, rows=d.rows; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:56,r:16,t:20,b:42};
+  const X=i=>p.l+(i+0.5)/rows.length*(w-p.l-p.r);
+  let lo=999,hi=0;
+  rows.forEach(function(r){lo=Math.min(lo,r.zdiff);hi=Math.max(hi,r.zdiff);});
+  hi=Math.max(hi,d.cohn_zdiff); lo=Math.min(lo,d.cohn_zdiff);
+  const pad=(hi-lo)*0.15; lo-=pad; hi+=pad;
+  const Y=z=>h-p.b-(z-lo)/(hi-lo)*(h-p.t-p.b);
+  axes(ctx,w,h,p,'copper thickness','differential impedance, Ω');
+  for(let i=0;i<=5;i++){const z=lo+(hi-lo)*i/5;ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(z));ctx.lineTo(w-p.r,Y(z));ctx.stroke();
+    label(ctx,z.toFixed(0),p.l-6,Y(z)+3,C.dim,9,'right');}
+  ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.beginPath();
+  ctx.moveTo(p.l,Y(d.cohn_zdiff));ctx.lineTo(w-p.r,Y(d.cohn_zdiff));ctx.stroke();dashed(ctx,false);
+  label(ctx,'Cohn, zero thickness: '+d.cohn_zdiff.toFixed(1)+' Ω',
+        w-p.r-4,Y(d.cohn_zdiff)-6,C.dim,9,'right');
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+  rows.forEach(function(r,i){const px=X(i),py=Y(r.zdiff);i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  rows.forEach(function(r,i){ctx.fillStyle=C.accent;ctx.beginPath();
+    ctx.arc(X(i),Y(r.zdiff),3.5,0,6.3);ctx.fill();
+    label(ctx,r.t_um.toFixed(0)+' µm',X(i),h-p.b+15,C.dim,9,'center');});
+  let html='';
+  rows.forEach(function(r){
+    html+=metric(r.t_um.toFixed(0)+' µm ('+r.t_oz.toFixed(1)+' oz)',
+      r.zdiff.toFixed(1)+' Ω  '+(r.delta_pct>=0?'+':'')+r.delta_pct.toFixed(1)+'%');});
+  document.getElementById('tk-metrics').innerHTML=html;
+})();
+
+/* ---- 05 coupling cost ---- */
+(function(){
+  const H=hidpi('cc-plot'); if(!H||!SI.coupling_cost)return;
+  const d=SI.coupling_cost, rows=d.rows;
+  const sl=document.getElementById('cc-sp');
+  sl.max=rows.length-1;
+  function draw(i){
+    const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:56,r:56,t:20,b:42};
+    const X=j=>p.l+(j+0.5)/rows.length*(w-p.l-p.r);
+    let wlo=9,whi=0; rows.forEach(function(r){wlo=Math.min(wlo,r.w_mm);whi=Math.max(whi,r.w_mm);});
+    const wp=(whi-wlo)*0.25; const Y1=v=>h-p.b-(v-(wlo-wp))/((whi+wp)-(wlo-wp))*(h-p.t-p.b);
+    let lm=0; rows.forEach(function(r){lm=Math.max(lm,r.extra_loss_db);}); lm*=1.15;
+    const Y2=v=>h-p.b-v/lm*(h-p.t-p.b);
+    axes(ctx,w,h,p,'edge-to-edge spacing, mm','trace width, mm');
+    for(let k=0;k<=4;k++){const v=(wlo-wp)+((whi+wp)-(wlo-wp))*k/4;
+      ctx.strokeStyle=C.grid;ctx.beginPath();ctx.moveTo(p.l,Y1(v));ctx.lineTo(w-p.r,Y1(v));
+      ctx.stroke(); label(ctx,v.toFixed(3),p.l-6,Y1(v)+3,C.accent,9,'right');}
+    for(let k=0;k<=4;k++)label(ctx,(lm*k/4).toFixed(2),w-p.r+6,Y2(lm*k/4)+3,C.pink,9,'left');
+    ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+    rows.forEach(function(r,j){const px=X(j),py=Y1(r.w_mm);j?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    ctx.strokeStyle=C.pink;ctx.lineWidth=2;ctx.beginPath();
+    rows.forEach(function(r,j){const px=X(j),py=Y2(r.extra_loss_db);
+      j?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    rows.forEach(function(r,j){
+      ctx.fillStyle=j===i?C.text:C.accent;ctx.beginPath();ctx.arc(X(j),Y1(r.w_mm),j===i?5:3,0,6.3);ctx.fill();
+      ctx.fillStyle=j===i?C.text:C.pink;ctx.beginPath();ctx.arc(X(j),Y2(r.extra_loss_db),j===i?5:3,0,6.3);ctx.fill();
+      label(ctx,r.s_mm.toFixed(2),X(j),h-p.b+15,C.dim,9,'center');});
+    const r=rows[i];
+    document.getElementById('cc-sp-val').textContent=r.s_mm.toFixed(2)+' mm';
+    document.getElementById('cc-metrics').innerHTML=
+      metric('trace width for 100 Ω',r.w_mm.toFixed(3)+' mm')+
+      metric('coupling',r.coupling_pct.toFixed(1)+' %')+
+      metric('loss at 14 GHz',r.alpha_db_per_in.toFixed(4)+' dB/in')+
+      metric('extra over 10 in',r.extra_loss_db.toFixed(3)+' dB');
+    const tight=rows[0], loose=rows[rows.length-1];
+    document.getElementById('cc-note').textContent=
+      'Holding the differential impedance at 100 ohms, tightening the pair from '+
+      loose.s_mm.toFixed(2)+' mm to '+tight.s_mm.toFixed(2)+' mm raises the coupling from '+
+      loose.coupling_pct.toFixed(2)+' to '+tight.coupling_pct.toFixed(1)+
+      ' per cent, forces the traces from '+loose.w_mm.toFixed(3)+' to '+
+      tight.w_mm.toFixed(3)+' mm wide, and costs '+tight.extra_loss_db.toFixed(2)+
+      ' dB over ten inches at 14 GHz. That decibel and a half is real margin, spent to '+
+      'buy coupling that the next slide shows is worth rather less than it looks.';
+  }
+  sl.addEventListener('input',function(){draw(+sl.value);});
+  draw(2);
+})();
+
+/* ---- 06 CMRR ---- */
+(function(){
+  const t=document.getElementById('cm-table'); if(!t||!SI.cmrr)return;
+  let html='<thead><tr><th>Balance</th><th>Amplitude imbalance</th>'+
+    '<th>Gain mismatch</th><th>Rejection</th><th>Residual from 50 mV</th></tr></thead><tbody>';
+  const names=['well balanced','typical','poorly balanced'];
+  SI.cmrr.forEach(function(r,i){
+    html+='<tr><td>'+names[i]+'</td><td>'+r.imbalance_pct.toFixed(1)+' %</td><td>'+
+      r.gain_mismatch_db.toFixed(2)+' dB</td><td>'+r.cmrr_db.toFixed(1)+' dB</td><td>'+
+      r.residual_mv.toFixed(2)+' mV</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+
+/* ---- 07 skew ---- */
+(function(){
+  const H=hidpi('sk-plot'); if(!H||!SI.skew)return;
+  const sel=document.getElementById('sk-sel');
+  Object.keys(SI.skew).forEach(function(k){const o=document.createElement('option');
+    o.value=k;o.textContent=k;sel.appendChild(o);});
+  function draw(key){
+    const d=SI.skew[key]; const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:52,r:16,t:20,b:38}, FHI=50;
+    const X=f=>p.l+f/FHI*(w-p.l-p.r);
+    const DLO=-30,DHI=2, Y=v=>h-p.b-(v-DLO)/(DHI-DLO)*(h-p.t-p.b);
+    axes(ctx,w,h,p,'frequency, GHz','dB');
+    for(let v=DLO;v<=DHI;v+=5){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+      label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');}
+    [0,10,20,30,40,50].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+      label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');});
+    ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
+    ctx.moveTo(X(14),p.t);ctx.lineTo(X(14),h-p.b);ctx.stroke();dashed(ctx,false);
+    function ser(arr,col){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();let st=false;
+      d.f_ghz.forEach(function(f,i){if(f>FHI)return;
+        const px=X(f),py=Y(Math.max(DLO,Math.min(DHI,arr[i])));
+        st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+      ctx.stroke();}
+    ser(d.scd21_db,C.pink); ser(d.sdd21_db,C.accent);
+    function at(arr,g){let b=0;d.f_ghz.forEach(function(f,i){
+      if(Math.abs(f-g)<Math.abs(d.f_ghz[b]-g))b=i;});return arr[b];}
+    document.getElementById('sk-metrics').innerHTML=
+      metric('skew',key)+
+      metric('conversion at 14 GHz',at(d.scd21_db,14).toFixed(1)+' dB')+
+      metric('differential lost',at(d.sdd21_db,14).toFixed(2)+' dB')+
+      metric('full conversion at',d.f_full_conversion_ghz.toFixed(1)+' GHz');
+    const v=document.getElementById('sk-verdict');
+    const bad=at(d.scd21_db,14)>-20;
+    v.className='verdict '+(bad?'bad':'ok');
+    v.textContent=bad
+      ? 'more than one per cent of the differential signal is leaving as common mode at Nyquist'
+      : 'conversion at Nyquist is below –20 dB — a tolerable share of the budget';
+  }
+  sel.addEventListener('input',function(){draw(sel.value);});
+  draw(Object.keys(SI.skew)[0]);
+})();
+
+/* ---- 08 mode velocity ---- */
+(function(){
+  const H=hidpi('mv-plot'); if(!H||!SI.mode_velocity)return;
+  const d=SI.mode_velocity; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:52,r:16,t:20,b:38}, FHI=50;
+  const X=f=>p.l+f/FHI*(w-p.l-p.r);
+  const DLO=-40,DHI=2, Y=v=>h-p.b-(v-DLO)/(DHI-DLO)*(h-p.t-p.b);
+  axes(ctx,w,h,p,'frequency, GHz','conversion, dB');
+  for(let v=DLO;v<=DHI;v+=10){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');}
+  [0,10,20,30,40,50].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+    label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');});
+  ctx.strokeStyle=C.pink;ctx.lineWidth=2;ctx.beginPath();let st=false;
+  d.f_ghz.forEach(function(f,i){if(f>FHI)return;
+    const px=X(f),py=Y(Math.max(DLO,Math.min(DHI,d.conversion_db[i])));
+    st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+  ctx.stroke();
+  document.getElementById('mv-metrics').innerHTML=
+    metric('velocity difference',d.delta_v_pct.toFixed(1)+' %')+
+    metric('equivalent skew',d.effective_skew_ps.toFixed(1)+' ps')+
+    metric('over','10 inches of microstrip')+
+    metric('in stripline','identically zero');
+})();
+
+/* ---- 09 termination ---- */
+(function(){
+  const t=document.getElementById('tm-table'); if(!t||!SI.termination)return;
+  const d=SI.termination;
+  let html='<thead><tr><th>Scheme</th><th>Components</th><th>Differential</th>'+
+    '<th>Common mode</th></tr></thead><tbody>';
+  html+='<tr><td>single resistor across the pair</td><td>'+
+    d.single_resistor.r_ohm.toFixed(0)+' Ω</td><td class="ok">terminated</td>'+
+    '<td class="bad">not terminated</td></tr>';
+  html+='<tr><td>two resistors to a floating midpoint</td><td>2 × '+
+    d.two_resistor.r_ohm.toFixed(0)+' Ω</td><td class="ok">terminated</td>'+
+    '<td class="bad">not terminated</td></tr>';
+  html+='<tr><td>tee network</td><td>2 × '+d.tee.r_series_ohm.toFixed(0)+
+    ' Ω plus '+d.tee.r_shunt_ohm.toFixed(0)+' Ω to the reference</td>'+
+    '<td class="ok">terminated</td><td class="ok">terminated</td></tr>';
+  html+='</tbody>'; t.innerHTML=html;
+})();
+</script>
