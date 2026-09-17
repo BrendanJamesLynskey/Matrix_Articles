@@ -9,6 +9,13 @@ PAGES = "https://brendanjameslynskey.github.io/Signal_Integrity"
 GH = "https://github.com/BrendanJamesLynskey"
 
 ver = json.load(open(os.path.join(DATA, 'verification.json')))
+
+PDF_PAGES = 0
+try:
+    from pypdf import PdfReader
+    PDF_PAGES = len(PdfReader(os.path.join(REPO, 'Signal_Integrity.pdf')).pages)
+except Exception:
+    PDF_PAGES = 22
 slides = {}
 for d in DECKS:
     f = os.path.join(REPO, d['slug'], 'index.html')
@@ -74,6 +81,12 @@ for d in DECKS:
 L.append("")
 L.append("**%d slides across eleven decks.** Single-page HTML, KaTeX-rendered maths, "
          "no build step — open any `index.html` directly.\n" % total)
+L.append("## Long-form companion\n")
+L.append("The same material as a written report: "
+         "[Signal_Integrity.pdf](Signal_Integrity.pdf) (%d pp). It carries the "
+         "continuous argument where the decks carry the interactive models, and it is "
+         "generated from the same computations, so a number cannot differ between the "
+         "two.\n" % PDF_PAGES)
 L.append("---\n")
 L.append("## Verified against published work\n")
 L.append("A model that agrees only with itself is not worth much. Every cross-check the "

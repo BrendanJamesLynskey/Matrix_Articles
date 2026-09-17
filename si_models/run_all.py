@@ -308,6 +308,9 @@ def deck06():
                                 fext_strip=r['fext_pct'],
                                 next_micro=rm['next_pct'],
                                 fext_micro=rm['fext_pct'],
+                                fext_micro_linear=rm['fext_linear_pct'],
+                                delta_tau_ps=rm['delta_tau_ps'],
+                                fext_saturated=rm['fext_saturated'],
                                 saturation_in=r['saturation_length_in']))
     d['risetime'] = []
     for tr in (10, 20, 40, 80, 160):
@@ -318,9 +321,34 @@ def deck06():
     d['guard'] = {k: dict(next_pct=v['next_pct'], fext_pct=v['fext_pct'],
                           kb=v['kb'], kf=v['kf'])
                   for k, v in X.guard_comparison().items()}
-    n = [X.next_fext(strip, 6.0, 20.0, 4.0)['next_v'] * 0.4] * 4
-    fx = [X.next_fext(ms, 6.0, 20.0, 4.0)['fext_v'] * 0.4] * 4
-    d['icn'] = X.icn(n, fx, 0.4)
+    # Integrated crosstalk noise for the channel this series actually works
+    # against, which is stripline throughout. Two decisions matter here.
+    #
+    # The spacing is three trace widths, a routed lane pitch, rather than the
+    # one-dielectric-height separation used above to demonstrate the
+    # coefficients; at the demonstration spacing the traces are effectively
+    # adjacent and the noise term would swallow the whole transmit swing.
+    #
+    # Only near-end coupling is counted. On an inner layer far-end coupling is
+    # identically zero, which is the chapter's central result. The microstrip
+    # far-end magnitudes this solver produces are not used for a budget: its
+    # grounded enclosure is not an open half-space, and it overstates the
+    # difference between the modal velocities that far-end coupling depends on.
+    # The stripline result does not have that difficulty, because it does not
+    # depend on the modal velocities at all -- they are equal by construction.
+    w_ag = 0.18
+    s_ag = 3.0 * w_ag
+    strip_ag = D.pair_from_geometry(w_ag, s_ag, 0.40, 4.0)
+    swing = 0.4
+    nf_s = X.next_fext(strip_ag, 6.0, 20.0, 4.0)
+    d['icn_geometry'] = dict(trace_w_mm=w_ag, spacing_mm=s_ag, spacing_w=3.0,
+                             length_in=6.0, tr_ps=20.0, swing_v=swing,
+                             layer='stripline',
+                             next_pct=nf_s['next_pct'],
+                             fext_pct=nf_s['fext_pct'],
+                             n_near=4, n_far=0)
+    n = [nf_s['next_v'] * swing] * 4
+    d['icn'] = X.icn(n, [], swing)
     d['budget'] = X.budget_impact(d['icn']['icn_mv'], 4.0, 44.5)
     return d
 

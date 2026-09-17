@@ -116,6 +116,19 @@
     <p class="note" id="cs-note"></p>
 
     <div class="callout">
+        <div class="callout-label">How far to trust the microstrip column</div>
+        <p>The stripline result is exact in the sense that matters: the two ratios are
+        equal because the medium is uniform, and the solver confirms it to six decimal
+        places. The microstrip <em>magnitudes</em> deserve more caution. An open
+        microstrip has fields extending indefinitely into the air above it, and this
+        solver encloses its cross-section in a grounded box; the enclosure perturbs the
+        air-side field and overstates the difference between the two modal velocities.
+        The sign, the mechanism and the contrast with stripline are sound. The far-end
+        coupling in decibels is not a number to budget from, which is why the budget on
+        slide 09 is built from the near-end term on an inner layer.</p>
+    </div>
+
+    <div class="callout">
         <div class="callout-label">Why the uniform case is exact rather than approximate</div>
         <p>In a homogeneous medium every mode travels at the same speed, $c/\sqrt{
         \varepsilon_r}$, and that forces $LC = \mu\varepsilon$ as matrices, not merely as
@@ -141,10 +154,22 @@
     <strong>saturation length</strong> is the distance the edge covers in half its own
     rise time.</p>
 
-    <p>Far-end crosstalk has no such limit. Each element of coupled length adds a
-    contribution that arrives at the same instant as all the others, because it travels
-    with the aggressor's edge, so the total grows in proportion to length without
-    bound.</p>
+    <p>Far-end crosstalk behaves quite differently. Each element of coupled length adds
+    a contribution that arrives at the same instant as all the others, because it travels
+    with the aggressor's edge, so the total grows in proportion to length &mdash; and it
+    is easy to stop there, because that is where the standard first-order formula stops.
+    It cannot be the whole story, since a linear growth would eventually predict a
+    crosstalk larger than the aggressor that caused it.</p>
+
+    <p>What actually happens is that the far-end voltage is the difference between the
+    even and odd modes arriving at slightly different times,
+    $v_{fext}(t) = \tfrac{1}{2}[v(t-\tau_e) - v(t-\tau_o)]$. While the modal delay
+    difference is small compared with the rise time this difference is proportional to
+    it, which reproduces the linear formula. Once the delay difference exceeds the rise
+    time the two modes arrive fully separated, and the far-end crosstalk saturates at
+    half the swing. The model computes the bounded form and reports the linear one
+    alongside it, so the point at which the familiar expression stops being usable is
+    visible rather than assumed.</p>
 
     <div class="canvas-wrap">
         <canvas id="ln-plot" width="780" height="300"></canvas>
@@ -255,6 +280,13 @@
     adding in power, producing a variance that sits beside receiver noise in the budget
     &mdash; without the full weighting of the published method.</p>
 
+    <p>The arrangement costed below is the one this series actually works against: a
+    stripline lane with four neighbours at three trace widths, which is a routed lane
+    pitch rather than the one-dielectric-height separation used earlier to demonstrate
+    the coefficients. Only near-end coupling is counted, because on an inner layer the
+    far-end coupling is identically zero &mdash; which is this deck's central result,
+    arriving in the budget.</p>
+
     <div class="metric-grid" id="ic-metrics"></div>
 
     <p class="note" id="ic-note"></p>
@@ -293,8 +325,8 @@
             <tr><td>Near-end coefficient</td><td>$K_b=\frac{1}{4}(L_m/L + C_m/C)$</td><td>A sum; cannot vanish</td></tr>
             <tr><td>Far-end coefficient</td><td>$K_f=-\frac{1}{2}(L_m/L - C_m/C)$</td><td>A difference; vanishes in a uniform dielectric</td></tr>
             <tr><td>Near-end saturation length</td><td>$\ell_{\text{sat}} = v\,t_r/2$</td><td>Longer coupling adds duration, not amplitude</td></tr>
-            <tr><td>Far-end amplitude</td><td>$K_f\,\ell\,t_{pd}/t_r$</td><td>Grows with length, worsens with faster edges</td></tr>
-            <tr><td>Stripline far-end</td><td>zero</td><td>Confirmed by the solver to five decimal places</td></tr>
+            <tr><td>Far-end amplitude</td><td>$\tfrac12\min(\Delta\tau/t_r,\,1)$</td><td>Linear in length while $\Delta\tau &lt; t_r$, where it equals $K_f\,\ell\,t_{pd}/t_r$; saturates at half the swing thereafter</td></tr>
+            <tr><td>Stripline far-end</td><td>zero</td><td>The modal velocities are equal, so $\Delta\tau$ is identically zero at any length</td></tr>
             <tr><td>Many aggressors</td><td>$\sqrt{\sum V_i^2}$</td><td>Uncorrelated sources add in power</td></tr>
             <tr><td>Guard trace</td><td>&mdash;</td><td>Needs stitching every tenth of a wavelength or it is a resonator</td></tr>
             <tr><td>Equalisation</td><td>&mdash;</td><td>Does nothing; the fix is geometry</td></tr>

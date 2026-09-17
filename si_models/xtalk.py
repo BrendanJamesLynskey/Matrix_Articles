@@ -42,27 +42,55 @@ def coefficients(modal):
 def next_fext(modal, length_in, tr_ps, er=3.7, v_swing=1.0):
     """Near- and far-end crosstalk amplitudes for a given coupled length.
 
-    Near-end crosstalk saturates: once the coupled section is long enough that
-    the backward wave from the far end is still arriving when the edge finishes,
-    making it longer adds nothing. The saturation length is the distance the
-    edge covers in half its own rise time.
+    Near-end crosstalk saturates. Once the coupled section is long enough that
+    the backward wave from the far end is still arriving when the edge has
+    finished, making it longer adds duration rather than amplitude, and the
+    saturated value is the backward coefficient times the swing.
 
-    Far-end crosstalk does not saturate. It grows in proportion to length and
-    in inverse proportion to rise time, so it is the one that gets worse as
-    edges get faster.
+    Far-end crosstalk is computed from the modal delays rather than from the
+    first-order coefficient. The far-end voltage is the difference between the
+    even and odd mode arrivals,
+
+        v_fext(t) = (1/2)[ v(t - tau_even) - v(t - tau_odd) ],
+
+    whose peak for an edge of rise time tr is (1/2)(d_tau / tr) while the modal
+    delay difference is smaller than the rise time, and one half once it is not.
+    That bound matters: the first-order expression K_f * l * t_pd / t_r is linear
+    in length and will happily predict a far-end crosstalk of several times the
+    aggressor swing on a long microstrip, which is impossible. The linear value
+    is still reported, as `fext_linear_v`, so the two can be compared and the
+    point at which the approximation fails can be seen.
+
+    In a homogeneous dielectric the two modal velocities are equal, the modal
+    delay difference is identically zero, and far-end crosstalk vanishes however
+    long the coupled section is.
     """
     c = coefficients(modal)
     v = C0 / np.sqrt(er)
     tpd = INCH / v
     tr = tr_ps * 1e-12
     l_sat_in = tr * v / 2.0 / INCH
+
     next_amp = c['kb'] * v_swing
     if length_in < l_sat_in:
         next_amp *= length_in / l_sat_in
-    fext_amp = c['kf'] * (length_in * tpd) / tr * v_swing
+
+    # modal delay difference over the coupled length
+    ve, vo = modal.get('v_even'), modal.get('v_odd')
+    if ve and vo:
+        d_tau = abs(1.0 / vo - 1.0 / ve) * length_in * INCH
+    else:
+        d_tau = abs(2.0 * c['kf']) * length_in * tpd
+    fext_amp = 0.5 * min(d_tau / tr, 1.0) * v_swing
+    fext_linear = c['kf'] * (length_in * tpd) / tr * v_swing
+
     return dict(next_v=float(next_amp), fext_v=float(fext_amp),
+                fext_linear_v=float(fext_linear),
                 next_pct=float(100 * next_amp / v_swing),
                 fext_pct=float(100 * fext_amp / v_swing),
+                fext_linear_pct=float(100 * fext_linear / v_swing),
+                delta_tau_ps=float(d_tau * 1e12),
+                fext_saturated=bool(d_tau >= tr),
                 saturation_length_in=float(l_sat_in),
                 saturated=bool(length_in >= l_sat_in),
                 next_duration_ps=float(2 * length_in * tpd * 1e12),

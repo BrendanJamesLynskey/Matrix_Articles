@@ -361,6 +361,14 @@ The worst is %.2f&nbsp;per&nbsp;cent.</p>
             out.append("</tbody></table></div>\n")
 
     out.append("""
+<h2 class="section-title">Long-form companion</h2>
+<div class="panel">
+<p>The same material as a written report:
+<a href="Signal_Integrity.pdf">Signal_Integrity.pdf</a>. It carries the continuous
+argument where the decks carry the interactive models, and it is generated from the same
+computations, so a number cannot differ between the two.</p>
+</div>
+
 <h2 class="section-title">How to read the series</h2>
 <div class="panel">
 <ul>
