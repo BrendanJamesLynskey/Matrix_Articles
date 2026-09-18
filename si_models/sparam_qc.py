@@ -478,3 +478,98 @@ def echo_placement_study(ch, rho=0.16, delays_ps=(35, 70, 140, 280, 500)):
                          eye_err_pct=float(100 * (q['eye_v'] / base['eye_v'] - 1)),
                          residual_isi=q['residual_isi']))
     return dict(reference=base, rows=rows, rho=rho, ui_ps=ui_ps)
+
+
+def separability_from_channel(ch, rates_gbps=(1, 2.5, 5, 10, 14, 28, 56),
+                              noise_mv_rms=6.0, amp_mv=400.0):
+    """Received amplitude and slew rate against symbol rate, on a real channel.
+
+    For each rate the pulse response is rebuilt with that symbol period -- the
+    channel's transfer function does not change, but the boxcar that turns an
+    impulse response into a symbol response does -- and the cursor amplitude
+    and the slope at the preceding zero crossing are measured from it.
+
+    A fixed receiver voltage noise is then converted to timing noise through
+    that slope, which is the conversion Stephens's fourth rule rests on.
+    """
+    from .jitter import q_from_ber
+    f = ch['f']
+    NFFT = ch['NFFT']
+    fs = f[-1] * 2.0
+    rows = []
+    for r in rates_gbps:
+        ui = 1e-9 / r
+        m = max(4, int(round(ui * fs / NFFT * NFFT)))
+        m = max(4, int(round(ui * (NFFT * (f[1] - f[0]) * 2) / 1.0)))
+        # samples per UI on the existing time grid
+        dt = 1.0 / (2.0 * f[-1])
+        m = max(4, int(round(ui / dt)))
+        full = np.concatenate([ch['s21'], np.conj(ch['s21'][-2:0:-1])])
+        imp = np.real(np.fft.ifft(full))
+        pulse = np.convolve(imp, np.ones(m))[:NFFT]
+        pk = int(np.argmax(np.abs(pulse)))
+        cursor = float(abs(pulse[pk]))
+        dt_ps = dt * 1e12
+        # Slew from the 20-80 per cent rise of the leading edge. Taking the
+        # derivative at 'the last zero crossing before the peak' fails on a
+        # low-loss pulse, which has almost no precursor undershoot, so the
+        # crossing lands in a flat region and the slope comes out near zero.
+        sgn = 1.0 if pulse[pk] >= 0 else -1.0
+        y = sgn * pulse[:pk + 1]
+        ypk = y[pk]
+
+        def _cross(frac):
+            lvl = frac * ypk
+            i = pk
+            while i > 1 and y[i] > lvl:
+                i -= 1
+            if i >= pk:
+                return float(pk)
+            y0, y1 = y[i], y[i + 1]
+            return i + ((lvl - y0) / (y1 - y0) if y1 != y0 else 0.0)
+
+        i20, i80 = _cross(0.2), _cross(0.8)
+        tr_samples = max(i80 - i20, 1e-9)
+        slope_norm = 0.6 * ypk / (tr_samples * dt_ps)
+        i0 = int(_cross(0.5))
+        # scale so the transmitted swing is amp_mv
+        scale = amp_mv
+        cursor_mv = cursor * scale
+        slew = slope_norm * scale
+        j_rms = noise_mv_rms / slew if slew > 0 else float('nan')
+        rows.append(dict(rate_gbps=r, ui_ps=float(ui * 1e12),
+                         samples_per_ui=int(m),
+                         rise_time_ps=float(tr_samples * dt_ps),
+                         rise_time_ui=float(tr_samples * dt_ps / (ui * 1e12)),
+                         cursor_mv=float(cursor_mv),
+                         slew_mv_per_ps=float(slew),
+                         jitter_rms_ps=float(j_rms),
+                         jitter_rms_ui=float(j_rms / (ui * 1e12)),
+                         jitter_pp_ui_at_1e12=float(
+                             2 * q_from_ber(1e-12) * j_rms / (ui * 1e12))))
+    return dict(rows=rows, noise_mv_rms=noise_mv_rms, amp_mv=amp_mv)
+
+
+def equalised_pulse(ch, nf=9, nb=5, sigma_n=0.0015):
+    """The pulse response a sampler actually sees, after the receive equaliser.
+
+    The dual-Dirac model and every jitter measurement are applied at the
+    slicer, not at the connector, so the data-dependent jitter that matters is
+    the residual left after equalisation. On a channel losing thirty decibels
+    the unequalised crossings spread over about two unit intervals and the eye
+    never opens at all, which makes the unequalised distribution useless for
+    testing a model whose whole purpose is to describe an open eye.
+    """
+    SM = ch['sm']
+    p = pulse_from_s21(ch['s21'], ch['M'], ch['NFFT'])
+    taps, cur = cursors(p, ch['M'])
+    h = taps / max(abs(taps[cur]), 1e-30)
+    w, c, dpos = SM.mmse_ffe_dfe(h, cur, nf=nf, nb=nb, sigma_n=sigma_n)
+    # apply the same feed-forward filter to the oversampled pulse, so the
+    # crossing can be located to better than a symbol
+    m = ch['M']
+    up = np.zeros((len(w) - 1) * m + 1)
+    up[::m] = w
+    peq = np.convolve(p, up)[:len(p)]
+    return dict(pulse=peq, taps=c, cursor_index_taps=dpos,
+                w=w, M=m, n_dfe=nb)

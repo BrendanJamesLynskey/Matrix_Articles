@@ -1,28 +1,24 @@
 <header class="hero">
-    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 08</div>
-    <h1><span class="accent">Jitter</span></h1>
-    <p class="subtitle">One word covering a bounded effect, an unbounded one and a
-    periodic one, added in different ways and measured differently. And a bathtub curve
-    that can flatter a link by a factor of five without the measurement showing anything
-    at all.</p>
+    <div class="series-label">Signal Integrity &mdash; Jitter, Deck 08 of 17</div>
+    <h1>The Dual-Dirac Model <span class="accent">and Its Limits</span></h1>
+    <p class="subtitle">The model that makes jitter measurable in minutes instead of
+    days. Five assumptions, one deterministic jitter that is not the deterministic
+    jitter, and a random jitter that quietly absorbs whatever else is smooth.</p>
 
     <div class="tags">
-        <span class="tag">RJ / DJ</span><span class="tag">dual-Dirac</span>
-        <span class="tag">bathtub</span><span class="tag">phase noise</span>
-        <span class="tag">DDJ</span><span class="tag">CDR</span>
-        <span class="tag">jitter tolerance</span>
+        <span class="tag">DJ($\delta\delta$)</span><span class="tag">DJ(p&ndash;p)</span>
+        <span class="tag">Q-scale</span><span class="tag">bathtub</span>
+        <span class="tag">RJ contamination</span><span class="tag">extrapolation</span>
     </div>
 
     <div class="pipeline">
-        <span class="pipeline-step">phase noise</span>
+        <span class="pipeline-step">real distribution</span>
         <span class="pipeline-arrow">&rarr;</span>
-        <span class="pipeline-step">RJ</span>
-        <span class="pipeline-arrow">+</span>
-        <span class="pipeline-step">DJ</span>
+        <span class="pipeline-step">two impulses</span>
         <span class="pipeline-arrow">&rarr;</span>
-        <span class="pipeline-step">bathtub</span>
+        <span class="pipeline-step">fit the tails</span>
         <span class="pipeline-arrow">&rarr;</span>
-        <span class="pipeline-step">eye at $10^{-12}$</span>
+        <span class="pipeline-step">TJ(BER)</span>
     </div>
     __NAV__
 </header>
@@ -31,170 +27,239 @@
     <div class="slide-number">00</div>
     <h2>Topics We'll Cover</h2>
     <ul class="contents-list">
-        <li><a href="#slide-01">A taxonomy that has to be got right</a></li>
-        <li><a href="#slide-02">Two quantities called Q</a></li>
-        <li><a href="#slide-03">The dual-Dirac convention</a></li>
+        <li><a href="#slide-01">What the model is for</a></li>
+        <li><a href="#slide-02">Its five assumptions, stated</a></li>
+        <li><a href="#slide-03">The Q-scale, where a Gaussian becomes a line</a></li>
         <li><a href="#slide-04">Interactive: the bathtub curve</a></li>
-        <li><a href="#slide-05">Interactive: what extrapolation misses</a></li>
-        <li><a href="#slide-06">Phase noise, and the band you integrate over</a></li>
-        <li><a href="#slide-07">Data-dependent jitter is not jitter at all</a></li>
-        <li><a href="#slide-08">The clock recovery loop decides what counts</a></li>
-        <li><a href="#slide-09">Interactive: jitter tolerance</a></li>
+        <li><a href="#slide-05">DJ($\delta\delta$) is not DJ(p&ndash;p)</a></li>
+        <li><a href="#slide-06">Interactive: the model against the real distribution</a></li>
+        <li><a href="#slide-07">When deterministic jitter is counted as random</a></li>
+        <li><a href="#slide-08">Interactive: what extrapolation cannot see</a></li>
+        <li><a href="#slide-09">Using the model without being misled by it</a></li>
         <li><a href="#slide-10">Cheat sheet</a></li>
     </ul>
 </section>
 
 <section class="slide" id="slide-01">
     <div class="slide-number">01</div>
-    <h2>A Taxonomy That Has to Be Got Right</h2>
-    <p>Jitter is the deviation of a transition from where it should have been. That
-    definition covers several mechanisms with quite different statistics, and the reason
-    to keep them apart is that they combine differently: bounded quantities add
-    arithmetically, unbounded ones add in quadrature, and mixing the two rules produces a
-    budget that passes on the bench and fails in the field.</p>
+    <h2>What the Model Is For</h2>
+    <p>Deck 07 ended on an awkward fact: total jitter at a low error ratio can only be
+    measured by counting errors, and counting enough of them takes minutes at
+    $10^{-12}$ and days at $10^{-15}$. The dual-Dirac model exists to escape that, and it
+    is worth being clear that escaping it is all it is for.</p>
 
-    <div class="diagram-grid cols-2">
-        <div class="diagram-panel accent-border">
-            <h4>Random jitter, unbounded</h4>
-            <p>Thermal and flicker noise in the oscillator and the sampling circuit,
-            converted to timing error. Gaussian, so it has no maximum &mdash; quoting a
-            peak-to-peak figure for it is meaningless without stating the error ratio it
-            was measured to. Specified as a standard deviation.</p>
-        </div>
-        <div class="diagram-panel y">
-            <h4>Data-dependent jitter, bounded</h4>
-            <p>The channel's own intersymbol interference moving the zero crossing. A
-            deterministic function of the preceding bits, so it is bounded by the worst
-            pattern, and &mdash; crucially &mdash; it is removed by an equaliser rather
-            than by a better clock.</p>
-        </div>
-        <div class="diagram-panel g">
-            <h4>Periodic jitter, bounded</h4>
-            <p>A tone from somewhere else on the board: a switching regulator, a
-            neighbouring clock, a fan controller. Bounded by its own amplitude,
-            uncorrelated with the data, and the subject of deck 07.</p>
-        </div>
-        <div class="diagram-panel r">
-            <h4>Duty-cycle distortion, bounded</h4>
-            <p>Rising and falling edges treated differently by a threshold that is not at
-            mid-swing. Bounded, easy to measure, and fixed in the transmitter rather than
-            anywhere else.</p>
-        </div>
+    <p>The components of jitter combine by convolution, so the distribution of crossing
+    times has three regions. Near the crossing point it is dominated by the deterministic
+    part. Far out in the tails it is dominated by the Gaussian random part. In between it
+    is a mixture. If the deterministic distribution were known, the two could be
+    deconvolved and the tails predicted exactly &mdash; but it is not known, and there is
+    no practical way to deconvolve without it.</p>
+
+    <p>So the model supplies the simplest deterministic distribution that could possibly
+    work: two Dirac delta functions, separated by an amount the fit determines, each
+    convolved with a Gaussian of width $\sigma$. The tails of the result are two
+    Gaussians displaced from each other, and that is something a short measurement can be
+    fitted to and a long extrapolation can be run from:</p>
+
+    <p>$$\mathrm{TJ(BER)} \approx \mathrm{DJ}(\delta\delta) +
+        2\,Q_{\mathrm{BER}}\,\sigma.$$</p>
+
+    <div class="callout">
+        <div class="callout-label">Read that as an approximation, not a definition</div>
+        <p>It is a Gaussian approximation to the outer edges of the jitter distribution,
+        displaced by a fitted amount. Everything in this deck follows from taking that
+        description literally rather than treating the two fitted quantities as though
+        they were the physical random and deterministic jitter.</p>
     </div>
-
-    <p>The composite quantities are <strong>total jitter</strong> at a specified error
-    ratio, and the split into a random part and a deterministic part that the next slides
-    rely on.</p>
 </section>
 
 <section class="slide" id="slide-02">
     <div class="slide-number">02</div>
-    <h2>Two Quantities Called Q</h2>
-    <p>Before the arithmetic, a collision of notation worth flagging explicitly, because
-    it genuinely catches people who work across both domains.</p>
+    <h2>Its Five Assumptions, Stated</h2>
+    <p>The model is usually invoked without its premises. They are worth writing down,
+    because four of them are reasonable and the fifth is routinely false.</p>
 
-    <div class="diagram-grid cols-2">
-        <div class="diagram-panel accent-border">
-            <h4>Communications Q</h4>
-            <p>The argument of the error function: a signal-to-noise ratio measured in
-            standard deviations, so that the error ratio is
-            $\tfrac{1}{2}\,\mathrm{erfc}(Q/\sqrt{2})$. Dimensionless, typically between
-            three and eight, and larger is better. This is the Q in every link budget in
-            this series.</p>
-        </div>
-        <div class="diagram-panel y">
-            <h4>Resonator Q</h4>
-            <p>Energy stored divided by energy dissipated per radian: a property of a
-            tuned circuit, typically between ten and several thousand, and larger is also
-            better but means something entirely different.</p>
-        </div>
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="as-table"></table>
     </div>
 
-    <p>The two meet in a way that makes the confusion harder rather than easier to avoid.
-    The resonator Q of an inductor-capacitor oscillator's tank sets its phase noise; the
-    phase noise integrates to the random jitter; the random jitter is part of the noise
-    in the denominator of the communications Q. A sentence about a high-Q tank improving
-    Q is not nonsense, but it needs both words defined.</p>
+    <p>The first two are industry-wide conventions rather than findings, and they are what
+    makes estimating from low statistics possible at all. The third is sound. The fourth
+    is the one this deck is mostly about, and it is not a claim about reality &mdash; it
+    is a deliberate simplification whose consequences have to be tracked.</p>
 
-    <div class="metric-grid" id="q-metrics"></div>
-
-    <p class="note">The communications Q required for an error ratio of one in a million
-    million is 7.03, and that number appears throughout this series. Note how slowly it
-    moves: three more decades of error ratio costs less than one unit of Q, which is why
-    link budgets are so sensitive near the target and so forgiving far from it.</p>
+    <p>The fifth, stationarity, was the subject of a slide in deck 07 and is the one most
+    obviously untrue of a real system: rails droop, clocks are deliberately modulated,
+    temperatures drift, links retrain. A distribution that moves while you measure it is
+    broader than any of its instantaneous forms, and no amount of fitting recovers that.</p>
 </section>
 
 <section class="slide" id="slide-03">
     <div class="slide-number">03</div>
-    <h2>The Dual-Dirac Convention</h2>
-    <p>The industry's reporting convention replaces whatever the deterministic
-    distribution really is with two impulses separated by the peak-to-peak deterministic
-    jitter, each convolved with the Gaussian random part. Total jitter at a given error
-    ratio is then</p>
+    <h2>The Q-Scale, Where a Gaussian Becomes a Line</h2>
+    <p>Plotting the error ratio against sampling position on a logarithmic axis gives the
+    familiar bathtub, whose flanks are curved. Plotting $Q(\mathrm{BER})$ instead
+    straightens them: a pure Gaussian tail becomes a straight line whose slope is
+    $\sigma$ and whose intercept is where the Dirac impulse sits.</p>
 
-    <p>$$\mathrm{TJ}(\mathrm{BER}) = \mathrm{DJ}_{pp} + 2\,Q(\mathrm{BER})\,
-        \mathrm{RJ}_{\text{rms}}.$$</p>
+    <p>That is not merely cosmetic. It turns the dual-Dirac fit into a straight-line fit,
+    which is why every instrument implements it this way; and it makes a non-Gaussian
+    tail obvious by eye, because the line bends. A logarithmic axis hides exactly that.</p>
 
-    <p>It is a convention for reporting rather than a description of the physics. The
-    real deterministic distribution is not two impulses; it is a cluster of possible
-    edge positions set by the data pattern. The model is exact only in the far tails,
-    which is, admittedly, where the budget lives.</p>
-
-    <div class="canvas-wrap" style="overflow-x:auto">
-        <table id="dd-table"></table>
+    <div class="canvas-wrap">
+        <canvas id="qs-plot" width="780" height="310"></canvas>
+        <div class="legend">
+            <span><i style="background:#a855f7"></i>the real distribution on a Q scale</span>
+            <span><i style="background:#8b949e"></i>the straight line the model fits</span>
+        </div>
     </div>
 
-    <p class="note">Notice the structure of the arithmetic. The deterministic term enters
-    once, whatever the error ratio; the random term is multiplied by fourteen at
-    $10^{-12}$. A design dominated by deterministic jitter behaves quite differently
-    under a tightened error-ratio specification from one dominated by random jitter, and
-    the decomposition tells you which you have.</p>
+    <p class="note" id="qs-note"></p>
 </section>
 
 <section class="slide" id="slide-04">
     <div class="slide-number">04</div>
     <h2>Interactive: The Bathtub Curve</h2>
-    <p>Sweep the sampling instant across the unit interval and plot the resulting error
-    ratio on a logarithmic axis and you get a bathtub: high at both edges where the
-    sampler is close to a transition, and low in the middle. Its two walls are
-    complementary error functions, so on a logarithmic axis their tails are close to
-    straight &mdash; which is what makes extrapolation tempting.</p>
+    <p>The same information on the axis everyone uses. The horizontal opening at the
+    target error ratio is the eye width the receiver has to work with, and everything a
+    clock recovery circuit does is an attempt to sit in the middle of it.</p>
 
     <div class="control-panel">
         <div class="control-row">
-            <label for="bt-sel">jitter</label>
+            <label for="bt-sel">jitter split</label>
             <select id="bt-sel" style="flex:1;min-width:190px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
         </div>
         <div class="metric-grid" id="bt-metrics"></div>
     </div>
 
     <div class="canvas-wrap">
-        <canvas id="bt-plot" width="780" height="310"></canvas>
+        <canvas id="bt-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#c084fc"></i>error ratio against sampling position</span>
+            <span><i style="background:#a855f7"></i>error ratio against sampling position</span>
             <span><i style="background:#fbbf24"></i>$10^{-12}$</span>
         </div>
     </div>
 
-    <p class="note">The horizontal opening at the target error ratio is the eye width
-    the receiver actually has to work with, and it is always smaller than the unit
-    interval by the total jitter. Everything a clock recovery circuit does is an attempt
-    to place its sampling instant in the middle of that opening and keep it there.</p>
+    <p class="note">Notice how the two contributions behave differently as the target
+    tightens. The deterministic part shifts both walls inward by a fixed amount whatever
+    the error ratio; the random part steepens them, and its contribution grows with Q.
+    A link dominated by one responds quite differently to a tightened specification from
+    a link dominated by the other.</p>
 </section>
 
 <section class="slide" id="slide-05">
     <div class="slide-number">05</div>
-    <h2>Interactive: What Extrapolation Misses</h2>
-    <p>No instrument can measure an error ratio of one in a million million in reasonable
-    time; at twenty-eight gigabaud that is one error roughly every thirty-six seconds,
-    and establishing the number statistically takes hours per point. The universal
-    practice is therefore to measure down to about $10^{-6}$, fit the dual-Dirac model,
-    and extrapolate.</p>
+    <h2>DJ($\delta\delta$) Is Not DJ(p&ndash;p)</h2>
+    <p>This is the single most common confusion in jitter analysis, and it follows
+    directly from taking the fourth assumption literally.</p>
 
-    <p>That is sound if the jitter really is one Gaussian plus one bounded term. If there
-    is a second, rarer Gaussian &mdash; an intermittent aggressor, a marginal supply, a
-    connector that occasionally misbehaves &mdash; the measurement cannot see it and the
-    extrapolation does not include it.</p>
+    <p>Real deterministic jitter never follows a two-impulse distribution &mdash; deck 07
+    showed what it actually looks like for this channel &mdash; so it is unreasonable to
+    expect the deterministic jitter extracted from the dual-Dirac model to equal the
+    actual peak-to-peak spread. They are different quantities and deserve different
+    names:</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>DJ($\delta\delta$), the model's</h4>
+            <p>A <em>fitting parameter</em>. It is the separation the two impulses would
+            need in order for two displaced Gaussians to reproduce the observed tails. It
+            can always be measured, on any instrument, and it is what standards specify.
+            It is not a property of the signal alone.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>DJ(p&ndash;p), the real one</h4>
+            <p>The actual peak-to-peak spread of the deterministic distribution. It is a
+            property of the signal, it is what a designer usually pictures, and it can
+            only be measured in special cases &mdash; such as when the whole distribution
+            can be computed, which is what the next slide does.</p>
+        </div>
+    </div>
+
+    <p>The relationship between them is an inequality rather than an equality, and it
+    runs in one direction:</p>
+
+    <p>$$\mathrm{DJ}(\delta\delta) \le \mathrm{DJ}(\mathrm{p\text{-}p}).$$</p>
+
+    <p>The model's deterministic jitter is the <em>smaller</em> number. Quoting it as
+    though it were the peak-to-peak value therefore understates the real spread &mdash;
+    which matters because the two are routinely compared across instruments, across
+    vendors and against specifications that do not always say which they mean.</p>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Interactive: The Model Against the Real Distribution</h2>
+    <p>The inequality can be tested rather than asserted, because for this channel both
+    quantities are computable. The deterministic distribution comes from enumerating the
+    bit patterns against the equalised pulse response &mdash; the equaliser matters,
+    because the sampler sits after it &mdash; and the model is then fitted to the tails
+    of the resulting error-ratio curve exactly as an instrument would fit it.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="dd-sel">random jitter present</label>
+            <select id="dd-sel" style="flex:1;min-width:170px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="dd-metrics"></div>
+        <div id="dd-verdict" class="verdict bad"></div>
+    </div>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table class="checktab" id="dd-table"></table>
+    </div>
+
+    <p class="note" id="dd-note"></p>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>When Deterministic Jitter Is Counted as Random</h2>
+    <p>The previous slide showed the fitted random jitter coming out larger than the
+    random jitter actually present. That is not a defect of the fit; it is what a fit to
+    the tails must do when part of the width is deterministic but smooth.</p>
+
+    <p>The mistake is expensive in exactly one direction. Random jitter is multiplied by
+    $2Q$ &mdash; fourteen at $10^{-12}$ &mdash; and deterministic jitter is not, so
+    attributing deterministic width to the Gaussian inflates the extrapolated total.
+    Whether that is conservative or dangerous depends on whether you are the one
+    specifying or the one complying.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="ct-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#a855f7"></i>random jitter the fit reports</span>
+            <span><i style="background:#8b949e"></i>the random jitter actually present</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="ct-metrics"></div>
+
+    <p class="note" id="ct-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">The two families of implementation</div>
+        <p>There are two ways to extract the random part, and they fail differently.
+        Fitting a Gaussian expression to the measured distribution is what most
+        instruments do, and it is what this slide models &mdash; it absorbs smooth
+        deterministic width. Measuring the timing-noise <em>spectrum</em> and identifying
+        the broadband floor with $\sigma$ separates them better, because a deterministic
+        contribution is not spectrally flat. Instruments differ substantially in which
+        they use, and therefore in the answer they give for the same signal.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Interactive: What Extrapolation Cannot See</h2>
+    <p>The model's purpose is extrapolation, so its most important failure mode is a
+    component that the measurement cannot reach. Suppose the random jitter is not one
+    Gaussian but two &mdash; a narrow one that is always present and a wide one that
+    appears rarely, which is what an intermittent aggressor or a marginal supply looks
+    like.</p>
+
+    <p>At the error ratio an instrument can reach, the rare component contributes almost
+    nothing and the fit is indistinguishable from a clean one. At $10^{-12}$ it dominates.</p>
 
     <div class="canvas-wrap" style="overflow-x:auto">
         <table class="checktab" id="ex-table"></table>
@@ -202,150 +267,64 @@
 
     <p class="note" id="ex-note"></p>
 
-    <div class="callout">
-        <div class="callout-label">What to do about it</div>
-        <p>Measure further down than is comfortable, because each decade constrains the
-        tail more. Check that the fitted random jitter is stable as the fit range is
-        extended, since a hidden second component makes it drift. And treat a bathtub
-        whose walls are not straight on a logarithmic axis as evidence rather than as
-        measurement noise &mdash; curvature is exactly what a second Gaussian produces.</p>
-    </div>
-</section>
-
-<section class="slide" id="slide-06">
-    <div class="slide-number">06</div>
-    <h2>Phase Noise, and the Band You Integrate Over</h2>
-    <p>Random jitter comes from the oscillator, and the oscillator is characterised by
-    its <strong>phase noise</strong> &mdash; the power in a one-hertz bandwidth at a
-    given offset from the carrier, relative to the carrier, in dBc/Hz. Converting it to
-    jitter is an integration:</p>
-
-    <p>$$\sigma_t = \frac{1}{2\pi f_0}\sqrt{2\int_{f_1}^{f_2} L(f)\,df}.$$</p>
-
-    <p>The limits are the important part, and they are a choice rather than a property of
-    the oscillator. A clock recovery loop tracks slow phase movement and rejects it, so
-    the lower limit belongs to the receiver rather than to the transmitter, and a jitter
-    figure quoted without the band it was integrated over is close to meaningless.</p>
-
-    <div class="canvas-wrap">
-        <canvas id="pn-plot" width="780" height="290"></canvas>
-        <div class="legend">
-            <span><i style="background:#c084fc"></i>phase noise</span>
-        </div>
-    </div>
-
-    <div class="canvas-wrap" style="overflow-x:auto">
-        <table id="pn-table"></table>
-    </div>
-
-    <p class="note" id="pn-note"></p>
-</section>
-
-<section class="slide" id="slide-07">
-    <div class="slide-number">07</div>
-    <h2>Data-Dependent Jitter Is Not Jitter at All</h2>
-    <p>The largest single timing term on a lossy channel is not random and does not come
-    from the clock. It is the channel's own intersymbol interference displacing the zero
-    crossing: the tails of earlier pulses are still present when the current edge
-    happens, so the voltage at which the edge starts is different for every history of
-    preceding bits, and the crossing moves.</p>
-
-    <p>This can be computed exactly rather than measured, by enumerating the bit patterns
-    and finding the crossing for each. The model does that on the pulse response of the
-    channel from
-    <a href="https://brendanjameslynskey.github.io/SerDes_Equalisation/">SerDes_Equalisation</a>.</p>
-
-    <div class="metric-grid" id="ddj-metrics"></div>
-
-    <p class="note" id="ddj-note"></p>
-
-    <div class="callout">
-        <div class="callout-label">Why the distinction earns its keep</div>
-        <p>Because it says what to buy. Data-dependent jitter is removed by equalisation
-        &mdash; it is the same intersymbol interference the decision-feedback taps are
-        already cancelling, seen in the time axis instead of the voltage axis. Random
-        jitter is removed by a better oscillator. A budget that lumps them together as
-        "total jitter" cannot tell you which of those two rather different purchases will
-        fix your link.</p>
-    </div>
-</section>
-
-<section class="slide" id="slide-08">
-    <div class="slide-number">08</div>
-    <h2>The Clock Recovery Loop Decides What Counts</h2>
-    <p>The receiver does not compare incoming edges against a perfect reference. It
-    recovers a clock from the data itself, with a loop that follows slow phase movement
-    and ignores fast movement. Jitter the loop tracks is harmless, because the sampling
-    instant moves with it; jitter it fails to track is what reaches the sampler.</p>
-
-    <p>So the loop's jitter transfer is a low-pass and the error &mdash; what the sampler
-    actually sees &mdash; is its high-pass complement. Slow wander of the transmitter's
-    clock, which would look alarming on an oscilloscope, is entirely benign; fast jitter
-    is not.</p>
-
-    <div class="canvas-wrap">
-        <canvas id="cd-plot" width="780" height="290"></canvas>
-        <div class="legend">
-            <span><i style="background:#34d399"></i>jitter transfer (tracked)</span>
-            <span><i style="background:#f472b6"></i>error response (seen by the sampler)</span>
-            <span><i style="background:#fbbf24"></i>loop bandwidth</span>
-        </div>
-    </div>
-
-    <p class="note">The crossover between the two curves is the loop bandwidth, and it is
-    the single most consequential number in a receiver's timing design. Wide bandwidth
-    tracks more jitter but admits more noise from the data transitions; narrow bandwidth
-    filters better and tracks less. Every clock recovery architecture is a position on
-    that trade.</p>
+    <p>This is the quantitative form of the warning in deck 07 about bounded uncorrelated
+    jitter. A rare wide component is precisely what crosstalk from a bursty neighbour
+    produces, and it is precisely what the acronyms have no name for.</p>
 </section>
 
 <section class="slide" id="slide-09">
     <div class="slide-number">09</div>
-    <h2>Interactive: Jitter Tolerance</h2>
-    <p>The compliance test that follows from the previous slide applies a sinusoidal
-    jitter tone at each frequency and asks how much the receiver survives. Only the part
-    the loop fails to track reaches the sampler, so the tolerance is the budget divided
-    by the magnitude of the error response &mdash; which rises steeply below the loop
-    bandwidth and flattens above it.</p>
-
-    <div class="control-panel">
-        <div class="control-row">
-            <label for="jt-bw">loop bandwidth</label>
-            <select id="jt-bw" style="flex:1;min-width:150px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+    <h2>Using the Model Without Being Misled by It</h2>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel g">
+            <h4>Say which DJ you mean</h4>
+            <p>Every specification, every datasheet and every correlation argument should
+            state whether it means the model's fitted parameter or the real peak-to-peak
+            spread. They differ by tens of per cent on a real channel, and the model's is
+            always the smaller.</p>
         </div>
-        <div class="metric-grid" id="jt-metrics"></div>
-    </div>
-
-    <div class="canvas-wrap">
-        <canvas id="jt-plot" width="780" height="300"></canvas>
-        <div class="legend">
-            <span><i style="background:#c084fc"></i>tolerance mask</span>
-            <span><i style="background:#fbbf24"></i>loop bandwidth</span>
+        <div class="diagram-panel y">
+            <h4>Watch the fitted RJ as the fit range moves</h4>
+            <p>If the random jitter the fit reports drifts as the range is extended
+            further down, something smooth and deterministic is being absorbed into it.
+            A stable value across a widening range is the evidence that the separation is
+            real.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Treat curvature as data</h4>
+            <p>On a Q-scale a clean Gaussian tail is straight. Curvature is not
+            measurement noise; it is the signature of a second component, and it is
+            visible long before it dominates.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Measure the aggressors both ways</h4>
+            <p>Run the link with neighbours quiet and again with them driven. The
+            difference is the bounded uncorrelated contribution, obtained directly rather
+            than inferred from a model that has no category for it.</p>
         </div>
     </div>
-
-    <p class="note" id="jt-note"></p>
 </section>
 
 <section class="slide" id="slide-10">
     <div class="slide-number">10</div>
     <h2>Cheat Sheet</h2>
     <table>
-        <thead><tr><th>Quantity</th><th>Expression</th><th>Worth remembering</th></tr></thead>
+        <thead><tr><th>Quantity</th><th>Meaning</th><th>Worth remembering</th></tr></thead>
         <tbody>
-            <tr><td>Communications Q</td><td>$\mathrm{BER}=\tfrac12\mathrm{erfc}(Q/\sqrt2)$</td><td>7.03 for $10^{-12}$; not the resonator Q</td></tr>
-            <tr><td>Dual-Dirac total jitter</td><td>$\mathrm{DJ}_{pp}+2Q\,\mathrm{RJ}_{\text{rms}}$</td><td>Deterministic once, random multiplied by 14 at $10^{-12}$</td></tr>
-            <tr><td>Phase noise to jitter</td><td>$\sigma_t=\frac{1}{2\pi f_0}\sqrt{2\int L\,df}$</td><td>The limits are a receiver property, not an oscillator one</td></tr>
-            <tr><td>Data-dependent jitter</td><td>Enumerate the patterns</td><td>Deterministic; fixed by equalisation, not by a better clock</td></tr>
-            <tr><td>Jitter transfer</td><td>Low-pass, corner at the loop bandwidth</td><td>Tracked jitter is harmless</td></tr>
-            <tr><td>Jitter tolerance</td><td>budget $/\,|1-H(f)|$</td><td>Rises as $f^{-2}$ below the loop bandwidth</td></tr>
-            <tr><td>Extrapolation</td><td>&mdash;</td><td>Safe only if the tail really is a single Gaussian</td></tr>
+            <tr><td>Dual-Dirac total jitter</td><td>$\mathrm{DJ}(\delta\delta)+2Q\sigma$</td><td>A Gaussian approximation to the outer edges, displaced</td></tr>
+            <tr><td>DJ($\delta\delta$)</td><td>A fitting parameter</td><td>Always measurable; not a property of the signal alone</td></tr>
+            <tr><td>DJ(p&ndash;p)</td><td>The real peak-to-peak spread</td><td>Larger; measurable only in special cases</td></tr>
+            <tr><td>The inequality</td><td>$\mathrm{DJ}(\delta\delta)\le\mathrm{DJ(p\text{-}p)}$</td><td>The commonest confusion in the field</td></tr>
+            <tr><td>Q-scale</td><td>$Q$ on the vertical axis</td><td>A Gaussian tail is a straight line; curvature is evidence</td></tr>
+            <tr><td>Fitted $\sigma$</td><td>Absorbs smooth deterministic width</td><td>Inflated whenever DJ resembles a Gaussian</td></tr>
+            <tr><td>The five assumptions</td><td>Separable, Gaussian, bounded, two impulses, stationary</td><td>The last is routinely false</td></tr>
+            <tr><td>Extrapolation</td><td>Safe only if the tail really is one Gaussian</td><td>A rare wide component is invisible where it is measured</td></tr>
         </tbody>
     </table>
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#c084fc',teal:'#34d399',
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#a855f7',teal:'#34d399',
          cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
@@ -362,30 +341,57 @@ function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginP
   ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
   if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
   if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
-function fmtHz(f){return f>=1e9?(f/1e9).toFixed(1)+'G':f>=1e6?(f/1e6).toFixed(0)+'M':
-  f>=1e3?(f/1e3).toFixed(0)+'k':f.toFixed(0);}
 
-/* ---- 02 Q ---- */
+/* ---- 02 assumptions ---- */
 (function(){
-  const el=document.getElementById('q-metrics'); if(!el||!SI.q)return;
-  let html='';
-  ['1e-06','1e-09','1e-12','1e-15'].forEach(function(k){
-    const v=SI.q[k]; if(v===undefined)return;
-    html+=metric('Q for '+k.replace('1e-','10⁻'),v.toFixed(3));});
-  el.innerHTML=html;
+  const t=document.getElementById('as-table'); if(!t||!SI.assumptions)return;
+  const notes=['a convention, not a finding — but the one that makes low-statistics estimation possible',
+    'a convention; if the random part is not Gaussian the whole model collapses',
+    'sound, and the definition of deterministic',
+    'a deliberate simplification — real deterministic jitter is never two impulses',
+    'routinely false: rails droop, clocks are modulated, temperatures drift, links retrain'];
+  let html='<thead><tr><th>#</th><th>Assumption</th><th>How safe</th></tr></thead><tbody>';
+  SI.assumptions.forEach(function(a,i){
+    html+='<tr><td>'+(i+1)+'</td><td>'+a+'</td><td>'+(notes[i]||'')+'</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
 })();
 
-/* ---- 03 dual dirac ---- */
+/* ---- 03 Q scale ---- */
 (function(){
-  const t=document.getElementById('dd-table'); if(!t||!SI.dual_dirac)return;
-  let html='<thead><tr><th>Random, rms</th><th>Deterministic, pk-pk</th>'+
-    '<th>Random contribution at $10^{-12}$</th><th>Total jitter</th>'+
-    '<th>Share of a 35.7 ps UI</th></tr></thead><tbody>';
-  SI.dual_dirac.forEach(function(r){
-    html+='<tr><td>'+r.rj_rms_ps.toFixed(2)+' ps</td><td>'+r.dj_pp_ps.toFixed(1)+
-      ' ps</td><td>'+r.rj_part_ps.toFixed(2)+' ps</td><td>'+r.tj_pp_ps.toFixed(2)+
-      ' ps</td><td>'+(100*r.tj_pp_ps/35.7).toFixed(1)+' %</td></tr>';});
-  html+='</tbody>'; t.innerHTML=html;
+  const H=hidpi('qs-plot'); if(!H||!SI.qscale)return;
+  const d=SI.qscale; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:54,r:16,t:20,b:40};
+  const t=d.t_ui, q=d.q;
+  if(!t||!t.length){label(ctx,'no data',w/2,h/2,C.dim,12,'center');return;}
+  let x0=Math.min.apply(null,t), x1=Math.max.apply(null,t);
+  const X=v=>p.l+(v-x0)/(x1-x0)*(w-p.l-p.r);
+  const qm=Math.max.apply(null,q)*1.08;
+  const Y=v=>h-p.b-v/qm*(h-p.t-p.b);
+  axes(ctx,w,h,p,'sampling position, unit intervals','Q');
+  for(let v=0;v<=qm;v+=1){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v.toFixed(0),p.l-6,Y(v)+3,C.dim,9,'right');}
+  // least-squares line over the measurable band, as an instrument would fit
+  const lo=q.map(function(v,i){return v;}).findIndex(function(v){return v>=4.75;});
+  const hi=q.findIndex(function(v){return v>=6.0;});
+  const a=Math.max(lo,0), b=hi>a?hi:q.length-1;
+  let sx=0,sy=0,sxx=0,sxy=0,n=0;
+  for(let i=a;i<=b;i++){sx+=q[i];sy+=t[i];sxx+=q[i]*q[i];sxy+=q[i]*t[i];n++;}
+  const m=(n*sxy-sx*sy)/(n*sxx-sx*sx||1), c0=(sy-m*sx)/(n||1);
+  ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.lineWidth=1.4;ctx.beginPath();
+  for(let v=0;v<=qm;v+=0.2){const px=X(m*v+c0),py=Y(v);
+    v?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+  ctx.stroke();dashed(ctx,false);
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+  t.forEach(function(v,i){const px=X(v),py=Y(q[i]);i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  for(let g=x0;g<=x1;g+=(x1-x0)/6){label(ctx,g.toFixed(2),X(g),h-p.b+14,C.dim,9,'center');}
+  document.getElementById('qs-note').textContent=
+    'The measured flank on a Q scale, with the straight line an instrument would fit to '+
+    'it between Q of about 4.75 and 6 — error ratios of 10⁻⁶ to '+
+    '10⁻⁹. Where the curve departs from the line is where the real '+
+    'distribution stops being a displaced Gaussian, and everything the model says about '+
+    'the region beyond the fit rests on that departure staying small.';
 })();
 
 /* ---- 04 bathtub ---- */
@@ -397,7 +403,7 @@ function fmtHz(f){return f>=1e9?(f/1e9).toFixed(1)+'G':f>=1e6?(f/1e6).toFixed(0)
   function draw(key){
     const d=SI.bathtubs[key]; const {ctx,w,h}=H; clear(ctx,w,h);
     const p={l:56,r:16,t:20,b:40};
-    const UI=d.ui_ps||35.7;
+    const UI=d.ui_ps||35.71;
     const X=t=>p.l+t/UI*(w-p.l-p.r);
     const LO=-18,HI=0, Y=v=>h-p.b-(v-LO)/(HI-LO)*(h-p.t-p.b);
     axes(ctx,w,h,p,'sampling position, ps','error ratio');
@@ -415,7 +421,7 @@ function fmtHz(f){return f>=1e9?(f/1e9).toFixed(1)+'G':f>=1e6?(f/1e6).toFixed(0)
       st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
     ctx.stroke();
     document.getElementById('bt-metrics').innerHTML=
-      metric('opening at $10^{-12}$',d.opening_ps.toFixed(2)+' ps')+
+      metric('opening at 1e-12',d.opening_ps.toFixed(2)+' ps')+
       metric('as a fraction of UI',(100*d.opening_ui).toFixed(1)+' %')+
       metric('closed by jitter',(UI-d.opening_ps).toFixed(2)+' ps');
   }
@@ -423,16 +429,101 @@ function fmtHz(f){return f>=1e9?(f/1e9).toFixed(1)+'G':f>=1e6?(f/1e6).toFixed(0)
   draw(Object.keys(SI.bathtubs)[0]);
 })();
 
-/* ---- 05 extrapolation ---- */
+/* ---- 06 dual-Dirac vs true ---- */
+(function(){
+  const rows=SI.dd_vs_true||[];
+  const t=document.getElementById('dd-table'); const sel=document.getElementById('dd-sel');
+  if(!t||!rows.length){ if(t) t.innerHTML='<tbody><tr><td>not computed</td></tr></tbody>'; return; }
+  rows.forEach(function(r,i){const o=document.createElement('option');
+    o.value=i;o.textContent=(r.rj_true_ui*(r.ui_ps||35.71)).toFixed(2)+' ps rms';
+    sel.appendChild(o);});
+  let html='<thead><tr><th>RJ present</th><th>RJ the fit reports</th>'+
+    '<th>DJ($\\delta\\delta$)</th><th>DJ(p&ndash;p), the truth</th>'+
+    '<th>ratio</th><th>TJ error at 1e-12</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    html+='<tr><td>'+r.rj_true_ui.toFixed(4)+' UI</td><td>'+r.rj_fitted_ui.toFixed(4)+
+      ' UI  (&times;'+r.rj_inflation.toFixed(2)+')</td><td>'+r.dj_dd_ui.toFixed(4)+
+      ' UI</td><td>'+r.dj_pp_ui.toFixed(4)+' UI</td><td class="bad">'+
+      r.dj_ratio.toFixed(2)+'</td><td>'+(r.tj_err_pct>=0?'+':'')+
+      r.tj_err_pct.toFixed(1)+' %</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  function pick(i){
+    const r=rows[i];
+    document.getElementById('dd-metrics').innerHTML=
+      metric('DJ the model reports',r.dj_dd_ui.toFixed(4)+' UI')+
+      metric('DJ actually present',r.dj_pp_ui.toFixed(4)+' UI')+
+      metric('the model is smaller by',(100*(1-r.dj_ratio)).toFixed(0)+' %')+
+      metric('RJ inflated by','×'+r.rj_inflation.toFixed(2));
+    const v=document.getElementById('dd-verdict');
+    v.className='verdict bad';
+    v.textContent='the fitted deterministic jitter is '+(100*(1-r.dj_ratio)).toFixed(0)+
+      ' per cent below the real peak-to-peak spread, and the fitted random jitter is '+
+      r.rj_inflation.toFixed(2)+' times the random jitter actually present';
+  }
+  sel.addEventListener('input',function(){pick(+sel.value);});
+  pick(0);
+  const worst=rows.reduce(function(a,b){return a.dj_ratio<b.dj_ratio?a:b;});
+  document.getElementById('dd-note').textContent=
+    'Across the range of random jitter a real receiver might see, the model’s '+
+    'deterministic jitter comes out between '+
+    (100*(1-rows[0].dj_ratio)).toFixed(0)+' and '+(100*(1-worst.dj_ratio)).toFixed(0)+
+    ' per cent below the true peak-to-peak spread of '+worst.dj_pp_ui.toFixed(3)+
+    ' UI, and the fitted random jitter between '+
+    rows[rows.length-1].rj_inflation.toFixed(2)+' and '+
+    rows[0].rj_inflation.toFixed(2)+' times too large. Neither is a mistake in the '+
+    'fitting; both are what the model is defined to do. The mistake would be reading '+
+    'either number as the physical quantity it is named after.';
+})();
+
+/* ---- 07 contamination ---- */
+(function(){
+  const H=hidpi('ct-plot'); if(!H||!SI.contamination)return;
+  const rows=SI.contamination.filter(function(r){return r.ok;});
+  const {ctx,w,h}=H; clear(ctx,w,h);
+  if(!rows.length){label(ctx,'not computed',w/2,h/2,C.dim,12,'center');return;}
+  const p={l:60,r:16,t:22,b:46};
+  const X=i=>p.l+(i+0.5)/rows.length*(w-p.l-p.r);
+  let ym=0; rows.forEach(function(r){ym=Math.max(ym,r.rj_fitted_ui);}); ym*=1.25;
+  const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+  axes(ctx,w,h,p,'shape of the deterministic distribution','random jitter, UI rms');
+  for(let i=0;i<=4;i++){const v=ym*i/4;ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v.toFixed(3),p.l-6,Y(v)+3,C.dim,9,'right');}
+  const truth=rows[0].rj_true_ui;
+  ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.beginPath();
+  ctx.moveTo(p.l,Y(truth));ctx.lineTo(w-p.r,Y(truth));ctx.stroke();dashed(ctx,false);
+  label(ctx,'truly present: '+truth.toFixed(3)+' UI',w-p.r-4,Y(truth)-6,C.dim,9,'right');
+  const bw=(w-p.l-p.r)/rows.length*0.45;
+  rows.forEach(function(r,i){
+    ctx.fillStyle=C.accent; ctx.fillRect(X(i)-bw/2,Y(r.rj_fitted_ui),bw,h-p.b-Y(r.rj_fitted_ui));
+    label(ctx,r.dj_shape.replace(/_/g,' '),X(i),h-p.b+16,C.dim,9,'center');
+    label(ctx,'×'+r.rj_inflation.toFixed(2),X(i),Y(r.rj_fitted_ui)-6,C.text,10,'center');});
+  let html='';
+  rows.forEach(function(r){html+=metric(r.dj_shape.replace(/_/g,' '),
+    r.rj_fitted_ui.toFixed(4)+' UI');});
+  document.getElementById('ct-metrics').innerHTML=html;
+  const a=rows[0], z=rows[rows.length-1];
+  document.getElementById('ct-note').textContent=
+    'All three cases contain exactly the same '+truth.toFixed(3)+
+    ' UI of genuine random jitter and the same peak-to-peak deterministic spread; only '+
+    'the shape of the deterministic distribution differs. When it really is two impulses '+
+    'the fit recovers the truth to '+((a.rj_inflation-1)*100).toFixed(0)+
+    ' per cent. When it is smooth and bell-shaped — which is what a sum of many '+
+    'small independent deterministic effects looks like — the fit reports '+
+    z.rj_inflation.toFixed(2)+' times too much, and that error is then multiplied by '+
+    'fourteen on its way to the total.';
+})();
+
+/* ---- 08 extrapolation ---- */
 (function(){
   const t=document.getElementById('ex-table'); if(!t||!SI.extrapolation)return;
-  let html='<thead><tr><th>Hidden second Gaussian</th><th>Random jitter the fit reports</th>'+
-    '<th>Opening the fit predicts</th><th>Opening there actually is</th>'+
+  let html='<thead><tr><th>Hidden second Gaussian</th><th>RJ the fit reports</th>'+
+    '<th>Opening it predicts</th><th>Opening there really is</th>'+
     '<th>Overstated by</th></tr></thead><tbody>';
   SI.extrapolation.forEach(function(r){
     const lab=(!r.weight)?'none':'weight '+r.weight.toExponential(0)+', σ '+
       r.rj2_true_ps.toFixed(1)+' ps';
-    const over=r.true_eye_closed?'<span class="bad">eye is closed</span>':
+    const over=r.true_eye_closed?'<span class="bad">the eye is closed</span>':
       '<span class="'+(r.ratio_predicted_to_true>1.2?'bad':'ok')+'">×'+
       r.ratio_predicted_to_true.toFixed(1)+'</span>';
     html+='<tr><td>'+lab+'</td><td>'+r.rj_fitted_ps.toFixed(3)+' ps</td><td>'+
@@ -441,140 +532,17 @@ function fmtHz(f){return f>=1e9?(f/1e9).toFixed(1)+'G':f>=1e6?(f/1e6).toFixed(0)
       '</td></tr>';});
   html+='</tbody>'; t.innerHTML=html;
   const rows=SI.extrapolation;
-  const r0=rows[0], rk=rows.filter(function(r){return r.ratio_predicted_to_true&&
+  const rk=rows.filter(function(r){return r.ratio_predicted_to_true&&
     r.ratio_predicted_to_true>2;})[0];
   if(rk)document.getElementById('ex-note').textContent=
-    'The fitted random jitter is '+r0.rj_fitted_ps.toFixed(3)+' ps with no second '+
-    'component and '+rk.rj_fitted_ps.toFixed(3)+' ps with one — identical to three '+
-    'decimal places, because at an error ratio of '+
-    r0.ber_meas.toExponential(0)+' the second component contributes nothing the '+
-    'instrument can see. The extrapolation predicts '+
-    rk.opening_predicted_ps.toFixed(2)+' ps of eye and the true opening at '+
-    rk.ber_target.toExponential(0)+' is '+rk.opening_true_ps.toFixed(2)+
-    ' ps, overstating it by a factor of '+rk.ratio_predicted_to_true.toFixed(1)+
-    '. Nothing in the measurement distinguishes the two cases.';
-})();
-
-/* ---- 06 phase noise ---- */
-(function(){
-  const H=hidpi('pn-plot'); if(!H||!SI.phase_noise)return;
-  const d=SI.phase_noise; const {ctx,w,h}=H; clear(ctx,w,h);
-  const p={l:58,r:16,t:20,b:40};
-  const FLO=1e3,FHI=1e9;
-  const X=f=>p.l+(Math.log10(f)-Math.log10(FLO))/(Math.log10(FHI)-Math.log10(FLO))*(w-p.l-p.r);
-  const LLO=-165,LHI=-70, Y=v=>h-p.b-(v-LLO)/(LHI-LLO)*(h-p.t-p.b);
-  axes(ctx,w,h,p,'offset from the carrier','phase noise, dBc/Hz');
-  for(let v=LLO;v<=LHI;v+=20){ctx.strokeStyle=C.grid;ctx.beginPath();
-    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
-    label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');}
-  [1e3,1e4,1e5,1e6,1e7,1e8,1e9].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
-    ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
-    label(ctx,fmtHz(g),X(g),h-p.b+14,C.dim,9,'center');});
-  ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();let st=false;
-  d.f_hz.forEach(function(f,i){const px=X(f),py=Y(Math.max(LLO,Math.min(LHI,d.l_dbc[i])));
-    st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
-  ctx.stroke();
-  const t=document.getElementById('pn-table');
-  let html='<thead><tr><th>Integration band</th><th>From</th><th>To</th>'+
-    '<th>Random jitter, rms</th></tr></thead><tbody>';
-  d.rows.forEach(function(r){
-    html+='<tr><td>'+r.band+'</td><td>'+fmtHz(r.f_lo)+'Hz</td><td>'+fmtHz(r.f_hi)+
-      'Hz</td><td>'+r.jitter_rms_fs.toFixed(1)+' fs</td></tr>';});
-  html+='</tbody>'; t.innerHTML=html;
-  const a=d.rows[0], z=d.rows[d.rows.length-1];
-  document.getElementById('pn-note').textContent=
-    'The same oscillator on a '+(d.f_carrier/1e9).toFixed(0)+
-    ' GHz carrier yields anything from '+z.jitter_rms_fs.toFixed(0)+' to '+
-    a.jitter_rms_fs.toFixed(0)+' femtoseconds depending only on where the integral '+
-    'starts — a factor of '+(a.jitter_rms_fs/z.jitter_rms_fs).toFixed(0)+
-    '. A jitter specification without its integration band does not constrain anything.';
-})();
-
-/* ---- 07 DDJ ---- */
-(function(){
-  const el=document.getElementById('ddj-metrics'); if(!el||!SI.ddj)return;
-  const d=SI.ddj;
-  if(!d.ok){el.innerHTML=metric('data-dependent jitter','not computed');return;}
-  el.innerHTML=metric('patterns enumerated',d.n_patterns)+
-    metric('spread of crossings',(d.spread_ui*35.71).toFixed(2)+' ps')+
-    metric('as a fraction of UI',(100*d.spread_ui).toFixed(1)+' %')+
-    metric('standard deviation',(d.std_ui*35.71).toFixed(2)+' ps');
-  document.getElementById('ddj-note').textContent=
-    'Enumerating all '+d.n_patterns+' histories of the preceding six bits on the '+
-    'unequalised backplane channel spreads the zero crossing over '+
-    (d.spread_ui*35.71).toFixed(1)+' picoseconds, which is '+
-    (100*d.spread_ui).toFixed(0)+' per cent of the unit interval. That single term '+
-    'dwarfs every random contribution on the previous slide — and unlike them it '+
-    'is entirely removed by the equaliser rather than by a better clock.';
-})();
-
-/* ---- 08 CDR ---- */
-(function(){
-  const H=hidpi('cd-plot'); if(!H||!SI.cdr)return;
-  const d=SI.cdr; const {ctx,w,h}=H; clear(ctx,w,h);
-  const p={l:56,r:16,t:20,b:40};
-  const FLO=1e3,FHI=1e9;
-  const X=f=>p.l+(Math.log10(f)-Math.log10(FLO))/(Math.log10(FHI)-Math.log10(FLO))*(w-p.l-p.r);
-  const LO=-45,HI=8, Y=v=>h-p.b-(v-LO)/(HI-LO)*(h-p.t-p.b);
-  axes(ctx,w,h,p,'jitter frequency','response, dB');
-  for(let v=LO;v<=HI;v+=10){ctx.strokeStyle=C.grid;ctx.beginPath();
-    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
-    label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');}
-  [1e3,1e4,1e5,1e6,1e7,1e8,1e9].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
-    ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
-    label(ctx,fmtHz(g),X(g),h-p.b+14,C.dim,9,'center');});
-  ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
-  ctx.moveTo(X(4e6),p.t);ctx.lineTo(X(4e6),h-p.b);ctx.stroke();dashed(ctx,false);
-  function ser(arr,col){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();let st=false;
-    d.f_hz.forEach(function(f,i){const px=X(f),py=Y(Math.max(LO,Math.min(HI,arr[i])));
-      st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
-    ctx.stroke();}
-  ser(d.transfer_db,C.teal); ser(d.error_db,C.pink);
-})();
-
-/* ---- 09 JTOL ---- */
-(function(){
-  const H=hidpi('jt-plot'); if(!H||!SI.jtol_bw)return;
-  const sel=document.getElementById('jt-bw');
-  Object.keys(SI.jtol_bw).forEach(function(k){const o=document.createElement('option');
-    o.value=k;o.textContent=k;sel.appendChild(o);});
-  function draw(key){
-    const d=SI.jtol_bw[key]; const {ctx,w,h}=H; clear(ctx,w,h);
-    const p={l:56,r:16,t:20,b:40};
-    const FLO=1e3,FHI=1e9;
-    const X=f=>p.l+(Math.log10(f)-Math.log10(FLO))/(Math.log10(FHI)-Math.log10(FLO))*(w-p.l-p.r);
-    const LO=-1.2,HI=1.3, Y=v=>h-p.b-(Math.log10(Math.max(v,0.05))-LO)/(HI-LO)*(h-p.t-p.b);
-    axes(ctx,w,h,p,'jitter frequency','tolerance, UI peak to peak');
-    [0.1,0.3,1,3,10].forEach(function(v){ctx.strokeStyle=C.grid;ctx.beginPath();
-      ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
-      label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');});
-    [1e3,1e4,1e5,1e6,1e7,1e8,1e9].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
-      ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
-      label(ctx,fmtHz(g),X(g),h-p.b+14,C.dim,9,'center');});
-    const bw=parseFloat(key)*1e6;
-    ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
-    ctx.moveTo(X(bw),p.t);ctx.lineTo(X(bw),h-p.b);ctx.stroke();dashed(ctx,false);
-    ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();let st=false;
-    d.f_hz.forEach(function(f,i){const px=X(f),py=Y(d.tol_ui[i]);
-      st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
-    ctx.stroke();
-    function at(g){let b=0;d.f_hz.forEach(function(f,i){
-      if(Math.abs(Math.log10(f/g))<Math.abs(Math.log10(d.f_hz[b]/g)))b=i;});
-      return d.tol_ui[b];}
-    document.getElementById('jt-metrics').innerHTML=
-      metric('loop bandwidth',key)+
-      metric('tolerance at 100 kHz',at(1e5).toFixed(2)+' UI')+
-      metric('at 1 MHz',at(1e6).toFixed(2)+' UI')+
-      metric('at 100 MHz',at(1e8).toFixed(3)+' UI');
-    document.getElementById('jt-note').textContent=
-      'With a '+key+' loop the receiver survives '+at(1e5).toFixed(1)+
-      ' unit intervals of jitter at 100 kHz and only '+at(1e8).toFixed(2)+
-      ' at 100 MHz. Widening the loop moves the whole mask left, buying tolerance to '+
-      'fast jitter and giving up the filtering that keeps the recovered clock clean '+
-      '— which is why the loop bandwidth is specified by the standard rather than '+
-      'left to the implementer.';
-  }
-  sel.addEventListener('input',function(){draw(sel.value);});
-  draw(Object.keys(SI.jtol_bw)[1]||Object.keys(SI.jtol_bw)[0]);
+    'The fitted random jitter is '+rows[0].rj_fitted_ps.toFixed(3)+
+    ' ps with no second component and '+rk.rj_fitted_ps.toFixed(3)+
+    ' ps with one — identical to three decimal places, because at an error ratio of '+
+    rk.ber_meas.toExponential(0)+' the rare component contributes nothing an instrument '+
+    'can see. The extrapolation then predicts '+rk.opening_predicted_ps.toFixed(2)+
+    ' ps of eye where the truth at '+rk.ber_target.toExponential(0)+' is '+
+    rk.opening_true_ps.toFixed(2)+' ps, overstating it by a factor of '+
+    rk.ratio_predicted_to_true.toFixed(1)+'. No amount of care in the fitting would have '+
+    'revealed it; the information is simply not in the measurement.';
 })();
 </script>

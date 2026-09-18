@@ -23,6 +23,28 @@ STYLE = open(os.path.join(HERE, "_house_style.css.html"), encoding="utf-8").read
 GH = "https://github.com/BrendanJamesLynskey/Signal_Integrity"
 PAGES = "https://brendanjameslynskey.github.io/Signal_Integrity"
 
+SECTIONS = [
+    ("The passive channel", 1, 4,
+     "What a transmission line is, where the return current flows, what the "
+     "materials do to the signal, and what happens at the one feature made by "
+     "drilling."),
+    ("The signal on it", 5, 6,
+     "Why every fast link is differential, and the one impairment no equaliser "
+     "can remove."),
+    ("Jitter", 7, 10,
+     "Organised around Ransom Stephens's five rules: it is about the bit error "
+     "ratio, total jitter can only be measured on a bit error ratio tester, "
+     "measurement is always a comparison against a reference clock, and timing "
+     "noise and amplitude noise are not really separable."),
+    ("Power integrity", 11, 14,
+     "The power delivery network as an impedance, as an ecology of resonances, "
+     "as something that has to be measured in milliohms, and finally as a "
+     "source of signal-integrity failures."),
+    ("The verdict", 15, 17,
+     "Whether the timing closes, whether the measurements can be believed, and "
+     "how a standard turns all of it into a pass or a fail."),
+]
+
 DECKS = [
     dict(n=1, slug="01-transmission-lines", body="deck_si_01_body.html",
          data="deck01", accent="#22d3ee",
@@ -60,37 +82,91 @@ DECKS = [
          short="Crosstalk",
          blurb="The impairment no equaliser can remove, and the one place "
                "near-end and far-end coupling genuinely differ."),
-    dict(n=7, slug="07-power-integrity", body="deck_si_07_body.html",
-         data="deck07", accent="#60a5fa",
-         title="Power Integrity as a Signal-Integrity Problem",
-         short="Power integrity",
-         blurb="How a disturbance on the supply becomes an error at the "
-               "receiver, and why more capacitors can make it worse."),
-    dict(n=8, slug="08-jitter", body="deck_si_08_body.html",
-         data="deck08", accent="#c084fc",
-         title="Jitter",
-         short="Jitter",
-         blurb="Bounded and unbounded, measured and extrapolated, and the "
-               "bathtub curve that flatters a link it should not."),
-    dict(n=9, slug="09-timing-and-budgets", body="deck_si_09_body.html",
-         data="deck09", accent="#2dd4bf",
+    dict(n=7, slug="07-total-jitter", body="deck_si_07_body.html",
+         data="deck07", accent="#c084fc",
+         title="Total Jitter and the Bit Error Ratio",
+         short="Total jitter",
+         blurb="Why jitter is defined against an error ratio, what a bit "
+               "error ratio tester does that nothing else can, and the "
+               "decomposition tree done properly."),
+    dict(n=8, slug="08-dual-dirac", body="deck_si_08_body.html",
+         data="deck08", accent="#a855f7",
+         title="The Dual-Dirac Model and Its Limits",
+         short="Dual-Dirac",
+         blurb="Five assumptions, a fitting parameter that is not the "
+               "peak-to-peak deterministic jitter, and the tails a "
+               "measurement cannot reach."),
+    dict(n=9, slug="09-clock-recovery", body="deck_si_09_body.html",
+         data="deck09", accent="#8b5cf6",
+         title="Clock Recovery, the Reference Clock and Tolerance",
+         short="Clock recovery",
+         blurb="Every jitter measurement compares a test clock against a "
+               "reference. Which reference, how much it tracks, and what the "
+               "tolerance mask is really testing."),
+    dict(n=10, slug="10-amplitude-noise", body="deck_si_10_body.html",
+         data="deck10", accent="#d946ef",
+         title="Crosstalk, Amplitude Noise and the Two-Dimensional View",
+         short="Amplitude noise",
+         blurb="Timing noise and amplitude noise are not separable, the "
+               "separation fails above about ten gigabits per second, and "
+               "crosstalk is where it fails first."),
+    dict(n=11, slug="11-pdn-impedance", body="deck_si_11_body.html",
+         data="deck11", accent="#60a5fa",
+         title="The Power Delivery Network as an Impedance",
+         short="PDN impedance",
+         blurb="Target impedance and what the rule is worth, real capacitors, "
+               "and why the number of parts is set by inductance rather than "
+               "by capacitance."),
+    dict(n=12, slug="12-planes-and-ecology", body="deck_si_12_body.html",
+         data="deck12", accent="#3b82f6",
+         title="Planes, Cavities and the PDN Ecology",
+         short="Planes and ecology",
+         blurb="Spreading inductance, cavity resonances, and the Bandini "
+               "Mountain \u2014 the peak the board cannot reach because it is "
+               "behind the package."),
+    dict(n=13, slug="13-measuring-low-impedance", body="deck_si_13_body.html",
+         data="deck13", accent="#0ea5e9",
+         title="Measuring Low Impedance",
+         short="Measuring milliohms",
+         blurb="Why a reflection measurement stops at about an ohm, how the "
+               "two-port shunt-through method reaches a milliohm, and the "
+               "ground loop that ruins it."),
+    dict(n=14, slug="14-pi-meets-si", body="deck_si_14_body.html",
+         data="deck14", accent="#38bdf8",
+         title="Power Integrity Meets Signal Integrity",
+         short="PI meets SI",
+         blurb="The routes by which a disturbance on the supply becomes an "
+               "error at a receiver \u2014 switching noise, cavity coupling, "
+               "and supply-induced jitter."),
+    dict(n=15, slug="15-timing-and-budgets", body="deck_si_15_body.html",
+         data="deck15", accent="#2dd4bf",
          title="Timing, Flight Time and the Budget",
          short="Timing budgets",
          blurb="Flight time is not propagation delay, and the arithmetic "
                "that ended the wide parallel bus."),
-    dict(n=10, slug="10-measurement-and-correlation",
-         body="deck_si_10_body.html", data="deck10", accent="#fb923c",
+    dict(n=16, slug="16-measurement-and-correlation",
+         body="deck_si_16_body.html", data="deck16", accent="#fb923c",
          title="Measurement, De-embedding and Correlation",
          short="Measurement",
          blurb="Where S-parameters come from, how they are damaged, and "
                "what correlation honestly means."),
-    dict(n=11, slug="11-com-and-compliance", body="deck_si_11_body.html",
-         data="deck11", accent="#4ade80",
+    dict(n=17, slug="17-com-and-compliance", body="deck_si_17_body.html",
+         data="deck17", accent="#4ade80",
          title="Channel Operating Margin and Compliance",
          short="COM and compliance",
          blurb="How a standard decides a channel is legal, run on the same "
                "channel the equalisation deck could not close."),
 ]
+
+# Paths the series used before the jitter and power-integrity sections were
+# added. They are kept as redirects so that published links do not rot.
+REDIRECTS = {
+    "07-power-integrity": "11-pdn-impedance",
+    "08-jitter": "07-total-jitter",
+    "09-timing-and-budgets": "15-timing-and-budgets",
+    "10-measurement-and-correlation": "16-measurement-and-correlation",
+    "11-com-and-compliance": "17-com-and-compliance",
+}
 
 EXTRA_CSS = """
         .legend{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;margin-top:.6rem;font-family:var(--font-mono);font-size:.72rem;color:var(--text-secondary)}
@@ -198,6 +274,41 @@ def build_deck(d, quiet=False):
     return n
 
 
+REDIRECT_HTML = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="0; url=../__TARGET__/">
+<link rel="canonical" href="__PAGES__/__TARGET__/">
+<title>Moved &mdash; Signal Integrity &amp; High-Speed Digital Design</title>
+<style>body{background:#0a0a0a;color:#e6edf3;font-family:system-ui,sans-serif;
+max-width:38rem;margin:18vh auto;padding:0 1.5rem;line-height:1.7}
+a{color:#22d3ee}</style>
+</head>
+<body>
+<h1>This deck has moved</h1>
+<p>The series grew a jitter section and a power-integrity section, so the decks
+after the sixth were renumbered. This page now lives at
+<a href="../__TARGET__/">__TARGET__</a>, and you should be sent there
+automatically.</p>
+<p><a href="../">Back to the series</a></p>
+</body>
+</html>
+'''
+
+
+def build_redirects():
+    n = 0
+    for old, new in REDIRECTS.items():
+        out = os.path.join(REPO, old, 'index.html')
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        with open(out, 'w', encoding='utf-8') as fh:
+            fh.write(REDIRECT_HTML.replace('__TARGET__', new)
+                                  .replace('__PAGES__', PAGES))
+        n += 1
+    print('  %-34s %d redirect stubs for the old paths' % ('(moved)', n))
+
+
 def build_all():
     print('building Signal_Integrity')
     total = 0
@@ -208,6 +319,7 @@ def build_all():
         else:
             total += n
     print('  %d slides across %d decks' % (total, len(DECKS)))
+    build_redirects()
     build_landing()
 
 
@@ -263,8 +375,13 @@ LANDING_HEAD = """<!DOCTYPE html>
            font-size:0.72rem; font-weight:700; font-family:'JetBrains Mono',monospace; }
   .badge-complete { background:rgba(16,185,129,.12); color:var(--green);
                     border:1px solid rgba(16,185,129,.25); }
-  .section-title { font-family:'Playfair Display',serif; font-size:1.3rem; color:#fafafa;
-                   margin:2.5rem 0 0.9rem; }
+  .section-title { font-family:'Playfair Display',serif; font-size:1.45rem; color:#fafafa;
+                   margin:2.6rem 0 0.35rem; display:flex; align-items:baseline;
+                   gap:0.8rem; flex-wrap:wrap; }
+  .section-title .secrange { font-family:'JetBrains Mono',monospace; font-size:0.72rem;
+                   color:var(--accent); letter-spacing:0.12em; text-transform:uppercase;
+                   font-weight:700; }
+  .secintro { color:var(--dim); font-size:0.88rem; margin:0 0 1rem; max-width:62ch; }
   .panel { background:var(--surface); border:1px solid var(--border); border-radius:10px;
            padding:1.25rem 1.5rem; font-size:0.9rem; color:var(--text2); }
   .panel ul { margin:0.5rem 0 0 1.1rem; }
@@ -308,26 +425,33 @@ def build_landing():
   <div class="icon">⬡</div>
   <div class="subtitle">Computed, interactive, verified</div>
   <h1>Signal Integrity &amp; High-Speed Digital Design</h1>
-  <p>Eleven decks on getting a signal from one chip to another intact &mdash; the physics
-  of the channel, the mechanisms that close an eye, and the arithmetic a standard uses to
-  decide a channel is legal.</p>
+  <p>Seventeen decks in five sections on getting a signal from one chip to another
+  intact &mdash; the physics of the channel, the mechanisms that close an eye, and the
+  arithmetic a standard uses to decide a channel is legal.</p>
   <p>Every number on every slide is computed by a model in
   <a href="https://github.com/BrendanJamesLynskey/Matrix_Articles">si_models</a> and
   embedded as data. Nothing is asserted by hand, and the models are checked against
   published worked examples wherever one exists.</p>
 </header>
 
-<div class="grid">
 """)
-    for d in DECKS:
-        out.append("""  <div class="card">
+    for title, lo, hi, intro in SECTIONS:
+        out.append('<h2 class="section-title">%s'
+                   '<span class="secrange">decks %02d&ndash;%02d</span></h2>\n'
+                   % (title, lo, hi))
+        out.append('<p class="secintro">%s</p>\n' % intro)
+        out.append('<div class="grid">\n')
+        for d in DECKS:
+            if not (lo <= d['n'] <= hi):
+                continue
+            out.append("""  <div class="card">
     <div class="num" style="color:%s">%02d</div>
     <div class="info"><h2>%s</h2><p>%s</p></div>
     <div class="action"><a class="btn btn-launch" href="%s/">Open</a>
       <span class="badge badge-complete">complete</span></div>
   </div>
 """ % (d['accent'], d['n'], d['title'], d['blurb'], d['slug']))
-    out.append("</div>\n")
+        out.append("</div>\n")
 
     # verification table
     if ver:
@@ -336,16 +460,22 @@ def build_landing():
             if not isinstance(v, dict) or 'err_pct' not in v:
                 continue
             rows.append((k, v))
+        rows.sort(key=lambda kv: (str(kv[1].get('source', '')).startswith('internal'), kv[0]))
         if rows:
-            worst = max(abs(v['err_pct']) for _, v in rows)
+            pub = [v for _, v in rows
+                   if not str(v.get('source', '')).startswith('internal')]
+            worst = max(abs(v['err_pct']) for v in pub) if pub else 0.0
             out.append("""
-<h2 class="section-title">What has been checked against published work</h2>
+<h2 class="section-title">What has been checked</h2>
 <div class="panel">
 <p>A model that agrees only with itself is not worth much. Every cross-check the series
 makes against an independently published result is listed here, with the disagreement.
+The last rows, marked <em>internal</em>, are not checks against anybody else: they are
+places where two different computations in the series have to agree with each other,
+and the quoted worst disagreement excludes them.
 The worst is %.2f&nbsp;per&nbsp;cent.</p>
 <table>
-<thead><tr><th>Quantity</th><th>This series</th><th>Published</th><th>Difference</th><th>Source</th></tr></thead>
+<thead><tr><th>Quantity</th><th>This series</th><th>Reference value</th><th>Difference</th><th>Source</th></tr></thead>
 <tbody>
 """ % worst)
             for k, v in rows:
@@ -377,10 +507,12 @@ is, where the return current flows, what the materials do to the signal, and wha
 at the one feature that is made by drilling.</li>
 <li><strong>Decks 05&ndash;06</strong> are about the signal on it &mdash; why it is
 differential, and the one impairment no equaliser can remove.</li>
-<li><strong>Decks 07&ndash;09</strong> are about the environment: the supply, the clock,
-and the timing budget the whole thing has to fit into.</li>
-<li><strong>Decks 10&ndash;11</strong> ask whether any of it can be believed, and how a
-standard turns it into a verdict.</li>
+<li><strong>Decks 07&ndash;10</strong> are about jitter &mdash; the quantity a serial
+link is finally judged on, and the one most often mis-stated.</li>
+<li><strong>Decks 11&ndash;14</strong> are about power integrity, ending with the four
+routes by which a disturbance on a rail reaches the eye.</li>
+<li><strong>Deck 15</strong> assembles a timing budget; <strong>decks 16&ndash;17</strong>
+ask whether any of it can be believed, and how a standard turns it into a verdict.</li>
 </ul>
 <p style="margin-top:0.8rem">Most decks are worked against one channel &mdash; the
 28.8&nbsp;inch backplane characterised in
@@ -397,17 +529,17 @@ numbers in another.</p>
 <tr><td><a href="https://brendanjameslynskey.github.io/SerDes_Equalisation/">Equalisation in High-Speed Serial Links</a></td><td>The worked channel this series keeps returning to, taken from S-parameters to a closed link budget</td></tr>
 <tr><td><a href="https://brendanjameslynskey.github.io/Matrix_Methods_Network_Parameters/">Matrix Methods in Network Parameters</a></td><td>The S-, Z- and Y-parameter algebra behind every cascade here</td></tr>
 <tr><td><a href="https://brendanjameslynskey.github.io/Matrix_Concepts_Digital_Filters/">Matrix Concepts in Digital Filters</a></td><td>The optimal-tap theory behind every equaliser</td></tr>
-<tr><td><a href="https://brendanjameslynskey.github.io/Kramers_Kronig_Relations/">Kramers&ndash;Kronig Relations</a></td><td>The causality constraint decks 03 and 10 both lean on</td></tr>
+<tr><td><a href="https://brendanjameslynskey.github.io/Kramers_Kronig_Relations/">Kramers&ndash;Kronig Relations</a></td><td>The causality constraint decks 03 and 16 both lean on</td></tr>
 <tr><td><a href="https://github.com/BrendanJamesLynskey/Interview_High_Speed_Serial_Links">High-Speed Serial Links &mdash; interview preparation</a></td><td>The written companion: notes and worked problems on the same ground</td></tr>
-<tr><td><a href="https://github.com/BrendanJamesLynskey/Interview_LPDDRx_Layout">LPDDRx Layout &mdash; interview preparation</a></td><td>The parallel-bus side of deck 09</td></tr>
-<tr><td><a href="https://github.com/BrendanJamesLynskey/SoC">Modern SoC Design</a></td><td>The silicon side: deck 04 on SerDes, 09 on power delivery, 13 on clocks</td></tr>
+<tr><td><a href="https://github.com/BrendanJamesLynskey/Interview_LPDDRx_Layout">LPDDRx Layout &mdash; interview preparation</a></td><td>The parallel-bus side of deck 15</td></tr>
+<tr><td><a href="https://github.com/BrendanJamesLynskey/SoC">Modern SoC Design</a></td><td>The silicon side: its deck 04 on SerDes, 09 on power delivery, 13 on clocks</td></tr>
 <tr><td><a href="https://github.com/BrendanJamesLynskey/Hardware">Hardware</a></td><td>The index this series sits in</td></tr>
 </tbody>
 </table>
 </div>
 
 <footer>
-  <p>__NSLIDES__ slides across eleven decks &middot; single-page HTML &middot;
+  <p>__NSLIDES__ slides across seventeen decks &middot; single-page HTML &middot;
   KaTeX-rendered maths &middot; no build step</p>
   <p style="margin-top:.5rem"><a href="https://github.com/BrendanJamesLynskey/Signal_Integrity">Source
   on GitHub</a> &middot; models in

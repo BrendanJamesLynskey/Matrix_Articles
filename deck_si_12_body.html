@@ -1,0 +1,640 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &mdash; Power Integrity, Deck 12 of 17</div>
+    <h1>Planes, Cavities and <span class="accent">the PDN Ecology</span></h1>
+    <p class="subtitle">A power delivery network is not a ladder of components but an
+    ecology, and its largest feature belongs to nobody: the antiresonance between the
+    die's own capacitance and the inductance of the package that connects it to
+    everything else.</p>
+
+    <div class="tags">
+        <span class="tag">spreading inductance</span><span class="tag">cavity modes</span>
+        <span class="tag">Bandini Mountain</span><span class="tag">on-die C</span>
+        <span class="tag">three droops</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">on-die C</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">package L</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">cavity</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">board C</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">regulator</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">The ecology, and who owns which decade</a></li>
+        <li><a href="#slide-02">Spreading inductance</a></li>
+        <li><a href="#slide-03">Interactive: impedance depends on where you probe</a></li>
+        <li><a href="#slide-04">The Bandini Mountain</a></li>
+        <li><a href="#slide-05">Interactive: damping it</a></li>
+        <li><a href="#slide-06">What moves it, and what does not</a></li>
+        <li><a href="#slide-07">Interactive: the droops, in the time domain</a></li>
+        <li><a href="#slide-08">The forcing function, the other way round</a></li>
+        <li><a href="#slide-09">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>The Ecology, and Who Owns Which Decade</h2>
+    <p>Deck 11 treated the network as a ladder of parallel branches, which is right as
+    far as it goes and stops being right above the first cavity resonance. The better
+    picture, and the one Smith and Bogatin insist on, is an ecology: a sequence of
+    elements each of which dominates a band, with the interesting behaviour living in the
+    handovers between them rather than in any one element.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="eco-table"></table>
+    </div>
+
+    <p>Read down the table and one thing stands out. Every handover is a place where a
+    capacitive branch meets an inductive one, and every such meeting is a parallel
+    resonance. The profile of a real network is therefore a series of peaks by
+    construction, and the design problem is choosing where they sit and how tall they are
+    rather than eliminating them.</p>
+
+    <div class="callout">
+        <div class="callout-label">The handover that cannot be designed away</div>
+        <p>One of them is different from the rest. The on-die capacitance and the package
+        inductance are on opposite sides of a boundary that the board cannot reach
+        across, so the peak between them is fixed by the die and the package alone. It is
+        usually the tallest feature in the profile and it is the subject of slides 04 to
+        06.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Spreading Inductance</h2>
+    <p>Between two points in a wide plane cavity, the inductance is not proportional to
+    the area of the planes. It depends on the logarithm of the separation divided by the
+    contact radius, scaled by the plate spacing:</p>
+
+    <p>$$L_{\text{spread}} \approx \frac{\mu_0 h}{2\pi}\ln\!\left(\frac{d}{r}\right).$$</p>
+
+    <p>Two consequences follow, and both are counter-intuitive enough to be worth stating
+    explicitly.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Thinner is better, in proportion</h4>
+            <p>Halving the dielectric between power and ground halves the inductance
+            directly. That is why the two planes are placed on adjacent layers and as
+            close together as the stackup allows &mdash; not for the capacitance, which
+            is a secondary benefit, but for the inductance.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Distance matters, but only logarithmically</h4>
+            <p>Moving a capacitor from twenty-five millimetres to one buys a factor of
+            two or three, not a factor of twenty-five. Getting a capacitor close is worth
+            doing and is not the dramatic lever it is often described as; shortening its
+            mounting loop, from deck 11, is the bigger one.</p>
+        </div>
+    </div>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="sp-table"></table>
+    </div>
+
+    <p class="note">The deeper consequence is on the next slide. If the inductance
+    between two points depends on where those points are, then the impedance of the
+    network is a property of a <em>pair</em> of locations, and "the PDN impedance" is not
+    a single number.</p>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Interactive: Impedance Depends on Where You Probe</h2>
+    <p>A plane pair is a resonant cavity, and each of its modes contributes in proportion
+    to the product of the mode shape evaluated at the two contact points. A probe sitting
+    on the node of a mode does not see that mode at all; one sitting on an antinode sees
+    it fully.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="pb-sel">contact points</label>
+            <select id="pb-sel" style="flex:1;min-width:210px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="pb-metrics"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="pb-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#3b82f6"></i>impedance between the chosen points</span>
+            <span><i style="background:#8b949e"></i>the other cases</span>
+        </div>
+    </div>
+
+    <p class="note" id="pb-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">What this does to a measurement</div>
+        <p>It means a power-plane impedance measurement is only meaningful with its probe
+        locations recorded, and that a measurement taken at a convenient test point can
+        differ substantially from what the load at the other end of the board
+        experiences. Deck 13 is about making such a measurement honestly; this slide is
+        about what it is a measurement <em>of</em>.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>The Bandini Mountain</h2>
+    <p>Seen from the die, the on-die decoupling capacitance sits in parallel with
+    everything beyond the package &mdash; and everything beyond the package is behind the
+    package's lead inductance. Those two resonate. Because the die capacitance is large
+    and the package inductance small, the resonance lands in the tens to hundreds of
+    megahertz, which is exactly where core logic switches.</p>
+
+    <p>The feature was named the Bandini Mountain by Steve Weir, after a fertiliser
+    company whose works were a well-known landmark on the approach to Los Angeles. The
+    joke is affectionate and the point is serious: it is usually the tallest thing in the
+    profile, and it is not on the board.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="bm-plot" width="780" height="310"></canvas>
+        <div class="legend">
+            <span><i style="background:#3b82f6"></i>impedance seen from the die</span>
+            <span><i style="background:#fbbf24"></i>the predicted resonance</span>
+            <span><i style="background:#f472b6"></i>its characteristic impedance</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="bm-metrics"></div>
+
+    <p class="note" id="bm-note"></p>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Interactive: Damping It</h2>
+    <p>The peak's height is set by how much resistance lies in the loop. Its
+    characteristic impedance, $\sqrt{L/C}$ of the resonating pair, is the natural scale:
+    with much less resistance than that the peak is tall and narrow, and with resistance
+    of that order it is barely a peak at all.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="bd-r">loop resistance</label>
+            <input type="range" id="bd-r" min="0" max="4" step="1" value="2">
+            <span class="val" id="bd-r-val"></span>
+        </div>
+        <div class="metric-grid" id="bd-metrics"></div>
+        <div id="bd-verdict" class="verdict ok"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="bd-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#3b82f6"></i>peak impedance</span>
+            <span><i style="background:#f472b6"></i>the characteristic impedance</span>
+        </div>
+    </div>
+
+    <p class="note" id="bd-note"></p>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>What Moves It, and What Does Not</h2>
+    <p>Because the resonance is between two elements neither of which is on the board,
+    the board's options are limited to damping. What genuinely moves it is silicon and
+    packaging.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="cd-table"></table>
+    </div>
+
+    <p>More on-die capacitance moves the peak down in frequency and lowers its
+    characteristic impedance, which lowers the peak too &mdash; a double benefit, and the
+    reason on-die decoupling capacitance is spent so freely despite costing area. Lower
+    package inductance does the same, which is one of the arguments for flip-chip over
+    wire bond and, further along, for putting regulation in the package.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel g">
+            <h4>Works</h4>
+            <p>More on-die capacitance. Lower package lead inductance. Deliberate
+            resistance in the path, which is what controlled-resistance capacitors and
+            the board's own copper loss provide.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Does not work</h4>
+            <p>Adding board capacitors. They are on the far side of the inductance that
+            causes the resonance, so they cannot see it. This is the single most common
+            wasted response to a measured Bandini peak.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Helps indirectly</h4>
+            <p>On-package decoupling, which sits between the die and the package lead and
+            therefore genuinely is inside the loop. It is expensive and it is why
+            high-end packages carry capacitors at all.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Interactive: The Droops, in the Time Domain</h2>
+    <p>Everything so far has been a frequency response. What an engineer sees on an
+    oscilloscope is a voltage that dips when the load turns on, and the shape of that dip
+    is the same information. The response below is obtained by transforming the
+    network's own impedance against a current step, so nothing is put into it by hand.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="tr-sel">on-die capacitance</label>
+            <select id="tr-sel" style="flex:1;min-width:150px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="tr-metrics"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="tr-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#3b82f6"></i>rail voltage</span>
+            <span><i style="background:#8b949e"></i>the eventual DC level, $I R_{\mathrm{dc}}$</span>
+        </div>
+    </div>
+
+    <p class="note" id="tr-note"></p>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>The Forcing Function, the Other Way Round</h2>
+    <p>The usual way to describe the first droop is that a sudden current demand drives
+    $L\,di/dt$ across the package inductance. Smith's framing inverts that, and the
+    inversion is worth adopting because it makes the design levers obvious.</p>
+
+    <p>Nothing off the die can respond in the first few tens of picoseconds, so the die
+    draws the charge it needs out of its own capacitance. <em>Then</em> the resulting
+    voltage difference across the package inductance is what pulls current in from the
+    board. The droop is the cause of the current, not the consequence of it, and that
+    ordering is the part worth adopting.</p>
+
+    <p>The depth of that first dip, though, is not the charge term alone. Two things
+    happen during the edge: charge leaves the capacitance, which costs $Q/C_{\text{die}}$,
+    and the same current crosses that capacitance's own series resistance, which costs
+    $I R_{\text{die}}$ immediately and does not depend on how much capacitance there is.
+    On the network modelled here the second is forty times the first, so a design that
+    doubles on-die capacitance to fix a first-droop problem will find almost nothing
+    changes. The metrics below separate the two rather than quoting their sum.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>What that framing predicts</h4>
+            <p>That the first droop is fixed on the die alone, so no board component can
+            reduce it; that the second droop's depth depends on how long the package
+            takes to respond, which is the package inductance; and that only the third is
+            a board problem at all. The computation bears all three out, and adds a
+            fourth: the deepest excursion of the whole response, divided by the step
+            current, comes out within a few per cent of the peak of the impedance
+            profile. The frequency and time domains are describing the same event.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>And what it explains</h4>
+            <p>Why adding board capacitance to a first-droop problem does nothing, and
+            why the maximum operating frequency of a core is so often limited on the die
+            rather than by anything a board designer can influence. It also explains why
+            the rail is still far from its DC level a microsecond after the step: the
+            bulk capacitance and the regulator work on a timescale the core does not
+            care about.</p>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="ff-metrics"></div>
+
+    <p class="note" id="ff-note"></p>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Quantity</th><th>Expression</th><th>Worth remembering</th></tr></thead>
+        <tbody>
+            <tr><td>Spreading inductance</td><td>$\mu_0 h \ln(d/r)/2\pi$</td><td>Proportional to plate spacing, logarithmic in distance</td></tr>
+            <tr><td>Cavity modes</td><td>$f_{mn}=\frac{c}{2\sqrt{\varepsilon_r}}\sqrt{(m/W)^2+(n/L)^2}$</td><td>Set by the outline; impedance depends on probe position</td></tr>
+            <tr><td>Bandini frequency</td><td>$1/2\pi\sqrt{L_{\text{pkg}}C_{\text{die}}}$</td><td>Tens to hundreds of MHz, where cores switch</td></tr>
+            <tr><td>Its characteristic impedance</td><td>$\sqrt{L_{\text{pkg}}/C_{\text{die}}}$</td><td>The resistance needed to damp it</td></tr>
+            <tr><td>Board capacitors</td><td>&mdash;</td><td>Cannot reach it; they are behind the inductance that causes it</td></tr>
+            <tr><td>First droop, charge term</td><td>$Q/C_{\text{die}}$</td><td>On-die capacitance alone; no board fix exists</td></tr>
+            <tr><td>First droop, resistive term</td><td>$I R_{\text{die}}$</td><td>Usually the larger of the two, and capacitance does not touch it</td></tr>
+            <tr><td>Deepest droop</td><td>$I\,Z_{\text{peak}}$</td><td>Which is why the peak of the impedance, not its average, is the specification</td></tr>
+            <tr><td>Eventual DC level</td><td>$I R_{\mathrm{dc}}$</td><td>The regulator's problem, not the decoupling's &mdash; and microseconds away</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#3b82f6',teal:'#34d399',
+         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+function hidpi(id){const c=document.getElementById(id);if(!c)return null;
+  const r=window.devicePixelRatio||1,w=c.width,h=c.height;
+  c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
+  const x=c.getContext('2d');x.scale(r,r);return{ctx:x,w,h};}
+function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
+function label(ctx,t,x,y,c2,s,a){ctx.fillStyle=c2||C.dim;
+  ctx.font=(s||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=a||'left';
+  ctx.fillText(t,x,y);ctx.textAlign='left';}
+function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
+function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+
+  '</div><div class="metric-value">'+v+'</div></div>';}
+function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
+  if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
+  if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
+function fmtHz(f){return f>=1e9?(f/1e9).toFixed(2)+' GHz':f>=1e6?(f/1e6).toFixed(1)+' MHz':
+  f>=1e3?(f/1e3).toFixed(0)+' kHz':f.toFixed(0)+' Hz';}
+function ohm(z){return z>=1?z.toFixed(2)+' Ω':z>=1e-3?(1e3*z).toFixed(1)+' mΩ':
+  (1e6*z).toFixed(0)+' µΩ';}
+function logx(p,w,lo,hi){return f=>p.l+(Math.log10(f)-Math.log10(lo))/(Math.log10(hi)-Math.log10(lo))*(w-p.l-p.r);}
+
+/* ---- 01 ecology ---- */
+(function(){
+  const t=document.getElementById('eco-table'); if(!t)return;
+  const rows=[
+    ['the regulator','DC to a few kHz','its control loop','output inductance and loop bandwidth'],
+    ['bulk capacitors','kHz to a few MHz','stored charge','their own series inductance'],
+    ['ceramics on the board','MHz to a few hundred MHz','stored charge','mounting inductance, deck 11'],
+    ['the plane cavity','a few hundred MHz to GHz','plate capacitance','its own resonances, slide 03'],
+    ['the package','GHz','on-package capacitance where present','lead inductance'],
+    ['the die','above that','on-die capacitance','nothing faster exists']];
+  let html='<thead><tr><th>Element</th><th>Band it owns</th><th>What it supplies</th>'+
+    '<th>What ends its reign</th></tr></thead><tbody>';
+  rows.forEach(function(r){html+='<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+
+    '</td><td>'+r[3]+'</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+
+/* ---- 02 spreading ---- */
+(function(){
+  const t=document.getElementById('sp-table'); if(!t||!SI.spreading)return;
+  const hs=[...new Set(SI.spreading.map(function(r){return r.h_um;}))];
+  const ds=[...new Set(SI.spreading.map(function(r){return r.d_mm;}))];
+  let html='<thead><tr><th>Plate spacing</th>';
+  ds.forEach(function(d){html+='<th>'+d+' mm apart</th>';});
+  html+='</tr></thead><tbody>';
+  hs.forEach(function(h){
+    html+='<tr><td>'+h+' µm</td>';
+    ds.forEach(function(d){
+      const r=SI.spreading.filter(function(x){return x.h_um===h&&x.d_mm===d;})[0];
+      html+='<td>'+(r?r.l_ph.toFixed(1):'')+' pH</td>';});
+    html+='</tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+
+/* ---- 03 probe ---- */
+(function(){
+  const H=hidpi('pb-plot'); if(!H||!SI.probe)return;
+  const keys=Object.keys(SI.probe);
+  const sel=document.getElementById('pb-sel');
+  keys.forEach(function(k){const o=document.createElement('option');
+    o.value=k;o.textContent=k;sel.appendChild(o);});
+  function draw(key){
+    const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:58,r:16,t:20,b:40}, FLO=1e7,FHI=1e10;
+    const X=logx(p,w,FLO,FHI);
+    const ZLO=-3,ZHI=1.4;
+    const Y=z=>h-p.b-(Math.log10(Math.max(z,1e-4))-ZLO)/(ZHI-ZLO)*(h-p.t-p.b);
+    axes(ctx,w,h,p,'frequency','impedance between the two points');
+    for(let e=ZLO;e<=ZHI;e++){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(Math.pow(10,e)));ctx.lineTo(w-p.r,Y(Math.pow(10,e)));ctx.stroke();
+      label(ctx,ohm(Math.pow(10,e)),p.l-6,Y(Math.pow(10,e))+3,C.dim,9,'right');}
+    [1e7,1e8,1e9,1e10].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+      label(ctx,fmtHz(g),X(g),h-p.b+14,C.dim,9,'center');});
+    keys.forEach(function(k){
+      const d=SI.probe[k], sel2=(k===key);
+      ctx.strokeStyle=sel2?C.accent:'#3d444d'; ctx.lineWidth=sel2?2.2:1;
+      ctx.beginPath(); let st=false;
+      d.f_hz.forEach(function(f,i){if(f<FLO||f>FHI)return;
+        const px=X(f),py=Y(d.z_ohm[i]);
+        st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+      ctx.stroke();});
+    const d=SI.probe[key];
+    document.getElementById('pb-metrics').innerHTML=
+      metric('worst impedance',ohm(d.z_max_band))+
+      metric('at',fmtHz(d.f_at_max));
+    let lo=1e9,hi=0,loK='',hiK='';
+    keys.forEach(function(k){const v=SI.probe[k].z_max_band;
+      if(v<lo){lo=v;loK=k;} if(v>hi){hi=v;hiK=k;}});
+    document.getElementById('pb-note').textContent=
+      'The same plane pair, measured between different pairs of points, gives a worst '+
+      'impedance from '+ohm(lo)+' ('+loK+') to '+ohm(hi)+' ('+hiK+') — a factor of '+
+      (hi/lo).toFixed(1)+'. Nothing about the board has changed between the curves; only '+
+      'where the two contacts are. This is a bare cavity with no decoupling, so the '+
+      'absolute values are high; what the comparison establishes is that the question '+
+      '“what is the PDN impedance” is incomplete without saying where.';
+  }
+  sel.addEventListener('input',function(){draw(sel.value);});
+  draw(keys[0]);
+})();
+
+/* ---- 04 Bandini ---- */
+(function(){
+  const H=hidpi('bm-plot'); if(!H||!SI.bandini)return;
+  const d=SI.bandini; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:58,r:16,t:20,b:40}, FLO=1e5,FHI=1e10;
+  const X=logx(p,w,FLO,FHI);
+  const ZLO=-4,ZHI=1;
+  const Y=z=>h-p.b-(Math.log10(Math.max(z,1e-5))-ZLO)/(ZHI-ZLO)*(h-p.t-p.b);
+  axes(ctx,w,h,p,'frequency','impedance seen from the die');
+  for(let e=ZLO;e<=ZHI;e++){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(Math.pow(10,e)));ctx.lineTo(w-p.r,Y(Math.pow(10,e)));ctx.stroke();
+    label(ctx,ohm(Math.pow(10,e)),p.l-6,Y(Math.pow(10,e))+3,C.dim,9,'right');}
+  [1e5,1e6,1e7,1e8,1e9,1e10].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+    label(ctx,fmtHz(g),X(g),h-p.b+14,C.dim,9,'center');});
+  ctx.strokeStyle=C.pink;dashed(ctx,true);ctx.beginPath();
+  ctx.moveTo(p.l,Y(d.z_bm_ohm));ctx.lineTo(w-p.r,Y(d.z_bm_ohm));ctx.stroke();dashed(ctx,false);
+  label(ctx,'√(L/C) = '+ohm(d.z_bm_ohm),w-p.r-4,Y(d.z_bm_ohm)-5,C.pink,9,'right');
+  ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
+  ctx.moveTo(X(d.f_bm_hz),p.t);ctx.lineTo(X(d.f_bm_hz),h-p.b);ctx.stroke();dashed(ctx,false);
+  label(ctx,fmtHz(d.f_bm_hz),X(d.f_bm_hz)+5,p.t+14,C.amber,10,'left');
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2.2;ctx.beginPath();let st=false;
+  d.f_hz.forEach(function(f,i){const px=X(f),py=Y(d.z_ohm[i]);
+    st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+  ctx.stroke();
+  ctx.fillStyle=C.text;ctx.beginPath();ctx.arc(X(d.f_peak_hz),Y(d.z_peak_ohm),5,0,6.3);ctx.fill();
+  document.getElementById('bm-metrics').innerHTML=
+    metric('on-die capacitance',d.c_die_nf.toFixed(0)+' nF')+
+    metric('effective loop inductance',d.l_eff_ph.toFixed(0)+' pH')+
+    metric('resonance',fmtHz(d.f_bm_hz))+
+    metric('characteristic impedance',ohm(d.z_bm_ohm))+
+    metric('peak impedance',ohm(d.z_peak_ohm))+
+    metric('quality factor',d.q.toFixed(2));
+  document.getElementById('bm-note').textContent=
+    'With '+d.c_die_nf.toFixed(0)+' nF on the die behind '+d.l_eff_ph.toFixed(0)+
+    ' pH of package and board-bank inductance, the resonance lands at '+
+    fmtHz(d.f_bm_hz)+' and the peak reaches '+ohm(d.z_peak_ohm)+
+    '. Its characteristic impedance is '+ohm(d.z_bm_ohm)+
+    ', which is the scale against which any damping has to be judged — and it is '+
+    'also, usefully, roughly the impedance the peak settles to once it is properly '+
+    'damped.';
+})();
+
+/* ---- 05 damping ---- */
+(function(){
+  const H=hidpi('bd-plot'); if(!H||!SI.bandini_damping)return;
+  const d=SI.bandini_damping, rows=d.rows;
+  const sl=document.getElementById('bd-r'); sl.max=rows.length-1;
+  function draw(i){
+    const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:62,r:16,t:20,b:44};
+    const X=j=>p.l+(j+0.5)/rows.length*(w-p.l-p.r);
+    let ym=0; rows.forEach(function(r){ym=Math.max(ym,r.z_peak_mohm);}); ym*=1.2;
+    const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+    axes(ctx,w,h,p,'series resistance in the loop, mΩ','peak impedance, mΩ');
+    for(let k=0;k<=4;k++){const v=ym*k/4;ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+      label(ctx,v.toFixed(0),p.l-6,Y(v)+3,C.dim,9,'right');}
+    ctx.strokeStyle=C.pink;dashed(ctx,true);ctx.beginPath();
+    ctx.moveTo(p.l,Y(d.z_bm_mohm));ctx.lineTo(w-p.r,Y(d.z_bm_mohm));ctx.stroke();
+    dashed(ctx,false);
+    label(ctx,'√(L/C) = '+d.z_bm_mohm.toFixed(1)+' mΩ',w-p.r-4,
+          Y(d.z_bm_mohm)-6,C.pink,9,'right');
+    ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+    rows.forEach(function(r,j){const px=X(j),py=Y(r.z_peak_mohm);
+      j?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    rows.forEach(function(r,j){ctx.fillStyle=j===i?C.text:C.accent;ctx.beginPath();
+      ctx.arc(X(j),Y(r.z_peak_mohm),j===i?5.5:3.5,0,6.3);ctx.fill();
+      label(ctx,r.r_mohm+'',X(j),h-p.b+16,C.dim,9,'center');});
+    const r=rows[i];
+    document.getElementById('bd-r-val').textContent=r.r_mohm+' mΩ';
+    document.getElementById('bd-metrics').innerHTML=
+      metric('loop resistance',r.r_mohm+' mΩ')+
+      metric('as a fraction of √(L/C)',(r.r_mohm/d.z_bm_mohm).toFixed(2))+
+      metric('peak impedance',r.z_peak_mohm.toFixed(1)+' mΩ')+
+      metric('relative to √(L/C)','×'+r.ratio_to_zbm.toFixed(2));
+    let best=rows[0]; rows.forEach(function(x){if(x.z_peak_mohm<best.z_peak_mohm)best=x;});
+    const v=document.getElementById('bd-verdict');
+    v.className='verdict '+(r.z_peak_mohm<=1.4*best.z_peak_mohm?'ok':'bad');
+    v.textContent=r.z_peak_mohm<=1.4*best.z_peak_mohm
+      ? 'close to optimally damped'
+      : 'under-damped — the peak is '+(r.z_peak_mohm/best.z_peak_mohm).toFixed(1)+
+        ' times its best achievable value';
+    document.getElementById('bd-note').textContent=
+      'The peak is lowest when the loop resistance is about '+best.r_mohm+
+      ' milliohms, which is '+(best.r_mohm/d.z_bm_mohm).toFixed(2)+
+      ' times the characteristic impedance of '+d.z_bm_mohm.toFixed(1)+
+      ' milliohms. Less resistance and the resonance rings; much more and the profile '+
+      'simply rises because the path is lossy. That is the design rule, and it explains '+
+      'why the answer to a tall Bandini peak is sometimes to add resistance rather than '+
+      'to remove it.';
+  }
+  sl.addEventListener('input',function(){draw(+sl.value);});
+  draw(2);
+})();
+
+/* ---- 06 what moves it ---- */
+(function(){
+  const t=document.getElementById('cd-table'); if(!t||!SI.bandini_vs_cdie)return;
+  let html='<thead><tr><th>On-die capacitance</th><th>Resonant frequency</th>'+
+    '<th>Characteristic impedance</th><th>Peak impedance</th></tr></thead><tbody>';
+  SI.bandini_vs_cdie.forEach(function(r){
+    html+='<tr><td>'+r.c_die_nf.toFixed(0)+' nF</td><td>'+r.f_bm_mhz.toFixed(1)+
+      ' MHz</td><td>'+r.z_bm_mohm.toFixed(1)+' mΩ</td><td>'+
+      r.z_peak_mohm.toFixed(1)+' mΩ</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+
+/* ---- 07 transient ---- */
+(function(){
+  const H=hidpi('tr-plot'); if(!H||!SI.transient_cdie)return;
+  const cases=SI.transient_cdie;
+  const sel=document.getElementById('tr-sel');
+  cases.forEach(function(c,i){const o=document.createElement('option');
+    o.value=i;o.textContent=c.c_die_nf.toFixed(0)+' nF';sel.appendChild(o);});
+  function draw(i){
+    const d=cases[i]; const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:58,r:16,t:20,b:40};
+    const TM=60;
+    const X=t=>p.l+t/TM*(w-p.l-p.r);
+    let lo=0; cases.forEach(function(c){c.v_mv.forEach(function(v){lo=Math.min(lo,v);});});
+    lo*=1.12;
+    const Y=v=>p.t+(0-v)/(0-lo)*(h-p.t-p.b);
+    axes(ctx,w,h,p,'time, ns','rail voltage, mV');
+    for(let k=0;k<=4;k++){const v=lo*k/4;ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+      label(ctx,v.toFixed(1),p.l-6,Y(v)+3,C.dim,9,'right');}
+    for(let g=0;g<=TM;g+=10){label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');}
+    if(SI.transient){const dc=-SI.transient.i_step_a*SI.transient.r_dc_mohm;
+      ctx.strokeStyle=C.dim;dashed(ctx,true);ctx.beginPath();
+      ctx.moveTo(p.l,Y(dc));ctx.lineTo(w-p.r,Y(dc));
+      ctx.stroke();dashed(ctx,false);
+      label(ctx,'eventual DC level, '+dc.toFixed(1)+' mV',w-p.r-4,Y(dc)-5,C.dim,9,'right');}
+    cases.forEach(function(c,j){
+      ctx.strokeStyle=j===i?C.accent:'#3d444d'; ctx.lineWidth=j===i?2.2:1;
+      ctx.beginPath(); let st=false;
+      c.t_ns.forEach(function(t,k){if(t>TM)return;const px=X(t),py=Y(c.v_mv[k]);
+        st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+      ctx.stroke();});
+    document.getElementById('tr-metrics').innerHTML=
+      metric('on-die capacitance',d.c_die_nf.toFixed(0)+' nF')+
+      metric('charge term, Q/C',d.first_droop_charge_mv.toFixed(2)+' mV')+
+      metric('resistive term, I·R',d.first_droop_esr_mv.toFixed(1)+' mV')+
+      metric('droop at the end of the edge',d.first_droop_computed_mv.toFixed(1)+' mV')+
+      metric('worst excursion',d.worst_mv.toFixed(1)+' mV');
+    const a=cases[0], z=cases[cases.length-1], T=SI.transient;
+    document.getElementById('tr-note').textContent=
+      'A '+T.i_step_a+' amp step with a '+T.rise_ps+' picosecond edge. Multiplying '+
+      'the on-die capacitance by '+(z.c_die_nf/a.c_die_nf).toFixed(0)+' takes the '+
+      'charge term from '+a.first_droop_charge_mv.toFixed(2)+' to '+
+      z.first_droop_charge_mv.toFixed(2)+' millivolts, in exact inverse proportion — '+
+      'and yet the droop measured at the end of the edge barely moves, from '+
+      a.first_droop_computed_mv.toFixed(1)+' to '+
+      z.first_droop_computed_mv.toFixed(1)+' millivolts, because it is dominated by '+
+      'the '+a.first_droop_esr_mv.toFixed(0)+' millivolts dropped across the on-die '+
+      'capacitance’s own series resistance, which capacitance does not touch. The '+
+      'deepest excursion of '+Math.abs(T.worst_mv).toFixed(0)+' millivolts arrives at '+
+      T.worst_at_ns.toFixed(1)+' nanoseconds and is '+
+      T.worst_as_impedance_mohm.toFixed(1)+' milliohms per amp, against a peak '+
+      'impedance of '+T.z_peak_mohm.toFixed(1)+' milliohms read off the frequency '+
+      'plot — the same event seen twice, '+
+      Math.abs(T.droop_vs_zpeak_err_pct).toFixed(1)+' per cent apart. The rail is '+
+      'still '+Math.abs(T.at_end_mv).toFixed(0)+' millivolts low after a microsecond; '+
+      'the bulk capacitance and the regulator work on a timescale the core does not '+
+      'experience.';
+  }
+  sel.addEventListener('input',function(){draw(+sel.value);});
+  draw(1);
+})();
+
+/* ---- 08 forcing function ---- */
+(function(){
+  const el=document.getElementById('ff-metrics'); if(!el||!SI.transient)return;
+  const t=SI.transient;
+  const q=0.5*t.i_step_a*t.rise_ps*1e-12;
+  el.innerHTML=metric('charge drawn in one edge',(q*1e12).toFixed(2)+' pC')+
+    metric('on-die capacitance',(SI.bandini?SI.bandini.c_die_nf.toFixed(0):'200')+' nF')+
+    metric('charge term, Q/C',t.first_droop_charge_mv.toFixed(2)+' mV')+
+    metric('resistive term, I·R',t.first_droop_esr_mv.toFixed(1)+' mV')+
+    metric('ratio',(t.first_droop_esr_mv/t.first_droop_charge_mv).toFixed(0)+'×')+
+    metric('deepest droop, as a fraction of a 0.9 V rail',
+           (100*Math.abs(t.worst_mv)/900).toFixed(1)+' %');
+  document.getElementById('ff-note').textContent=
+    'A '+t.i_step_a+' amp step ramping over '+t.rise_ps+
+    ' picoseconds moves '+(q*1e12).toFixed(2)+' picocoulombs of charge, which divided '+
+    'by the on-die capacitance is only '+t.first_droop_charge_mv.toFixed(2)+
+    ' millivolts. The same current crossing that capacitance’s '+
+    (t.first_droop_esr_mv/t.i_step_a).toFixed(0)+' milliohms of series resistance is '+
+    t.first_droop_esr_mv.toFixed(0)+' millivolts, '+
+    (t.first_droop_esr_mv/t.first_droop_charge_mv).toFixed(0)+
+    ' times larger, and both appear before anything off the die has had time to react. '+
+    'It is that combined droop, appearing across the package inductance, which then '+
+    'pulls current in from the board — and the ordering is Smith’s point, even though '+
+    'the arithmetic says the resistive half is the one to attack.';
+})();
+</script>

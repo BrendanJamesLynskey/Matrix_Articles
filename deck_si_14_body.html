@@ -1,0 +1,506 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &mdash; Power Integrity, Deck 14 of 17</div>
+    <h1>Power Integrity Meets <span class="accent">Signal Integrity</span></h1>
+    <p class="subtitle">Four routes by which a disturbance on a supply rail becomes an
+    error at a receiver &mdash; and the observation that two of the four are not power
+    problems at all but return-path problems wearing a different hat.</p>
+
+    <div class="tags">
+        <span class="tag">SSN</span><span class="tag">PSRR</span>
+        <span class="tag">supply-induced jitter</span>
+        <span class="tag">DC blocking</span><span class="tag">cavity coupling</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">$di/dt$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">rail noise</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">PSRR, loop</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">jitter</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">the eye</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Four routes from the rail to the eye</a></li>
+        <li><a href="#slide-02">Simultaneous switching noise</a></li>
+        <li><a href="#slide-03">Interactive: supply ripple becoming jitter</a></li>
+        <li><a href="#slide-04">Where the regulator's switching frequency should sit</a></li>
+        <li><a href="#slide-05">A signal that changes reference plane, seen as a PI problem</a></li>
+        <li><a href="#slide-06">Interactive: how many DC blocking capacitors</a></li>
+        <li><a href="#slide-07">The cavity as a shared medium</a></li>
+        <li><a href="#slide-08">The budget, joined up</a></li>
+        <li><a href="#slide-09">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Four Routes From the Rail to the Eye</h2>
+    <p>Power integrity earns its place in a signal-integrity series only through the
+    routes by which it damages a signal. There are four worth separating, and they are
+    not equally famous.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>One: through the transmitter</h4>
+            <p>Rail noise modulates the output stage's supply and therefore its swing and
+            its threshold, producing amplitude noise directly &mdash; which deck 10
+            showed is also jitter, through the slew rate.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Two: through the oscillator</h4>
+            <p>Rail noise reaches the phase-locked loop's control node and modulates its
+            frequency, which integrates to phase and appears as jitter. This is the
+            best-known route and the subject of slides 03 and 04.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Three: through the return path</h4>
+            <p>A signal that changes reference plane needs its return current to cross
+            between two planes, which means through the power delivery network. The
+            network's impedance is therefore in series with the signal. Slides 05 and 06.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Four: through the cavity</h4>
+            <p>Every via passing through a plane pair couples into it, and the pair is a
+            shared resonant medium. What one signal injects, another picks up. Slide 07.</p>
+        </div>
+    </div>
+
+    <p>The third and fourth are the ones most often missed, and they are not really power
+    problems. They are the return-path argument of deck 02 restated: the power delivery
+    network <em>is</em> the return path whenever a signal changes reference, so its
+    impedance becomes a signal-integrity parameter whether or not anyone intended it to.</p>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Simultaneous Switching Noise</h2>
+    <p>When many drivers switch at once their currents all flow through whatever
+    inductance the supply and return paths share, and the voltage that develops across it
+    is $L$ times the total rate of change. The scaling with driver count is what makes
+    this an interface problem rather than a component one.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="ss-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#38bdf8"></i>supply disturbance</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="ss-metrics"></div>
+
+    <p class="note" id="ss-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">The strongest unlisted argument for differential</div>
+        <p>A differential pair draws a constant current from the supply whichever way it
+        is driven, because one leg sources exactly what the other sinks. Its contribution
+        to this sum is therefore close to zero. Deck 05 listed the benefits of
+        differential signalling and this one rarely appears on such lists; on a wide
+        interface it is frequently the largest of them.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Interactive: Supply Ripple Becoming Jitter</h2>
+    <p>A tone on the supply reaches the oscillator's control node attenuated by whatever
+    rejection exists, and modulates its frequency. Frequency modulation integrates to
+    phase modulation, so the phase deviation is the frequency deviation divided by the
+    modulation frequency &mdash; and the jitter is that phase divided by the carrier's
+    angular frequency.</p>
+
+    <p>The loop then filters. Against a disturbance injected at the oscillator its
+    error response is high-pass, and how steeply it rises decides the whole answer: a
+    first-order loop rejects in proportion to frequency, a second-order loop in
+    proportion to frequency squared. Since the modulation index is already falling as
+    the reciprocal of frequency, the first-order loop's rising rejection cancels it
+    exactly and the jitter is <em>flat</em> from the lowest frequencies up to the loop
+    bandwidth. Only in the second-order case does the square win, and only then is there
+    a genuine worst frequency.</p>
+
+    <p>Both are plotted, because the familiar rule &mdash; that the dangerous tone is the
+    one near the loop bandwidth &mdash; is a statement about second-order loops and is
+    simply false for a first-order one. Real synthesis and clock-recovery loops are
+    type&nbsp;II, so the rule survives; but it survives for a reason worth knowing, and
+    the flat curve is what shows it.</p>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="rj-psrr">supply rejection</label>
+            <select id="rj-psrr" style="flex:1;min-width:150px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+        </div>
+        <div class="metric-grid" id="rj-metrics"></div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="rj-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#38bdf8"></i>second-order loop (type II)</span>
+            <span><i style="background:#64748b"></i>first-order loop, for contrast</span>
+            <span><i style="background:#fbbf24"></i>loop bandwidth</span>
+        </div>
+    </div>
+
+    <p class="note" id="rj-note"></p>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Where the Regulator's Switching Frequency Should Sit</h2>
+    <p>A switching regulator puts a large, narrow, entirely predictable tone on the rail
+    at its switching frequency. The previous slide says what that tone becomes, and
+    therefore gives a design rule that is easy to state and routinely ignored: the
+    regulator's frequency should be chosen against the transceiver's loop bandwidth, not
+    against efficiency alone.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel g">
+            <h4>Well below the loop bandwidth</h4>
+            <p>The loop tracks and corrects it, and the correction improves faster than
+            the modulation index grows, so the jitter falls away at twenty decibels per
+            decade below the natural frequency. A hundred-kilohertz regulator under a
+            four-megahertz loop is thirty decibels better placed than a four-megahertz
+            one, which is why low-frequency regulators were never a jitter problem.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>At it</h4>
+            <p>The worst place, and where modern multi-megahertz regulators land by
+            default. The response is symmetric about the loop's natural frequency &mdash;
+            twenty decibels per decade up on one side, twenty down on the other &mdash;
+            so &ldquo;just above&rdquo; and &ldquo;just below&rdquo; are equally bad and
+            the peak itself sits at the bandwidth, not beyond it.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Far above it</h4>
+            <p>Also acceptable: the phase deviation falls inversely with the modulation
+            frequency even though the loop does nothing. Very high switching frequencies
+            are benign for this reason, whatever else they cost.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>And spread spectrum</h4>
+            <p>Deliberately modulating the switching frequency smears the tone across a
+            band. That reduces the peak and leaves the total energy where it was, which
+            helps an emissions measurement and helps a jitter budget rather less than is
+            usually assumed.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>A Signal That Changes Reference Plane, Seen as a PI Problem</h2>
+    <p>Deck 02 treated this as a return-path question and priced it as a loop inductance.
+    Smith and Bogatin treat the same configuration as a power-integrity question, and the
+    change of view is worth adopting because it explains the remedy.</p>
+
+    <p>When a signal via carries a trace from a layer referenced to ground to one
+    referenced to a supply, the return current has to cross from one plane to the other.
+    The only route is the cavity between them, so the <em>cavity's impedance appears in
+    series with the signal</em>. Everything deck 12 established about that impedance
+    &mdash; that it resonates, that it depends on where you probe, that its peaks are
+    tall &mdash; is therefore a signal-integrity property.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Why the peaks matter here</h4>
+            <p>At a cavity resonance the impedance the return current sees is at its
+            highest, so the signal suffers the largest series discontinuity at exactly
+            the frequencies where the plane pair rings. A transition that is acceptable
+            at most frequencies can be severe at a few.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>And what it implies for stackups</h4>
+            <p>That the cheapest fix is to not do it: plan the layer transitions so that
+            a high-speed net either keeps its reference or changes between two planes of
+            the same net, which needs only a stitching via. This is a stackup decision
+            made before routing, and it cannot be retrofitted.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Interactive: How Many DC Blocking Capacitors</h2>
+    <p>Where the transition is unavoidable, the return current crosses through capacitors
+    placed between the two planes. The question is how many, and it has the same answer
+    as the one in deck 11: above their resonances, capacitors present mounting
+    inductance, so the count is set by inductance rather than by capacitance.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="dc-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#38bdf8"></i>impedance in series with the signal at 1 GHz</span>
+        </div>
+    </div>
+
+    <div class="metric-grid" id="dc-metrics"></div>
+
+    <p class="note" id="dc-note"></p>
+
+    <div class="callout">
+        <div class="callout-label">Two jobs, two counts</div>
+        <p>Blocking capacitors placed between planes do two different things, and the
+        number needed is not the same for each. Carrying the return current of a
+        particular transition needs a capacitor close to that transition. Damping the
+        cavity's resonances needs capacitors distributed across the plane pair, in a
+        number set by the cavity rather than by any one signal. A design that provides
+        for one and not the other usually discovers it in an emissions chamber.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>The Cavity as a Shared Medium</h2>
+    <p>The fourth route is the least intuitive. A plane pair is a two-dimensional
+    waveguide shared by everything that penetrates it. A via injecting energy into it
+    does not deliver that energy to a particular destination; it excites the cavity's
+    modes, and every other via in the same cavity is coupled to those modes.</p>
+
+    <div class="metric-grid" id="cv-metrics"></div>
+
+    <p>That makes the plane pair a crosstalk mechanism with a quite different character
+    from the one in deck 06. Trace-to-trace coupling falls off with separation; cavity
+    coupling does not, because a resonant mode fills the whole cavity. Two vias at
+    opposite corners of a board are coupled through a mode that spans it, and moving them
+    apart does not help.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel g">
+            <h4>Damping helps</h4>
+            <p>Lowering the quality factor of the modes reduces the coupling at every
+            location simultaneously, which spacing cannot do. Distributed capacitors and
+            deliberately lossy planes both work.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Thin dielectric helps</h4>
+            <p>Closer planes lower the cavity's impedance in proportion, so the same
+            injected current produces less voltage. The same lever as the spreading
+            inductance of deck 12.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Splitting helps, carefully</h4>
+            <p>A separate cavity for a sensitive rail keeps its modes to itself. It also
+            creates the plane discontinuities of deck 02, so it trades one mechanism for
+            another and has to be planned rather than improvised.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>The Budget, Joined Up</h2>
+    <p>The four routes deliver their damage into budgets the earlier decks already built,
+    and it is worth being explicit about which entry each one lands in, because the
+    commonest error is to count a disturbance twice.</p>
+
+    <table>
+        <thead><tr><th>Route</th><th>Arrives as</th><th>Enters which budget</th><th>Computed where</th></tr></thead>
+        <tbody>
+            <tr><td>Through the transmitter</td><td>Amplitude modulation of the swing</td><td>The voltage noise term, and its jitter equivalent through the slew rate</td><td>Deck 10, slides 02 and 03</td></tr>
+            <tr><td>Through the oscillator</td><td>Periodic jitter at the ripple frequency</td><td>The deterministic jitter term, bounded</td><td>Slide 03 of this deck</td></tr>
+            <tr><td>Through the return path</td><td>A series impedance at the transition</td><td>Insertion loss and reflection &mdash; the channel itself</td><td>Deck 02, deck 12</td></tr>
+            <tr><td>Through the cavity</td><td>Crosstalk uncorrelated with the victim</td><td>Bounded uncorrelated jitter, and the crosstalk variance</td><td>Deck 07, deck 10</td></tr>
+        </tbody>
+    </table>
+
+    <p>Note that only the second is a jitter term by origin. The first becomes one
+    through the slew rate, the third is not a noise term at all but a change to the
+    channel, and the fourth is crosstalk that happens to have arrived by an unusual
+    route. Deck 17's compliance calculation sees all four, but it sees them in three
+    different places.</p>
+
+    <div class="callout">
+        <div class="callout-label">Which is why this deck exists</div>
+        <p>A power-integrity analysis that stops at an impedance profile has not said
+        whether the link works, and a signal-integrity analysis that treats the supply as
+        ideal has not said whether the channel is the one it modelled. The two meet at
+        precisely these four places and nowhere else, which makes the list short enough
+        to check.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Mechanism</th><th>Expression</th><th>Worth remembering</th></tr></thead>
+        <tbody>
+            <tr><td>Simultaneous switching noise</td><td>$L\,N\,\Delta I / t_r$</td><td>Linear in driver count; near zero for differential</td></tr>
+            <tr><td>Supply to jitter</td><td>$\Delta\phi = K_{\mathrm{VCO}}V_n/f_m$</td><td>Filtered by the loop below its bandwidth</td></tr>
+            <tr><td>Worst tone frequency</td><td>At the loop bandwidth, for a type-II loop; nowhere in particular for a type-I one</td><td>Place the regulator's frequency deliberately, and state the loop order before quoting the rule</td></tr>
+            <tr><td>Reference-plane change</td><td>Cavity impedance in series</td><td>A PI property that is a SI parameter</td></tr>
+            <tr><td>DC blocking capacitors</td><td>$Z \to \omega L_{\text{mount}}/N$</td><td>Two jobs, two different counts</td></tr>
+            <tr><td>Cavity coupling</td><td>Modal, not local</td><td>Distance does not help; damping does</td></tr>
+            <tr><td>Double counting</td><td>&mdash;</td><td>Four routes, three budget entries; count each once</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#38bdf8',teal:'#34d399',
+         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+function hidpi(id){const c=document.getElementById(id);if(!c)return null;
+  const r=window.devicePixelRatio||1,w=c.width,h=c.height;
+  c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
+  const x=c.getContext('2d');x.scale(r,r);return{ctx:x,w,h};}
+function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
+function label(ctx,t,x,y,c2,s,a){ctx.fillStyle=c2||C.dim;
+  ctx.font=(s||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=a||'left';
+  ctx.fillText(t,x,y);ctx.textAlign='left';}
+function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
+function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+
+  '</div><div class="metric-value">'+v+'</div></div>';}
+function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
+  if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
+  if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
+function fmtHz(f){return f>=1e9?(f/1e9).toFixed(2)+' GHz':f>=1e6?(f/1e6).toFixed(1)+' MHz':
+  f>=1e3?(f/1e3).toFixed(0)+' kHz':f.toFixed(0)+' Hz';}
+function logx(p,w,lo,hi){return f=>p.l+(Math.log10(f)-Math.log10(lo))/(Math.log10(hi)-Math.log10(lo))*(w-p.l-p.r);}
+
+/* ---- 02 SSN ---- */
+(function(){
+  const H=hidpi('ss-plot'); if(!H||!SI.ssn)return;
+  const d=SI.ssn; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:58,r:16,t:20,b:44};
+  const X=i=>p.l+(i+0.5)/d.length*(w-p.l-p.r);
+  let ym=0; d.forEach(function(r){ym=Math.max(ym,r.v_noise_mv);}); ym*=1.15;
+  const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+  axes(ctx,w,h,p,'drivers switching simultaneously','supply disturbance, mV');
+  for(let i=0;i<=5;i++){const v=ym*i/5;ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v.toFixed(0),p.l-6,Y(v)+3,C.dim,9,'right');}
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+  d.forEach(function(r,i){const px=X(i),py=Y(r.v_noise_mv);
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  d.forEach(function(r,i){ctx.fillStyle=C.accent;ctx.beginPath();
+    ctx.arc(X(i),Y(r.v_noise_mv),3.5,0,6.3);ctx.fill();
+    label(ctx,r.n_drivers+'',X(i),h-p.b+16,C.dim,9,'center');});
+  const last=d[d.length-1];
+  document.getElementById('ss-metrics').innerHTML=
+    metric('shared inductance',last.l_loop_ph.toFixed(0)+' pH')+
+    metric('64 drivers, di/dt',last.di_dt_a_per_ns.toFixed(1)+' A/ns')+
+    metric('disturbance',last.v_noise_mv.toFixed(0)+' mV')+
+    metric('one driver',d[0].v_noise_mv.toFixed(1)+' mV');
+  document.getElementById('ss-note').textContent=
+    'Sixty picohenries of shared inductance — a realistic figure for a package '+
+    'power path — with 20 mA per driver switching in 25 picoseconds gives '+
+    last.v_noise_mv.toFixed(0)+' millivolts across the rail when 64 drivers switch '+
+    'together, against '+d[0].v_noise_mv.toFixed(1)+
+    ' millivolts for one. On a 0.9 volt rail that is '+
+    (100*last.v_noise_mv/900).toFixed(1)+' per cent — most of the ripple budget, '+
+    'spent by the interface on itself before any other load has been considered.';
+})();
+
+/* ---- 03 ripple to jitter ---- */
+(function(){
+  const H=hidpi('rj-plot'); if(!H||!SI.ripple)return;
+  const sel=document.getElementById('rj-psrr');
+  (SI.psrr||[]).forEach(function(r,i){const o=document.createElement('option');
+    o.value=i;o.textContent=r.psrr_db+' dB';sel.appendChild(o);});
+  const d=SI.ripple;
+  function draw(i){
+    const {ctx,w,h}=H; clear(ctx,w,h);
+    const p={l:60,r:16,t:20,b:40}, FLO=1e3,FHI=1e9;
+    const X=logx(p,w,FLO,FHI);
+    const scale=(SI.psrr&&SI.psrr[i])?Math.pow(10,(SI.psrr[i].psrr_db+20)/20):1;
+    let ym=0; d.jitter_pp_ps.forEach(function(v){ym=Math.max(ym,v*scale);});
+    (d.jitter_pp_ps_order1||[]).forEach(function(v){ym=Math.max(ym,v*scale);}); ym*=1.15;
+    const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+    axes(ctx,w,h,p,'frequency of the supply tone','jitter, ps peak to peak');
+    for(let k=0;k<=5;k++){const v=ym*k/5;ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+      label(ctx,v.toFixed(3),p.l-6,Y(v)+3,C.dim,9,'right');}
+    [1e3,1e4,1e5,1e6,1e7,1e8,1e9].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
+      label(ctx,fmtHz(g).replace(/\.\d+/,''),X(g),h-p.b+14,C.dim,8,'center');});
+    ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
+    ctx.moveTo(X(d.pll_bw_hz),p.t);ctx.lineTo(X(d.pll_bw_hz),h-p.b);ctx.stroke();dashed(ctx,false);
+    label(ctx,'loop bandwidth',X(d.pll_bw_hz)+5,p.t+14,C.amber,10,'left');
+    if(d.jitter_pp_ps_order1){
+      ctx.strokeStyle=C.dim;ctx.lineWidth=1.4;ctx.beginPath();let s1=false;
+      d.f_hz.forEach(function(f,k){const px=X(f),py=Y(d.jitter_pp_ps_order1[k]*scale);
+        s1?ctx.lineTo(px,py):(ctx.moveTo(px,py),s1=true);});
+      ctx.stroke();
+    }
+    ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();let st=false;
+    d.f_hz.forEach(function(f,k){const px=X(f),py=Y(d.jitter_pp_ps[k]*scale);
+      st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+    ctx.stroke();
+    let wi=0; d.jitter_pp_ps.forEach(function(v,k){if(v>d.jitter_pp_ps[wi])wi=k;});
+    ctx.fillStyle=C.pink;ctx.beginPath();
+    ctx.arc(X(d.f_hz[wi]),Y(d.jitter_pp_ps[wi]*scale),4.5,0,6.3);ctx.fill();
+    document.getElementById('rj-metrics').innerHTML=
+      metric('supply tone','20 mV')+
+      metric('supply rejection',(SI.psrr&&SI.psrr[i]?SI.psrr[i].psrr_db:-20)+' dB')+
+      metric('worst frequency',fmtHz(d.f_hz[wi]))+
+      metric('jitter there',(d.jitter_pp_ps[wi]*scale).toFixed(3)+' ps')+
+      metric('peak over 1 kHz',d.peak_over_low_f_db.toFixed(0)+' dB')+
+      metric('first-order plateau',(d.order1_plateau_ps*scale).toFixed(2)+' ps');
+    document.getElementById('rj-note').textContent=
+      'Twenty millivolts of ripple produces at most '+
+      (d.jitter_pp_ps[wi]*scale).toFixed(3)+' picoseconds peak to peak, at '+
+      fmtHz(d.f_hz[wi])+' — that is '+(d.worst_over_bw).toFixed(2)+' times the loop '+
+      'bandwidth, so the peak sits on the bandwidth rather than beyond it, and it '+
+      'stands '+d.peak_over_low_f_db.toFixed(0)+' decibels above the same tone placed '+
+      'at a kilohertz. The grey curve is the same calculation for a first-order loop: '+
+      'flat at '+(d.order1_plateau_ps*scale).toFixed(2)+' picoseconds all the way down, '+
+      'because there the rising rejection and the falling modulation index cancel. '+
+      'Against a 35.7 picosecond unit interval the peak is '+
+      (100*d.jitter_pp_ps[wi]*scale/35.7).toFixed(2)+' per cent of the eye, and it is a '+
+      'deterministic bounded term, so it enters the budget once rather than multiplied '+
+      'by fourteen.';
+  }
+  sel.addEventListener('input',function(){draw(+sel.value);});
+  draw(1);
+})();
+
+/* ---- 06 DC blocking ---- */
+(function(){
+  const H=hidpi('dc-plot'); if(!H||!SI.dc_blocking)return;
+  const d=SI.dc_blocking; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:62,r:16,t:20,b:44};
+  const X=i=>p.l+(i+0.5)/d.length*(w-p.l-p.r);
+  let ym=0; d.forEach(function(r){ym=Math.max(ym,r.z_at_1ghz);}); ym*=1.15;
+  const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+  axes(ctx,w,h,p,'number of blocking capacitors','series impedance at 1 GHz, Ω');
+  for(let i=0;i<=4;i++){const v=ym*i/4;ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v.toFixed(2),p.l-6,Y(v)+3,C.dim,9,'right');}
+  const bw=(w-p.l-p.r)/d.length*0.5;
+  d.forEach(function(r,i){
+    ctx.fillStyle=C.accent;ctx.fillRect(X(i)-bw/2,Y(r.z_at_1ghz),bw,h-p.b-Y(r.z_at_1ghz));
+    label(ctx,r.n_caps+'',X(i),h-p.b+16,C.dim,9,'center');
+    label(ctx,r.z_at_1ghz.toFixed(2),X(i),Y(r.z_at_1ghz)-6,C.text,9,'center');});
+  let html='';
+  d.forEach(function(r){html+=metric(r.n_caps+' capacitor'+(r.n_caps>1?'s':''),
+    r.l_ph.toFixed(0)+' pH');});
+  document.getElementById('dc-metrics').innerHTML=html;
+  const a=d[0], z=d[d.length-1];
+  document.getElementById('dc-note').textContent=
+    'One capacitor leaves '+a.l_ph.toFixed(0)+' picohenries in series with the signal, '+
+    'which is '+a.z_at_1ghz.toFixed(2)+' ohms at a gigahertz — a substantial '+
+    'discontinuity on a hundred-ohm pair. Sixteen bring it to '+
+    z.z_at_1ghz.toFixed(2)+' ohms. The dependence is the same one as deck 11: the count '+
+    'is set by inductance, and the capacitance value barely enters.';
+})();
+
+/* ---- 07 cavity ---- */
+(function(){
+  const el=document.getElementById('cv-metrics'); if(!el||!SI.cavity_to_signal)return;
+  let html='';
+  SI.cavity_to_signal.slice(0,4).forEach(function(m){
+    html+=metric('mode ('+m.m+','+m.n+')',m.f_ghz.toFixed(3)+' GHz');});
+  el.innerHTML=html;
+})();
+</script>

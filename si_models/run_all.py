@@ -355,8 +355,183 @@ def deck06():
 
 # ---------------------------------------------------------------- deck 07 ---
 def deck07():
+    """Total jitter and the bit error ratio."""
+    from si_models import jitter as J
+    d = {'q': {str(b): J.q_from_ber(b) for b in
+               (1e-3, 1e-6, 1e-9, 1e-12, 1e-15, 1e-17)}}
+    d['rules'] = [
+        "It's about the bit error ratio",
+        "Total jitter can only be measured on a bit error ratio tester",
+        "Measurements of jitter are always the comparison of a test clock "
+        "and a reference clock",
+        "Timing noise and amplitude noise are not really separable "
+        "(but we do it anyway)",
+        "It's still about the bit error ratio",
+    ]
+    d['bert'] = [J.bert_time(b, r) for b in (1e-6, 1e-9, 1e-12, 1e-15)
+                 for r in (2.5, 28.0)]
+    d['bert_28'] = [J.bert_time(b, 28.0) for b in
+                    (1e-6, 1e-9, 1e-12, 1e-15, 1e-17)]
+    ch, p = _jit_channel()
+    ui_ps = ch['UI'] * 1e12
+    pk = int(np.argmax(p))
+    cr = J.ddj_crossings(p, ch['M'], pk, depth=8)
+    if cr.get('ok'):
+        d['ddj'] = dict(n=cr['n'], pp_ui=cr['pp_ui'], std_ui=cr['std_ui'],
+                        pp_ps=cr['pp_ui'] * ui_ps, std_ps=cr['std_ui'] * ui_ps,
+                        hist=np.histogram(cr['crossings_ui'], bins=48)[0].tolist(),
+                        bins=np.histogram(cr['crossings_ui'],
+                                          bins=48)[1].tolist())
+    d['ui_ps'] = ui_ps
+    d['taxonomy'] = [
+        dict(acronym='RJ', name='random jitter', bounded=False,
+             correlated='no', source='thermal and flicker noise in oscillators '
+             'and samplers', combines='in quadrature',
+             fixed_by='a better oscillator'),
+        dict(acronym='DDJ', name='data-dependent jitter', bounded=True,
+             correlated='with the victim data',
+             source="the channel's own intersymbol interference",
+             combines='deterministically', fixed_by='equalisation'),
+        dict(acronym='DCD', name='duty-cycle distortion', bounded=True,
+             correlated='with the data', source='a threshold away from mid-swing',
+             combines='deterministically', fixed_by='the transmitter'),
+        dict(acronym='PJ', name='periodic jitter', bounded=True,
+             correlated='no', source='a tone from elsewhere, often a regulator',
+             combines='deterministically', fixed_by='the supply, or the plan'),
+        dict(acronym='SJ', name='sinusoidal jitter', bounded=True,
+             correlated='no', source='deliberately applied for calibration',
+             combines='deterministically', fixed_by='not a defect'),
+        dict(acronym='BUJ', name='bounded uncorrelated jitter', bounded=True,
+             correlated='no', source='crosstalk, chiefly',
+             combines='deterministically but unpredictably',
+             fixed_by='geometry'),
+    ]
+    return d
+
+
+# ---------------------------------------------------------------- deck 08 ---
+def deck08():
+    """The dual-Dirac model and its limits."""
+    from si_models import jitter as J
+    ch, p = _jit_channel_eq()
+    ui_ps = ch['UI'] * 1e12
+    pk = int(np.argmax(p))
+    d = {'ui_ps': ui_ps, 'pulse_is_equalised': True}
+    d['assumptions'] = [
+        'jitter separates into a random and a deterministic category',
+        'the random part is Gaussian and described by one number',
+        'the deterministic part is bounded',
+        'the deterministic part is two Dirac delta functions',
+        'the process is stationary',
+    ]
+    d['q_table'] = [dict(ber=b, q=J.q_from_ber(b), two_q=2 * J.q_from_ber(b))
+                    for b in (1e-10, 1e-11, 1e-12, 1e-13, 1e-14, 1e-15)]
+    cr = J.ddj_crossings(p, ch['M'], pk, depth=8)
+    if cr.get('ok'):
+        for rj in (0.010, 0.020, 0.035):
+            r = J.dual_dirac_vs_true(cr['crossings_ui'], rj, ui_ps)
+            if r.get('ok'):
+                d.setdefault('dd_vs_true', []).append(r)
+        b = J.ber_from_distribution(cr['crossings_ui'], 0.020, ui_ps)
+        d['bathtub_real'] = dict(t_ui=thin(b['t_ui'], 320),
+                                 ber=thin(b['ber'], 320),
+                                 left=thin(b['left'], 320))
+        tq, qq = J.q_scale(b['t_ui'], b['left'])
+        d['qscale'] = dict(t_ui=thin(tq, 260), q=thin(qq, 260))
+        d['ddj_pp_ui'] = cr['pp_ui']
+    d['contamination'] = [J.rj_contamination(dj_shape=s)
+                          for s in ('dual_dirac', 'uniform', 'gaussian_like')]
+    d['bathtubs'] = {}
+    for lab, (rj, dj) in (('RJ 0.5 ps, DJ 8 ps', (0.5, 8.0)),
+                          ('RJ 1.0 ps, DJ 8 ps', (1.0, 8.0)),
+                          ('RJ 0.5 ps, DJ 16 ps', (0.5, 16.0))):
+        bb = J.bathtub(rj, dj, ui_ps, 400)
+        d['bathtubs'][lab] = dict(t_ps=thin(bb['t_ps'], 300),
+                                  ber=thin(bb['ber'], 300),
+                                  **J.eye_opening(bb))
+    d['extrapolation'] = []
+    for w in (0.0, 1e-9, 1e-8, 1e-7):
+        e = J.extrapolation_error(w2=w)
+        e['weight'] = w
+        d['extrapolation'].append({k: v for k, v in e.items()
+                                   if not isinstance(v, (list, tuple))})
+    d['dual_dirac'] = [J.dual_dirac(rj, dj, 1e-12)
+                       for rj, dj in ((0.5, 5.0), (0.8, 12.0), (1.5, 12.0))]
+    return d
+
+
+# ---------------------------------------------------------------- deck 09 ---
+def deck09():
+    """Clock recovery, the reference clock and tolerance."""
+    from si_models import jitter as J
+    d = {}
+    il = J.integration_limits_matter()
+    d['phase_noise'] = dict(rows=il['rows'], f_hz=thin(il['f_hz'], 300),
+                            l_dbc=thin(il['l_dbc'], 300),
+                            f_carrier=il['f_carrier'])
+    tr = J.cdr_transfer(np.logspace(3, 9, 300), 4e6)
+    d['cdr'] = dict(f_hz=thin(tr['f_hz'], 240),
+                    transfer_db=thin(tr['jitter_transfer_db'], 240),
+                    error_db=thin(tr['error_db'], 240))
+    d['cdr_zeta'] = {}
+    for z in (0.5, 0.707, 1.0, 2.0):
+        t = J.cdr_transfer(np.logspace(3, 9, 240), 4e6, z)
+        d['cdr_zeta']['zeta %.3g' % z] = dict(
+            f_hz=thin(t['f_hz'], 200),
+            transfer_db=thin(t['jitter_transfer_db'], 200))
+    jt = J.jitter_tolerance(bw_hz=4e6, budget_ui=0.15)
+    d['jtol'] = dict(f_hz=thin(jt['f_hz']), tol_ui=thin(jt['tol_ui']),
+                     bw_hz=jt['bw_hz'], budget_ui=jt['budget_ui'])
+    d['jtol_bw'] = {}
+    for bw in (1e6, 4e6, 16e6):
+        r = J.jitter_tolerance(bw_hz=bw, budget_ui=0.15)
+        d['jtol_bw']['%g MHz' % (bw / 1e6)] = dict(
+            f_hz=thin(r['f_hz'], 200), tol_ui=thin(r['tol_ui'], 200))
+    ch, p = _jit_channel()
+    pk = int(np.argmax(p))
+    d['ddj'] = J.ddj_from_pulse(p, ch['M'], pk, depth=6)
+    d['ui_ps'] = ch['UI'] * 1e12
+    return d
+
+
+# ---------------------------------------------------------------- deck 10 ---
+def deck10():
+    """Crosstalk, amplitude noise and the two-dimensional view."""
+    from si_models import jitter as J
+    from si_models import sparam_qc as Q
+    ch, p = _jit_channel()
+    ui_ps = ch['UI'] * 1e12
+    d = {'ui_ps': ui_ps}
+    sep = Q.separability_from_channel(ch)
+    d['separability'] = J.separability(sep['rows'])
+    d['separability']['noise_mv_rms'] = sep['noise_mv_rms']
+    d['separability']['amp_mv'] = sep['amp_mv']
+    sl = J.slew_from_pulse(p, ch['M'], ui_ps)
+    d['slew'] = sl
+    d['amp_to_jitter'] = [
+        dict(dv_mv=v, jitter_ps=J.amplitude_to_jitter(v, sl['slew_mv_per_ps']),
+             jitter_ui=J.amplitude_to_jitter(v, sl['slew_mv_per_ps']) / ui_ps)
+        for v in (1, 2, 5, 10, 20)]
+    try:
+        import json as _j
+        x = _j.load(open(os.path.join(OUT, 'deck06.json')))
+        icn = x['icn']['icn_mv']
+    except Exception:
+        icn = 2.06
+    d['xt_jitter'] = J.crosstalk_jitter(icn, sl['slew_mv_per_ps'], ui_ps)
+    d['xt_sweep'] = [J.crosstalk_jitter(v, sl['slew_mv_per_ps'], ui_ps)
+                     for v in (1, 2, 5, 10, 20)]
+    return d
+
+
+# ------------------------------------------------------ power integrity ----
+def deck11():
+    """The PDN as an impedance."""
     from si_models import pdn as P
     d = {'target': P.target_impedance(0.9, 5.0, 20.0)}
+    d['targets'] = [P.target_impedance(v, 5.0, i)
+                    for v, i in ((1.8, 1.0), (1.2, 5.0), (0.9, 20.0),
+                                 (0.75, 100.0), (0.6, 400.0))]
     z = P.pdn_impedance()
     f = z['f']
     d['f_hz'] = thin(f, 420)
@@ -366,8 +541,7 @@ def deck07():
     d['caps'] = {k: dict(srf_hz=P.series_resonance(v['c'], v['esl'], 0.6e-9),
                          srf_bare_hz=P.series_resonance(v['c'], v['esl']),
                          **v) for k, v in P.CAP_LIBRARY.items()}
-    d['mounting'] = [dict(vias=n,
-                          l_ph=P.mounting_inductance(0.8, 1.6, n) * 1e12)
+    d['mounting'] = [dict(vias=n, l_ph=P.mounting_inductance(0.8, 1.6, n) * 1e12)
                      for n in (1, 2, 4, 8)]
     d['more_caps'] = []
     for cnt in (10, 20, 40, 80, 160):
@@ -380,7 +554,105 @@ def deck07():
                                    worst_peak_hz=pk[0]['f_hz'] if pk else None,
                                    z_at_100mhz=float(np.interp(1e8, f, zz['z'])),
                                    z_at_1ghz=float(np.interp(1e9, f, zz['z']))))
-    d['ssn'] = [P.ssn(n, 0.020, 25.0, 60.0) for n in (1, 4, 16, 32, 64)]
+    d['fdtim'] = P.fdtim()
+    d['fdtim_sweep'] = P.fdtim_sweep()
+    d['fdtim_targets'] = [dict(z_target_mohm=zt,
+                               **{k: v for k, v in P.fdtim(zt).items()
+                                  if k in ('n_min', 'l_for_one_cap_ph')})
+                          for zt in (10, 25, 45, 100)]
+    return d
+
+
+# ---------------------------------------------------------------- deck 12 ---
+def deck12():
+    """Planes, cavities and the PDN ecology."""
+    from si_models import pdn as P
+    from si_models import retpath as R
+    d = {}
+    b = P.bandini_mountain()
+    d['bandini'] = dict(f_hz=thin(b['f'], 400), z_ohm=thin(b['z'], 400),
+                        f_bm_hz=b['f_bm_hz'], z_bm_ohm=b['z_bm_ohm'],
+                        f_peak_hz=b['f_peak_hz'], z_peak_ohm=b['z_peak_ohm'],
+                        q=b['q'], l_eff_ph=b['l_eff_ph'],
+                        c_die_nf=b['c_die_nf'], l_pkg_ph=b['l_pkg_ph'])
+    d['bandini_damping'] = P.bandini_damping(r_list_mohm=(2, 5, 10, 20, 50))
+    d['bandini_vs_cdie'] = []
+    for c in (50, 100, 200, 500, 1000):
+        bb = P.bandini_mountain(c_die_nf=c)
+        d['bandini_vs_cdie'].append(dict(c_die_nf=c,
+                                         f_bm_mhz=bb['f_bm_hz'] / 1e6,
+                                         z_bm_mohm=1e3 * bb['z_bm_ohm'],
+                                         z_peak_mohm=1e3 * bb['z_peak_ohm']))
+    d['spreading'] = P.spreading_sweep()
+    d['spreading_note'] = P.spreading_inductance(100.0, 10.0)
+    pp = P.probe_position_study()
+    d['probe'] = {k: dict(f_hz=thin(v['f'], 300), z_ohm=thin(v['z'], 300),
+                          z_max_band=v['z_max_band'], f_at_max=v['f_at_max'])
+                  for k, v in pp.items()}
+    d['cavity'] = R.cavity_modes(150, 100, 4.0, 4)
+    t = P.transient_droop(i_step_a=10.0, t_span_ns=1000.0)
+    keep = ('first_droop_charge_mv', 'first_droop_esr_mv', 'first_droop_mv',
+            'first_droop_computed_mv', 'worst_mv', 'worst_at_ns',
+            'worst_as_impedance_mohm', 'z_peak_mohm',
+            'droop_vs_zpeak_err_pct', 'at_end_mv', 'r_dc_mohm',
+            'i_step_a', 'rise_ps', 't_span_ns', 'record_us')
+    d['transient'] = dict(t_ns=thin(t['t_ns'], 500), v_mv=thin(t['v_mv'], 500),
+                          **{k: t[k] for k in keep})
+    d['transient_cdie'] = []
+    for c in (50, 200, 800):
+        tt = P.transient_droop(i_step_a=10.0, c_die_nf=c, t_span_ns=1000.0)
+        d['transient_cdie'].append(dict(
+            c_die_nf=c, t_ns=thin(tt['t_ns'], 300),
+            v_mv=thin(tt['v_mv'], 300),
+            first_droop_charge_mv=tt['first_droop_charge_mv'],
+            first_droop_esr_mv=tt['first_droop_esr_mv'],
+            first_droop_computed_mv=tt['first_droop_computed_mv'],
+            worst_mv=tt['worst_mv']))
+    # The two domains checked against each other: the deepest droop divided by
+    # the step current ought to be the peak of the impedance profile.
+    VER['pdn/droop_vs_zpeak'] = dict(
+        ours=t['worst_as_impedance_mohm'],
+        published=t['z_peak_mohm'],
+        err_pct=t['droop_vs_zpeak_err_pct'],
+        source='internal: deepest transient droop per amp against the peak of '
+               'the impedance profile (time domain vs frequency domain)',
+        within_tolerance=abs(t['droop_vs_zpeak_err_pct']) < 10.0)
+    return d
+
+
+# ---------------------------------------------------------------- deck 13 ---
+def deck13():
+    """Measuring low impedance."""
+    from si_models import pdn as P
+    d = {}
+    d['sensitivity'] = P.measurement_sensitivity()
+    d['sensitivity_40'] = P.measurement_sensitivity(directivity_db=40.0)
+    d['sensitivity_50'] = P.measurement_sensitivity(directivity_db=50.0)
+    zs = np.logspace(-4, 1, 240)
+    d['shunt_curve'] = dict(
+        z_ohm=zs.tolist(),
+        s21_db=(20 * np.log10(np.abs(P.two_port_shunt(zs)))).tolist(),
+        s11_db=(20 * np.log10(np.abs((zs - 50.0) / (zs + 50.0)))).tolist())
+    d['roundtrip'] = []
+    for zm in (0.5, 1, 5, 20, 100, 500):
+        z = zm * 1e-3
+        s21 = P.two_port_shunt(z)
+        back = P.two_port_shunt_invert(s21)
+        d['roundtrip'].append(dict(z_mohm=zm,
+                                   s21_db=float(20 * np.log10(abs(s21))),
+                                   recovered_mohm=float(abs(back) * 1e3)))
+    d['ground_loop'] = [P.ground_loop_error(1.0, zs_) for zs_ in
+                        (10.0, 50.0, 200.0, 1000.0)]
+    return d
+
+
+# ---------------------------------------------------------------- deck 14 ---
+def deck14():
+    """Power integrity meets signal integrity."""
+    from si_models import pdn as P
+    from si_models import jitter as J
+    from si_models import retpath as R
+    d = {'ssn': [P.ssn(n, 0.020, 25.0, 60.0) for n in (1, 4, 16, 32, 64)]}
     rs = P.ripple_sweep(20.0, -20.0, 4e6, 14e9)
     rs['f_hz'] = thin(rs['f_hz'])
     rs['jitter_pp_ps'] = thin(rs['jitter_pp_ps'])
@@ -390,60 +662,28 @@ def deck07():
                           20.0, 5e6, p, pll_bw_hz=4e6,
                           f_carrier=14e9)['jitter_pp_ps'])
                  for p in (-10, -20, -30, -40)]
+    ch, p_ = _jit_channel()
+    ui_ps = ch['UI'] * 1e12
+    sl = J.slew_from_pulse(p_, ch['M'], ui_ps)
+    d['slew'] = sl
+    d['rail_to_jitter'] = [
+        dict(ripple_mv=v,
+             jitter_ps=J.amplitude_to_jitter(v * 0.1, sl['slew_mv_per_ps']),
+             note='10 per cent of rail ripple reaching the output stage')
+        for v in (5, 10, 20, 50)]
+    d['cavity_to_signal'] = R.cavity_modes(150, 100, 4.0, 4)
+    d['dc_blocking'] = []
+    for n in (1, 2, 4, 8, 16):
+        d['dc_blocking'].append(dict(
+            n_caps=n,
+            l_ph=P.mounting_inductance(0.8, 1.6, n) * 1e12,
+            z_at_1ghz=float(2 * np.pi * 1e9 *
+                            P.mounting_inductance(0.8, 1.6, n))))
     return d
 
 
-# ---------------------------------------------------------------- deck 08 ---
-def deck08():
-    from si_models import jitter as J
-    d = {'q': {str(b): J.q_from_ber(b) for b in
-               (1e-3, 1e-6, 1e-9, 1e-12, 1e-15, 1e-17)}}
-    d['dual_dirac'] = [J.dual_dirac(rj, dj, 1e-12)
-                       for rj, dj in ((0.5, 5.0), (0.8, 12.0), (1.5, 12.0),
-                                      (0.8, 20.0))]
-    d['bathtubs'] = {}
-    for lab, (rj, dj) in (('RJ 0.5 ps, DJ 8 ps', (0.5, 8.0)),
-                          ('RJ 1.0 ps, DJ 8 ps', (1.0, 8.0)),
-                          ('RJ 0.5 ps, DJ 16 ps', (0.5, 16.0))):
-        b = J.bathtub(rj, dj, 35.7, 400)
-        d['bathtubs'][lab] = dict(t_ps=thin(b['t_ps'], 300),
-                                  ber=thin(b['ber'], 300),
-                                  **J.eye_opening(b))
-    d['extrapolation'] = []
-    for w in (0.0, 1e-9, 1e-8, 1e-7):
-        e = J.extrapolation_error(w2=w)
-        e['weight'] = w
-        d['extrapolation'].append({k: v for k, v in e.items()
-                                   if not isinstance(v, (list, tuple))})
-    il = J.integration_limits_matter()
-    d['phase_noise'] = dict(rows=il['rows'], f_hz=thin(il['f_hz'], 300),
-                            l_dbc=thin(il['l_dbc'], 300),
-                            f_carrier=il['f_carrier'])
-    jt = J.jitter_tolerance(bw_hz=4e6, budget_ui=0.15)
-    d['jtol'] = dict(f_hz=thin(jt['f_hz']), tol_ui=thin(jt['tol_ui']),
-                     bw_hz=jt['bw_hz'], budget_ui=jt['budget_ui'])
-    d['jtol_bw'] = {}
-    for bw in (1e6, 4e6, 16e6):
-        r = J.jitter_tolerance(bw_hz=bw, budget_ui=0.15)
-        d['jtol_bw']['%g MHz' % (bw / 1e6)] = dict(
-            f_hz=thin(r['f_hz'], 200), tol_ui=thin(r['tol_ui'], 200))
-    tr = J.cdr_transfer(np.logspace(3, 9, 300), 4e6)
-    d['cdr'] = dict(f_hz=thin(tr['f_hz'], 240),
-                    transfer_db=thin(tr['jitter_transfer_db'], 240),
-                    error_db=thin(tr['error_db'], 240))
-    try:
-        from si_models import sparam_qc as Q
-        ch = Q.reference_channel(0.0)
-        p = Q.pulse_from_s21(ch['s21'], ch['M'], ch['NFFT'])
-        pk = int(np.argmax(p))
-        d['ddj'] = J.ddj_from_pulse(p, ch['M'], pk, depth=6)
-    except Exception as exc:
-        d['ddj'] = dict(ok=False, error=str(exc))
-    return d
-
-
-# ---------------------------------------------------------------- deck 09 ---
-def deck09():
+# ---------------------------------------------------------------- deck 15 ---
+def deck15():
     from si_models import timing as T
     d = {'flight': [dict(z_source=z,
                          **{k: v for k, v in
@@ -463,8 +703,8 @@ def deck09():
     return d
 
 
-# ---------------------------------------------------------------- deck 10 ---
-def deck10():
+# ---------------------------------------------------------------- deck 16 ---
+def deck16():
     from si_models import sparam_qc as Q
     ch = Q.reference_channel(0.0)
     d = {'equalised': Q.equalised_eye(ch['s21'], ch)}
@@ -492,8 +732,8 @@ def deck10():
     return d
 
 
-# ---------------------------------------------------------------- deck 11 ---
-def deck11():
+# ---------------------------------------------------------------- deck 17 ---
+def deck17():
     from si_models import sparam_qc as Q
     from si_models import com as C
     ch = Q.reference_channel(0.0)
@@ -530,12 +770,30 @@ def deck11():
     return d
 
 
+# ---------------------------------------------------------- jitter 07-10 ---
+def _jit_channel():
+    from si_models import sparam_qc as Q
+    ch = Q.reference_channel(0.0)
+    p = Q.pulse_from_s21(ch['s21'], ch['M'], ch['NFFT'])
+    return ch, p
+
+
+def _jit_channel_eq():
+    """The channel after its receive equaliser, which is where a sampler sits."""
+    from si_models import sparam_qc as Q
+    ch = Q.reference_channel(0.0)
+    eq = Q.equalised_pulse(ch)
+    return ch, eq['pulse']
+
+
 if __name__ == '__main__':
     only = sys.argv[1:] if len(sys.argv) > 1 else None
     fns = {'deck01': deck01, 'deck02': deck02, 'deck03': deck03,
            'deck04': deck04, 'deck05': deck05, 'deck06': deck06,
            'deck07': deck07, 'deck08': deck08, 'deck09': deck09,
-           'deck10': deck10, 'deck11': deck11}
+           'deck10': deck10, 'deck11': deck11, 'deck12': deck12,
+           'deck13': deck13, 'deck14': deck14, 'deck15': deck15,
+           'deck16': deck16, 'deck17': deck17}
     for nm, fn in fns.items():
         if only and nm not in only:
             continue

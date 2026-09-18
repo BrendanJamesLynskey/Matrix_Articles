@@ -1,0 +1,370 @@
+<header class="hero">
+    <div class="series-label">Signal Integrity &mdash; Power Integrity, Deck 13 of 17</div>
+    <h1>Measuring <span class="accent">Low Impedance</span></h1>
+    <p class="subtitle">A power delivery network has to be verified, and the quantity to
+    be verified is a milliohm. Every instinct carried over from signal measurement fails
+    here, for reasons worth understanding rather than working around.</p>
+
+    <div class="tags">
+        <span class="tag">directivity</span><span class="tag">shunt-through</span>
+        <span class="tag">Kelvin</span><span class="tag">ground loop</span>
+        <span class="tag">correlation</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">reflection</span>
+        <span class="pipeline-arrow">&times;</span>
+        <span class="pipeline-step">transmission</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$S_{21}$ at &minus;88 dB</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">a milliohm</span>
+    </div>
+    __NAV__
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Why a milliohm is hard</a></li>
+        <li><a href="#slide-02">Reflection stops at about an ohm</a></li>
+        <li><a href="#slide-03">Interactive: the two-port shunt-through method</a></li>
+        <li><a href="#slide-04">The ground loop that ruins it</a></li>
+        <li><a href="#slide-05">Kelvin sensing, and why four wires</a></li>
+        <li><a href="#slide-06">What to measure, and where</a></li>
+        <li><a href="#slide-07">Correlating a measurement to a model</a></li>
+        <li><a href="#slide-08">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Why a Milliohm Is Hard</h2>
+    <p>Deck 11 established that a modern rail needs an impedance of a few milliohms, and
+    a large accelerator core tens of microhms. Deck 12 established that the answer depends
+    on where the two contacts are. Both of those are claims about a physical board, and
+    a claim about a physical board eventually has to be measured.</p>
+
+    <p>The difficulty is not precision in the ordinary sense. It is that every technique
+    familiar from signal measurement is built around a reference impedance of fifty ohms,
+    and a milliohm is four and a half orders of magnitude below it.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel r">
+            <h4>The contacts</h4>
+            <p>A few milliohms of contact or lead resistance is the whole quantity being
+            measured. Any two-wire method measures its own leads.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>The instrument</h4>
+            <p>A reflection measurement of anything far below the reference impedance
+            looks like a short, and the difference from a short is what has to be
+            resolved.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>The setup</h4>
+            <p>Two cables sharing a ground form a loop whose impedance is comparable with
+            the device, so current intended for the device goes round the outside
+            instead.</p>
+        </div>
+    </div>
+
+    <p>Each has a specific remedy, and the three remedies are the content of this deck.</p>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Reflection Stops at About an Ohm</h2>
+    <p>The natural instinct is a one-port measurement: send a wave, measure what comes
+    back, invert $Z = Z_0(1+S_{11})/(1-S_{11})$. It works beautifully down to a few ohms
+    and then stops, and the reason is not noise.</p>
+
+    <p>As the impedance falls, $S_{11}$ approaches minus one and the measured quantity
+    becomes a tiny departure from a full reflection. How tiny a departure can be believed
+    is set by the analyser's <strong>directivity</strong> &mdash; the leakage of the
+    incident signal into the reflected channel &mdash; which is typically forty decibels.
+    That puts a floor of roughly $2Z_0 \times 10^{-D/20}$ on the impedance that can be
+    resolved at all.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table class="checktab" id="ms-table"></table>
+    </div>
+
+    <p class="note" id="ms-note"></p>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Interactive: The Two-Port Shunt-Through Method</h2>
+    <p>Drive through the device instead. Place the unknown as a shunt between two ports
+    and measure transmission. A shunt admittance $Y$ has the ABCD matrix
+    $\begin{pmatrix}1&0\\Y&1\end{pmatrix}$, from which</p>
+
+    <p>$$S_{21} = \frac{2Z}{2Z + Z_0}, \qquad
+        Z = \frac{Z_0}{2}\cdot\frac{S_{21}}{1 - S_{21}}.$$</p>
+
+    <p>The key feature is the direction of the inequality. A small impedance produces a
+    <em>small transmitted signal</em>, not a small deviation from a large one. A milliohm
+    transmits about &minus;88 decibels, and an analyser has well over a hundred decibels
+    of dynamic range, so the measurement sits comfortably inside the instrument's
+    capability &mdash; and there is no directivity term at all.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="sh-plot" width="780" height="300"></canvas>
+        <div class="legend">
+            <span><i style="background:#0ea5e9"></i>transmission through the shunt</span>
+            <span><i style="background:#f472b6"></i>reflection from it</span>
+            <span><i style="background:#fbbf24"></i>the directivity floor</span>
+        </div>
+    </div>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table class="checktab" id="rt-table"></table>
+    </div>
+
+    <p class="note" id="rt-note"></p>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>The Ground Loop That Ruins It</h2>
+    <p>The method has one failure mode and it is severe. The two ports share a ground
+    through the cable braids, so there is a second path from one port to the other that
+    does not go through the device. At low frequency the braid impedance is comparable
+    with a milliohm, and the measurement reads the two in parallel.</p>
+
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="gl-table"></table>
+    </div>
+
+    <p>The error is always in the same direction &mdash; the measurement reads
+    <em>lower</em> than the truth, because a parallel path can only reduce the apparent
+    impedance. A power delivery network that measures better than it is, is exactly the
+    wrong error to make.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel g">
+            <h4>The remedy</h4>
+            <p>A common-mode isolator, transformer or semi-floating differential
+            amplifier in one port's path, which breaks the braid loop without breaking
+            the signal path. Needed below roughly a megahertz, where the braid's own
+            inductance has not yet made it a high impedance.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>How to know it is working</h4>
+            <p>Measure a known short and a known milliohm standard. Without an isolator
+            the two read almost the same at low frequency; with one, they separate. It
+            is a two-minute check and it is the difference between a measurement and a
+            number.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Kelvin Sensing, and Why Four Wires</h2>
+    <p>At direct current and up to the low kilohertz, the network-analyser methods are
+    replaced by the oldest trick in low-resistance measurement: separate the wires that
+    carry the current from the wires that sense the voltage.</p>
+
+    <p>A two-wire measurement puts the lead and contact resistance in series with the
+    unknown and reports the sum. Since the leads are themselves several milliohms, the
+    measurement is mostly of itself. A four-point Kelvin arrangement forces current
+    through one pair and senses voltage with another, and because the sense pair carries
+    essentially no current its own resistance drops out.</p>
+
+    <div class="callout">
+        <div class="callout-label">Where the two regimes meet</div>
+        <p>Kelvin sensing is exact and slow; shunt-through is fast and fails below the
+        frequency where the ground loop bites. A complete impedance profile is therefore
+        usually stitched from two measurements, and the overlap region is where they are
+        checked against each other. A discontinuity at the join is the usual sign that
+        the isolator is missing.</p>
+    </div>
+
+    <p>The same principle appears again in the board itself. A regulator that senses its
+    output at its own pins regulates the voltage at its own pins; one that senses at the
+    load regulates the voltage at the load, and the difference is the IR drop along the
+    path &mdash; which for a hundred-amp rail at a milliohm is a hundred millivolts, or
+    more than the entire ripple budget.</p>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>What to Measure, and Where</h2>
+    <p>Deck 12 established that impedance is a property of a pair of points. That makes
+    the choice of probe location part of the measurement's definition rather than a
+    practical detail, and there are only a few defensible choices.</p>
+
+    <table>
+        <thead><tr><th>Where</th><th>What it tells you</th><th>What it misses</th></tr></thead>
+        <tbody>
+            <tr><td>At the load's own pads, or as close as the package allows</td><td>What the load actually experiences &mdash; the right answer</td><td>Usually inaccessible, and adding a probe changes it</td></tr>
+            <tr><td>At a dedicated test point near the load</td><td>A good proxy, if the spreading inductance between the two is small</td><td>The spreading inductance between the two, which slide 02 of deck 12 says is logarithmic and non-zero</td></tr>
+            <tr><td>At the regulator</td><td>The regulator's view, useful for loop stability</td><td>Almost everything above a megahertz</td></tr>
+            <tr><td>Between two arbitrary plane points</td><td>The cavity's behaviour</td><td>The die, the package, and therefore the Bandini Mountain entirely</td></tr>
+        </tbody>
+    </table>
+
+    <p class="note">The last row is worth dwelling on. A board-level measurement cannot
+    see the largest feature in the profile, because that feature is on the far side of
+    the package inductance. A board that measures beautifully can still sit under a die
+    that is seeing a tall peak, and no amount of care with the instrument will reveal it
+    &mdash; which is why on-die voltage monitors exist.</p>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Correlating a Measurement to a Model</h2>
+    <p>The purpose of measuring is usually to check a simulation, and the same warning
+    applies here as in deck 16: agreement on the quantity that is easy to plot does not
+    imply agreement on the quantity that matters.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>What usually agrees</h4>
+            <p>The broad shape: the capacitive fall, the resonances of each tier, the
+            overall level. Getting these right mostly requires having the right parts in
+            the model, which is bookkeeping.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>What usually does not</h4>
+            <p>The height of the anti-resonant peaks, which depends on damping and
+            therefore on the equivalent series resistance of every branch, on board
+            copper loss, and on the dielectric loss of the planes. Those are the numbers
+            least likely to be in a datasheet and most likely to be guessed.</p>
+        </div>
+    </div>
+
+    <p>Since deck 11 showed that the peaks are what decide a design, a model that matches
+    everywhere except the peaks has failed at the only place it was needed. The practical
+    discipline is to correlate on peak height explicitly, and to treat a model that is
+    too <em>good</em> at the peaks &mdash; predicting a lower impedance than measured
+    &mdash; as the more dangerous error, since it is the direction that ships a board.</p>
+
+    <div class="callout">
+        <div class="callout-label">And a time-domain check</div>
+        <p>A frequency-domain correlation can be satisfied while the transient response
+        is wrong, for the same reason deck 16 gives: the phase relationships across the
+        band decide where the energy lands in time. Comparing a measured droop against a
+        simulated one, as deck 12 computes it, is a stronger test than comparing two
+        impedance curves.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Method</th><th>Expression</th><th>Range and failure mode</th></tr></thead>
+        <tbody>
+            <tr><td>One-port reflection</td><td>$Z=Z_0\frac{1+S_{11}}{1-S_{11}}$</td><td>Down to about an ohm; limited by directivity, not by noise</td></tr>
+            <tr><td>Two-port shunt-through</td><td>$Z=\frac{Z_0}{2}\frac{S_{21}}{1-S_{21}}$</td><td>Down to a milliohm and below; fails at low frequency on the braid loop</td></tr>
+            <tr><td>A milliohm shunt</td><td>$S_{21}\approx -88$ dB</td><td>A small signal in a large dynamic range, which is why it works</td></tr>
+            <tr><td>Ground-loop error</td><td>Parallel with the braid</td><td>Always reads low; cure with a common-mode isolator</td></tr>
+            <tr><td>Four-point Kelvin</td><td>Force and sense separately</td><td>DC to kilohertz; exact, slow</td></tr>
+            <tr><td>Where to probe</td><td>&mdash;</td><td>Part of the definition; a board measurement cannot see the Bandini peak</td></tr>
+            <tr><td>Correlation</td><td>&mdash;</td><td>Correlate on peak height, and check the transient</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<script>
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#0ea5e9',teal:'#34d399',
+         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+function hidpi(id){const c=document.getElementById(id);if(!c)return null;
+  const r=window.devicePixelRatio||1,w=c.width,h=c.height;
+  c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
+  const x=c.getContext('2d');x.scale(r,r);return{ctx:x,w,h};}
+function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
+function label(ctx,t,x,y,c2,s,a){ctx.fillStyle=c2||C.dim;
+  ctx.font=(s||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=a||'left';
+  ctx.fillText(t,x,y);ctx.textAlign='left';}
+function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
+function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+
+  '</div><div class="metric-value">'+v+'</div></div>';}
+function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
+  if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
+  if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
+function ohm(z){return z>=1?z.toFixed(2)+' Ω':z>=1e-3?(1e3*z).toFixed(2)+' mΩ':
+  (1e6*z).toFixed(0)+' µΩ';}
+
+/* ---- 02 sensitivity ---- */
+(function(){
+  const t=document.getElementById('ms-table'); if(!t||!SI.sensitivity)return;
+  const s=SI.sensitivity;
+  let html='<thead><tr><th>Impedance</th><th>$S_{11}$</th>'+
+    '<th>Departure from a perfect short</th><th>$S_{21}$ through a shunt</th>'+
+    '<th>Reflection can resolve it?</th></tr></thead><tbody>';
+  s.rows.forEach(function(r){
+    html+='<tr><td>'+r.z_mohm.toFixed(1)+' mΩ</td><td>'+r.s11_db.toFixed(4)+
+      ' dB</td><td>'+r.s11_departure_from_short.toExponential(1)+'</td><td>'+
+      r.s21_db.toFixed(1)+' dB</td><td class="'+
+      (r.resolvable_by_reflection?'ok':'bad')+'">'+
+      (r.resolvable_by_reflection?'yes':'no')+'</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  document.getElementById('ms-note').textContent=
+    'With '+s.directivity_db.toFixed(0)+' decibels of directivity the reflection floor '+
+    'is about '+ohm(s.reflection_floor_ohm)+', so none of these impedances can be '+
+    'resolved that way — the departure from a perfect short is smaller than the '+
+    'instrument’s own leakage. The transmission column tells a different story: '+
+    'every one of them produces a signal an analyser measures without difficulty.';
+})();
+
+/* ---- 03 shunt ---- */
+(function(){
+  const H=hidpi('sh-plot'); if(!H||!SI.shunt_curve)return;
+  const d=SI.shunt_curve; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:58,r:16,t:20,b:40};
+  const ZLO=-4,ZHI=1;
+  const X=z=>p.l+(Math.log10(z)-ZLO)/(ZHI-ZLO)*(w-p.l-p.r);
+  const LO=-120,HI=5, Y=v=>h-p.b-(v-LO)/(HI-LO)*(h-p.t-p.b);
+  axes(ctx,w,h,p,'impedance of the device','scattering parameter, dB');
+  for(let v=LO;v<=HI;v+=20){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');}
+  for(let e=ZLO;e<=ZHI;e++){ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(X(Math.pow(10,e)),p.t);ctx.lineTo(X(Math.pow(10,e)),h-p.b);ctx.stroke();
+    label(ctx,ohm(Math.pow(10,e)),X(Math.pow(10,e)),h-p.b+14,C.dim,9,'center');}
+  if(SI.sensitivity){const fl=SI.sensitivity.reflection_floor_ohm;
+    ctx.fillStyle='rgba(251,191,36,.10)';
+    ctx.fillRect(p.l,p.t,X(fl)-p.l,h-p.t-p.b);
+    label(ctx,'below the directivity floor',p.l+8,p.t+16,C.amber,10,'left');}
+  function ser(arr,col){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();let st=false;
+    d.z_ohm.forEach(function(z,i){const px=X(z),py=Y(Math.max(LO,Math.min(HI,arr[i])));
+      st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+    ctx.stroke();}
+  ser(d.s21_db,C.accent); ser(d.s11_db,C.pink);
+  const t=document.getElementById('rt-table');
+  let html='<thead><tr><th>True impedance</th><th>$S_{21}$</th>'+
+    '<th>Recovered from $S_{21}$</th><th>Error</th></tr></thead><tbody>';
+  (SI.roundtrip||[]).forEach(function(r){
+    const err=100*(r.recovered_mohm/r.z_mohm-1);
+    html+='<tr><td>'+r.z_mohm.toFixed(1)+' mΩ</td><td>'+r.s21_db.toFixed(1)+
+      ' dB</td><td>'+r.recovered_mohm.toFixed(4)+' mΩ</td><td class="ok">'+
+      (Math.abs(err)<1e-6?'exact':err.toFixed(4)+' %')+'</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+  const rt=SI.roundtrip||[];
+  if(rt.length)document.getElementById('rt-note').textContent=
+    'Inverting the transmission recovers the impedance exactly, from '+
+    rt[0].z_mohm.toFixed(1)+' milliohms at '+rt[0].s21_db.toFixed(0)+
+    ' dB up to '+rt[rt.length-1].z_mohm.toFixed(0)+' milliohms at '+
+    rt[rt.length-1].s21_db.toFixed(0)+' dB. The arithmetic is not where the difficulty '+
+    'lies; the difficulty is entirely in the fixture, which is the next slide.';
+})();
+
+/* ---- 04 ground loop ---- */
+(function(){
+  const t=document.getElementById('gl-table'); if(!t||!SI.ground_loop)return;
+  let html='<thead><tr><th>Braid impedance</th><th>True device impedance</th>'+
+    '<th>What the measurement reads</th><th>Error</th></tr></thead><tbody>';
+  SI.ground_loop.forEach(function(r){
+    html+='<tr><td>'+r.z_shield_mohm.toFixed(0)+' mΩ</td><td>'+
+      r.z_true_mohm.toFixed(2)+' mΩ</td><td>'+r.z_apparent_mohm.toFixed(3)+
+      ' mΩ</td><td class="'+(Math.abs(r.error_pct)>2?'bad':'ok')+'">'+
+      r.error_pct.toFixed(1)+' %</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+</script>

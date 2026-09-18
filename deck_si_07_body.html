@@ -1,26 +1,24 @@
 <header class="hero">
-    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 07</div>
-    <h1>Power Integrity as a <span class="accent">Signal-Integrity Problem</span></h1>
-    <p class="subtitle">Not how to design a power delivery network, but by what route a
-    disturbance on the supply becomes an error at the receiver &mdash; and why adding
-    capacitors can make the impedance worse at exactly the frequency that matters.</p>
+    <div class="series-label">Signal Integrity &mdash; Jitter, Deck 07 of 17</div>
+    <h1>Total Jitter and the <span class="accent">Bit Error Ratio</span></h1>
+    <p class="subtitle">Jitter is not a quantity a system has; it is a quantity defined
+    against an error ratio you nominate. Everything awkward about measuring it follows
+    from that, and so does the one instrument that can do it honestly.</p>
 
     <div class="tags">
-        <span class="tag">target impedance</span><span class="tag">anti-resonance</span>
-        <span class="tag">mounting inductance</span><span class="tag">SSN</span>
-        <span class="tag">PSRR</span><span class="tag">supply-induced jitter</span>
+        <span class="tag">TJ(BER)</span><span class="tag">BERT</span>
+        <span class="tag">RJ / DJ</span><span class="tag">DDJ</span>
+        <span class="tag">BUJ</span><span class="tag">stationarity</span>
     </div>
 
     <div class="pipeline">
-        <span class="pipeline-step">$di/dt$</span>
+        <span class="pipeline-step">timing noise</span>
         <span class="pipeline-arrow">&rarr;</span>
-        <span class="pipeline-step">$Z_{\text{PDN}}(f)$</span>
+        <span class="pipeline-step">eye closure</span>
         <span class="pipeline-arrow">&rarr;</span>
-        <span class="pipeline-step">supply ripple</span>
+        <span class="pipeline-step">$\mathrm{BER}(t)$</span>
         <span class="pipeline-arrow">&rarr;</span>
-        <span class="pipeline-step">PSRR, PLL</span>
-        <span class="pipeline-arrow">&rarr;</span>
-        <span class="pipeline-step">jitter</span>
+        <span class="pipeline-step">TJ(BER)</span>
     </div>
     __NAV__
 </header>
@@ -29,334 +27,328 @@
     <div class="slide-number">00</div>
     <h2>Topics We'll Cover</h2>
     <ul class="contents-list">
-        <li><a href="#slide-01">The question this deck asks</a></li>
-        <li><a href="#slide-02">A capacitor is an inductor, above its resonance</a></li>
-        <li><a href="#slide-03">Mounting inductance is the layout's contribution</a></li>
-        <li><a href="#slide-04">Interactive: the impedance of the whole ladder</a></li>
-        <li><a href="#slide-05">Interactive: when more capacitors make it worse</a></li>
-        <li><a href="#slide-06">Target impedance, and what the rule is worth</a></li>
-        <li><a href="#slide-07">Simultaneous switching noise</a></li>
-        <li><a href="#slide-08">Interactive: from supply ripple to jitter</a></li>
-        <li><a href="#slide-09">Where the regulator's switching frequency should go</a></li>
-        <li><a href="#slide-10">What this deck does not cover</a></li>
-        <li><a href="#slide-11">Cheat sheet</a></li>
+        <li><a href="#slide-01">Five rules, and why they are worth having</a></li>
+        <li><a href="#slide-02">Total jitter is a function, not a number</a></li>
+        <li><a href="#slide-03">Interactive: what only a bit error ratio tester can do</a></li>
+        <li><a href="#slide-04">Two quantities called Q</a></li>
+        <li><a href="#slide-05">The decomposition tree, done properly</a></li>
+        <li><a href="#slide-06">Bounded uncorrelated jitter: organising ignorance</a></li>
+        <li><a href="#slide-07">Interactive: the real distribution, from the channel</a></li>
+        <li><a href="#slide-08">Stationarity, the assumption nobody states</a></li>
+        <li><a href="#slide-09">Two frequency domains, easily confused</a></li>
+        <li><a href="#slide-10">Cheat sheet</a></li>
     </ul>
 </section>
 
 <section class="slide" id="slide-01">
     <div class="slide-number">01</div>
-    <h2>The Question This Deck Asks</h2>
-    <p>Power delivery is a large subject and most of it belongs elsewhere. Regulator
-    topologies, on-package voltage regulation, backside power delivery, deep-trench
-    capacitors and the thermal consequences of all of them are covered in the
-    <a href="https://github.com/BrendanJamesLynskey/SoC">SoC series</a>, deck 09, from
-    the silicon side. This deck asks a narrower question with a definite answer: by what
-    route does a disturbance on the supply become an error at a receiver, and how much of
-    a link's budget does it consume?</p>
+    <h2>Five Rules, and Why They Are Worth Having</h2>
+    <p>Jitter attracts acronyms faster than almost any other topic in this field, and it
+    is easy to end up fluent in the vocabulary while losing track of what any of it is
+    for. Ransom Stephens's remedy is a short list of rules that the acronyms have to
+    serve, and this section of the series is organised around them.</p>
 
-    <p>The route has three stages and each is computed here. A current step drawn by the
-    switching logic meets the network's impedance and becomes a voltage ripple. The
-    ripple reaches the transmitter and its phase-locked loop, neither of which is
-    perfectly immune, and becomes jitter and amplitude modulation. That jitter lands in
-    the same budget as the intersymbol interference and crosstalk of the earlier decks.</p>
+    <div class="diagram-grid cols-2" id="rules-grid"></div>
 
-    <div class="diagram-grid cols-3">
-        <div class="diagram-panel accent-border">
-            <h4>Stage one</h4>
-            <p>Current demand against network impedance. This is where anti-resonance
-            lives, and where the counter-intuitive result about adding capacitors
-            appears.</p>
-        </div>
-        <div class="diagram-panel y">
-            <h4>Stage two</h4>
-            <p>Supply rejection. How much of the ripple reaches the oscillator's control
-            node and the driver's output stage.</p>
-        </div>
-        <div class="diagram-panel g">
-            <h4>Stage three</h4>
-            <p>Frequency modulation becoming phase modulation becoming jitter, filtered
-            by the loop that is supposed to be correcting it.</p>
-        </div>
+    <p>The first and the last are the same rule, which is the point of stating it twice.
+    We care about jitter for exactly the reason we care about signal-to-noise ratio: a
+    poor one means a high error rate. Voltage noise causes errors when the signal
+    fluctuates vertically across the sampling point; jitter causes errors when the
+    transition fluctuates horizontally across it. Anything said about jitter that cannot
+    be connected back to an error ratio is decoration.</p>
+
+    <div class="callout">
+        <div class="callout-label">Where the four rules are treated</div>
+        <p>The first and fifth are this deck. The second is slide 03 and everything
+        about the dual-Dirac model in deck 08, which exists because the honest
+        measurement is too slow. The third is deck 09, on clock recovery and the
+        reference clock. The fourth &mdash; that timing noise and amplitude noise are not
+        really separable &mdash; is deck 10, and it is the one this series would most
+        easily have got wrong, because the separation is so convenient that it is rarely
+        questioned.</p>
     </div>
 </section>
 
 <section class="slide" id="slide-02">
     <div class="slide-number">02</div>
-    <h2>A Capacitor Is an Inductor, Above Its Resonance</h2>
-    <p>A real capacitor is a capacitance in series with a resistance and an inductance.
-    Below the frequency where the capacitive and inductive reactances cancel, it behaves
-    as a capacitor and its impedance falls; above it, the inductance dominates and the
-    impedance rises again. At the series resonance itself the impedance is just the
-    equivalent series resistance.</p>
+    <h2>Total Jitter Is a Function, Not a Number</h2>
+    <p>The quantity that links jitter to errors is <strong>total jitter at a specified
+    error ratio</strong>, written TJ(BER). It is the amount by which the eye has closed
+    horizontally by the time the error ratio reaches the value you nominate, and it
+    changes with that value &mdash; which is why quoting a total jitter without the error
+    ratio it belongs to says very little.</p>
 
-    <p>That single fact is the whole architecture of a decoupling network. No capacitor
-    is useful across the whole band, so the network is built as a ladder of values, each
-    covering the region where the one below it has given up. And because every capacitor
-    is inductive above its resonance, every pair of adjacent values creates a frequency
-    at which one is inductive and the other still capacitive &mdash; which is where they
-    resonate against each other.</p>
+    <p>The construction is straightforward. Sweep the sampling instant across the unit
+    interval and record the error ratio at each position. Near the middle it is
+    vanishingly small; approaching either crossing it climbs. The horizontal distance
+    between the two flanks at a chosen level is the eye opening at that level, and the
+    total jitter is the unit interval minus that opening:</p>
 
-    <div class="canvas-wrap" style="overflow-x:auto">
-        <table id="cp-table"></table>
-    </div>
+    <p>$$\mathrm{TJ(BER)} = T_b - \text{eye opening at that BER}.$$</p>
 
-    <p class="note">Notice how little the resonance moves across four decades of
-    capacitance once the mounting is included. The value sets where the capacitor starts
-    working; the mounting sets where it stops.</p>
+    <p>Read backwards, this is a design criterion: a link works at a given error ratio
+    if the total jitter at that error ratio is less than one bit period. Read forwards,
+    it says something less comfortable &mdash; the eye may be wide open at
+    $10^{-6}$ and entirely closed at $10^{-15}$, and the two statements describe the same
+    signal.</p>
+
+    <div class="metric-grid" id="q-metrics"></div>
+
+    <p class="note">The multiplier on the random part of the jitter grows only slowly
+    with the error ratio, which is both a mercy and a trap: three extra decades of
+    reliability cost less than one unit of Q, so the budget is insensitive far from the
+    target and very sensitive near it.</p>
 </section>
 
 <section class="slide" id="slide-03">
     <div class="slide-number">03</div>
-    <h2>Mounting Inductance Is the Layout's Contribution</h2>
-    <p>The inductance in the previous table has two parts. The part inside the component
-    is a property of the part, and a better part buys a little. The part outside it
-    &mdash; the loop from the pads, down the vias, to the planes and back &mdash; is a
-    property of the layout, and above a few hundred megahertz it is usually the larger of
-    the two.</p>
+    <h2>Interactive: What Only a Bit Error Ratio Tester Can Do</h2>
+    <p>The second rule is the awkward one. Total jitter at a low error ratio can only be
+    <em>measured</em> on a bit error ratio tester, because measuring an error ratio means
+    counting errors, and counting enough of them to believe the number means transmitting
+    on the order of ten divided by that ratio.</p>
 
-    <div class="metric-grid" id="mt-metrics"></div>
+    <p>Everything else &mdash; every oscilloscope, every time-interval analyser, every
+    fast estimate a bit error ratio tester itself offers &mdash; produces an
+    <em>estimate</em>, obtained by measuring what can be measured quickly and
+    extrapolating with a model. Deck 08 is about that model and what it costs.</p>
 
-    <p>Halving the mounting inductance by doubling the number of via pairs raises the
-    useful frequency of every capacitor in the design by a factor of the square root of
-    two, at the cost of two more holes. That is nearly always cheaper than buying a
-    better capacitor, and it is the reason decoupling layout rules talk about via
-    placement rather than about part numbers.</p>
-
-    <div class="callout">
-        <div class="callout-label">And why capacitors moved under the package</div>
-        <p>The shortest possible mounting loop is one that goes straight down into the
-        planes with no trace at all, which is why decoupling migrated first to the
-        underside of the board directly beneath the package, then into the package
-        substrate, and finally onto the die. Each step shortens the loop by roughly an
-        order of magnitude, and each step therefore moves the frequency at which the
-        capacitor stops working up by roughly a factor of three.</p>
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="bt-rate">symbol rate</label>
+            <input type="range" id="bt-rate" min="0" max="4" step="1" value="3">
+            <span class="val" id="bt-rate-val"></span>
+        </div>
+        <div class="metric-grid" id="bt-metrics"></div>
+        <div id="bt-verdict" class="verdict ok"></div>
     </div>
+
+    <div class="canvas-wrap">
+        <canvas id="bt-plot" width="780" height="290"></canvas>
+        <div class="legend">
+            <span><i style="background:#c084fc"></i>time to a confident measurement</span>
+            <span><i style="background:#fbbf24"></i>one working day</span>
+        </div>
+    </div>
+
+    <p class="note" id="bt-note"></p>
 </section>
 
 <section class="slide" id="slide-04">
     <div class="slide-number">04</div>
-    <h2>Interactive: The Impedance of the Whole Ladder</h2>
-    <p>Put every branch in parallel: the regulator with its output inductance, each tier
-    of discrete capacitors with its mounting, the capacitance of the plane pair itself,
-    and the on-die capacitance behind the package inductance. The result is not a smooth
-    curve. It is a sequence of dips where each tier resonates and peaks between them
-    where adjacent tiers fight each other.</p>
+    <h2>Two Quantities Called Q</h2>
+    <p>Before any arithmetic, a collision of notation worth flagging explicitly, because
+    it genuinely catches engineers who work across both domains &mdash; and the two meet
+    inside this very topic.</p>
 
-    <div class="canvas-wrap">
-        <canvas id="pd-plot" width="780" height="320"></canvas>
-        <div class="legend">
-            <span><i style="background:#60a5fa"></i>the complete network</span>
-            <span><i style="background:#8b949e"></i>individual tiers</span>
-            <span><i style="background:#f472b6"></i>target impedance</span>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Communications Q</h4>
+            <p>The argument of the complementary error function: a signal-to-noise ratio
+            measured in standard deviations, so that the error ratio is
+            $\tfrac{1}{2}\,\mathrm{erfc}(Q/\sqrt{2})$. Dimensionless, normally between
+            three and eight, and larger is better. Every budget in this series uses it.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Resonator Q</h4>
+            <p>Energy stored divided by energy dissipated per radian: a property of a
+            tuned circuit, normally between ten and several thousand. Larger is also
+            better, and it means something entirely different.</p>
         </div>
     </div>
 
-    <div class="metric-grid" id="pd-metrics"></div>
+    <p>They meet in a chain that makes the confusion harder rather than easier to avoid.
+    The resonator Q of an inductor-capacitor oscillator's tank sets its phase noise; the
+    phase noise integrates to the random jitter; the random jitter is part of the noise
+    in the denominator of the communications Q. A sentence about a high-Q tank improving
+    Q is therefore not nonsense &mdash; but it needs both words defined, and a reviewer
+    who works across both will ask.</p>
 
-    <p class="note" id="pd-note"></p>
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="q-table"></table>
+    </div>
 </section>
 
 <section class="slide" id="slide-05">
     <div class="slide-number">05</div>
-    <h2>Interactive: When More Capacitors Make It Worse</h2>
-    <p>Here is the result that makes this worth computing rather than asserting. The
-    intuitive response to a PDN that does not meet its target is to add more capacitors.
-    Adding more of one value lowers the impedance in the band where that value is
-    capacitive &mdash; and sharpens the anti-resonance above it, because it lowers the
-    inductance of that branch and raises the quality factor of the parallel resonance
-    with the tier above.</p>
+    <h2>The Decomposition Tree, Done Properly</h2>
+    <p>The reason to decompose jitter at all is that the components combine differently
+    and are fixed by different purchases. Bounded quantities add arithmetically,
+    unbounded ones in quadrature, and a budget that mixes the rules passes on the bench
+    and fails in the field.</p>
 
-    <div class="canvas-wrap">
-        <canvas id="mc-plot" width="780" height="290"></canvas>
-        <div class="legend">
-            <span><i style="background:#60a5fa"></i>worst anti-resonant peak</span>
-            <span><i style="background:#34d399"></i>impedance at 100 MHz</span>
-        </div>
-    </div>
+    <p>The standard tree splits total jitter into random and deterministic; splits
+    deterministic into data-dependent, periodic and bounded uncorrelated; and puts
+    intersymbol interference and duty-cycle distortion under data-dependent, with a
+    dotted line between them because duty-cycle distortion changes how much intersymbol
+    interference there is.</p>
 
     <div class="canvas-wrap" style="overflow-x:auto">
-        <table id="mc-table"></table>
+        <table id="tax-table"></table>
     </div>
 
-    <p class="note" id="mc-note"></p>
-
-    <div class="callout">
-        <div class="callout-label">What actually helps</div>
-        <p>Spreading the values so that adjacent tiers overlap rather than leaving a gap;
-        choosing parts with enough equivalent series resistance to damp the resonance
-        rather than the lowest available; and reducing mounting inductance, which moves
-        every resonance up together instead of creating a new one. The instinct to
-        specify the lowest-resistance capacitor available is precisely wrong here: some
-        loss in the branch is what keeps the peak finite.</p>
-    </div>
+    <p class="note">The last column is the one that earns the decomposition its keep. A
+    budget reporting a single total jitter figure cannot tell you whether to buy a better
+    oscillator, a longer equaliser, a quieter regulator or more spacing &mdash; and those
+    are four different conversations with four different departments.</p>
 </section>
 
 <section class="slide" id="slide-06">
     <div class="slide-number">06</div>
-    <h2>Target Impedance, and What the Rule Is Worth</h2>
-    <p>The standard design target is</p>
+    <h2>Bounded Uncorrelated Jitter: Organising Ignorance</h2>
+    <p>One branch of the tree deserves its own slide because it is honest about being a
+    residue. Stephens describes bounded uncorrelated jitter as the category the industry
+    uses for organising its ignorance: it is everything bounded that is not correlated
+    with the victim's own data, which in practice means everything we do not know how to
+    measure separately.</p>
 
-    <p>$$Z_{\text{target}} = \frac{V_{\text{rail}} \times \text{ripple allowed}}
-        {I_{\text{transient}}},$$</p>
+    <p>The reason the category exists at all is an assumption: that the only
+    <em>unbounded</em> contribution is the Gaussian random part. Everything else must be
+    bounded, so anything bounded that cannot be attributed to the data or to a known tone
+    gets swept here.</p>
 
-    <p>and for a nine-hundred-millivolt rail with five per cent ripple and a twenty-amp
-    transient it gives forty-five milliohms. It is a useful first cut and a poor sign-off
-    criterion, for a reason worth being explicit about: it is a flat number applied to a
-    network whose impedance is anything but flat, driven by a current whose spectrum is
-    anything but white.</p>
-
-    <div class="metric-grid" id="tg-metrics"></div>
-
-    <p>Meeting it everywhere is neither necessary nor sufficient. Not necessary, because
-    a peak at a frequency the load never excites costs nothing. Not sufficient, because
-    a network that meets it at every frequency can still fail on a transient whose
-    spectrum happens to concentrate at the one peak that just scrapes under. The honest
-    version of the calculation is done in the time domain against the actual current
-    profile, and the target impedance is what you use before you have one.</p>
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel r">
+            <h4>Crosstalk, chiefly</h4>
+            <p>Deterministic &mdash; it is an exact function of the aggressor's data
+            &mdash; but that data is not the victim's, so nothing in the victim's
+            receiver can predict it. Bounded by the aggressor's swing. The best example
+            of the category, and the subject of deck 10.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Why it defeats measurement</h4>
+            <p>Most techniques for extracting random jitter assume that anything smooth
+            and wide in the tails is Gaussian. Bounded uncorrelated jitter is often both,
+            so it is counted as random &mdash; and random jitter is multiplied by
+            fourteen at $10^{-12}$ while bounded jitter is not.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>What to do about it</h4>
+            <p>Measure with the aggressors quiet and again with them driven. The
+            difference is the contribution that the acronyms cannot name, and it is
+            usually easier to obtain than to argue about which branch of the tree it
+            belongs on.</p>
+        </div>
+    </div>
 </section>
 
 <section class="slide" id="slide-07">
     <div class="slide-number">07</div>
-    <h2>Simultaneous Switching Noise</h2>
-    <p>When many drivers switch at once, their currents all flow through whatever
-    inductance the supply and return paths share, and the voltage that develops across
-    it is $L\,di/dt$ summed over all of them. The scaling with driver count is what makes
-    this an interface problem rather than a component one: a single driver is harmless
-    and thirty-two switching in step are not.</p>
+    <h2>Interactive: The Real Distribution, From the Channel</h2>
+    <p>Data-dependent jitter is the one branch that can be computed exactly rather than
+    measured, because it is a deterministic function of the preceding bits and the
+    channel's own pulse response. Enumerating every pattern of a given depth and finding
+    the zero crossing for each gives the distribution outright.</p>
+
+    <p>It is worth looking at, because it is emphatically <em>not</em> two impulses,
+    which is what the model in deck 08 will assume it is.</p>
 
     <div class="canvas-wrap">
-        <canvas id="ss-plot" width="780" height="270"></canvas>
+        <canvas id="ddj-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#60a5fa"></i>supply disturbance</span>
+            <span><i style="background:#c084fc"></i>zero-crossing positions, all patterns</span>
         </div>
     </div>
 
-    <div class="metric-grid" id="ss-metrics"></div>
+    <div class="metric-grid" id="ddj-metrics"></div>
 
-    <p class="note" id="ss-note"></p>
-
-    <p>This is the strongest argument for the differential signalling of deck 05 and for
-    the line codes that keep the transmitted stream balanced. A differential pair draws a
-    constant current from the supply whichever way it is driven, so its contribution to
-    this sum is close to zero &mdash; which is a benefit of differential signalling that
-    is rarely listed and is frequently the largest one on a wide interface.</p>
+    <p class="note" id="ddj-note"></p>
 </section>
 
 <section class="slide" id="slide-08">
     <div class="slide-number">08</div>
-    <h2>Interactive: From Supply Ripple to Jitter</h2>
-    <p>The last stage of the route. A tone on the supply reaches the oscillator's control
-    node attenuated by the supply rejection of whatever regulates it, and modulates the
-    oscillator's frequency. Frequency modulation integrates to phase modulation, so the
-    phase deviation is the frequency deviation divided by the modulation frequency, and
-    the jitter is that phase divided by the carrier's angular frequency.</p>
+    <h2>Stationarity, the Assumption Nobody States</h2>
+    <p>Every jitter measurement, and every model built on one, assumes the process is
+    <strong>stationary</strong> &mdash; that a measurement taken over a suitable interval
+    gives the same answer whenever it is started. It is listed as one of the five
+    assumptions behind the dual-Dirac model and it is almost never mentioned in a
+    specification.</p>
 
-    <p>The loop itself filters. Inside its bandwidth the feedback corrects the
-    disturbance; outside it, the oscillator is on its own. The consequence is that supply
-    tones just above the loop bandwidth are the dangerous ones, and where the switching
-    regulator's fundamental sits relative to that bandwidth is a design decision rather
-    than an accident.</p>
+    <p>It is also the assumption most obviously untrue of a real system.</p>
 
-    <div class="control-panel">
-        <div class="control-row">
-            <label for="rj-psrr">supply rejection</label>
-            <select id="rj-psrr" style="flex:1;min-width:150px;background:var(--bg-code);color:var(--accent);border:1px solid var(--border);border-radius:4px;padding:.3rem;font-family:var(--font-mono);font-size:.8rem"></select>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel r">
+            <h4>Things that are not stationary</h4>
+            <p>A rail that droops when a neighbouring core wakes up. A spread-spectrum
+            clock, deliberately modulated. A thermal drift over minutes. A link that
+            retrains. A fan that changes speed. Each makes the jitter distribution a
+            function of when you looked.</p>
         </div>
-        <div class="metric-grid" id="rj-metrics"></div>
-    </div>
-
-    <div class="canvas-wrap">
-        <canvas id="rj-plot" width="780" height="290"></canvas>
-        <div class="legend">
-            <span><i style="background:#60a5fa"></i>jitter from a 20 mV tone</span>
-            <span><i style="background:#fbbf24"></i>loop bandwidth</span>
+        <div class="diagram-panel y">
+            <h4>Why it matters for the tails</h4>
+            <p>Extrapolating to $10^{-12}$ means claiming to know a distribution's
+            behaviour a long way past where it was sampled. If the distribution itself
+            moves on a timescale comparable with the measurement, the extrapolated tail
+            is not a tail of anything &mdash; it is a mixture of several distributions,
+            which is broader than any of them.</p>
         </div>
     </div>
 
-    <p class="note" id="rj-note"></p>
+    <p>The practical consequence is that a jitter number should carry its observation
+    interval alongside its error ratio, and that a measurement repeated at a different
+    time is worth more than the same measurement continued for longer.</p>
 </section>
 
 <section class="slide" id="slide-09">
     <div class="slide-number">09</div>
-    <h2>Where the Regulator's Switching Frequency Should Go</h2>
-    <p>The previous slide gives a design rule that is easy to state and frequently
-    ignored. A switching regulator puts a large, narrow, entirely predictable tone on the
-    rail at its switching frequency. That tone becomes periodic jitter in proportion to
-    how poorly the phase-locked loop rejects disturbances at that frequency &mdash; and
-    the loop's rejection is worst just above its own bandwidth.</p>
+    <h2>Two Frequency Domains, Easily Confused</h2>
+    <p>The word "frequency" does two jobs in this subject and mixing them produces
+    confident nonsense.</p>
 
     <div class="diagram-grid cols-2">
         <div class="diagram-panel accent-border">
-            <h4>Well below the loop bandwidth</h4>
-            <p>The loop tracks and corrects it. A one-megahertz regulator under a
-            four-megahertz loop contributes very little. This is the comfortable case and
-            it is why low-frequency regulators were never a jitter problem.</p>
-        </div>
-        <div class="diagram-panel r">
-            <h4>Just above it</h4>
-            <p>The worst place. The loop no longer corrects and the modulation index is
-            still large because the tone is at a low enough frequency that a given
-            frequency deviation integrates to a large phase deviation. This is where
-            modern multi-megahertz regulators land by default.</p>
-        </div>
-        <div class="diagram-panel g">
-            <h4>Far above it</h4>
-            <p>Also acceptable, because the phase deviation falls as one over the
-            modulation frequency even though the loop does nothing. Very high switching
-            frequencies are benign for this reason, whatever else they cost.</p>
+            <h4>The signal's frequency domain</h4>
+            <p>The harmonic content of the waveform itself: the spectrum whose Nyquist
+            frequency is half the symbol rate, whose loss is the subject of deck 03, and
+            which the equaliser shapes. For a 28 GBd lane this domain runs to tens of
+            gigahertz.</p>
         </div>
         <div class="diagram-panel y">
-            <h4>The practical answer</h4>
-            <p>Pick the regulator's frequency deliberately against the transceiver's
-            loop bandwidth, rather than letting the power team choose it for efficiency
-            and the SerDes team discover it in the jitter decomposition. Spread-spectrum
-            modulation, which smears the tone, makes the peak smaller and the total no
-            better.</p>
+            <h4>The jitter frequency domain</h4>
+            <p>The spectrum of the <em>deviations</em> from the ideal phase &mdash; the
+            single-sideband phase-noise spectrum. Its axis is the offset from the
+            carrier, and the interesting region runs from kilohertz to tens of
+            megahertz: six orders of magnitude below the other one.</p>
         </div>
+    </div>
+
+    <p>A clock recovery circuit's bandwidth is a frequency in the <em>second</em> domain.
+    It says nothing about the signal's bandwidth and everything about which part of the
+    phase-noise spectrum reaches the sampler. That distinction is the whole of deck 09,
+    and getting it wrong is how a perfectly good oscillator comes to be blamed for a
+    problem it has no part in.</p>
+
+    <div class="callout">
+        <div class="callout-label">A useful check</div>
+        <p>If a statement about jitter would change meaning when the data rate changed
+        but the oscillator did not, it is probably about the first domain. If it would
+        change when the clock recovery loop changed but the data rate did not, it is
+        about the second.</p>
     </div>
 </section>
 
 <section class="slide" id="slide-10">
     <div class="slide-number">10</div>
-    <h2>What This Deck Does Not Cover</h2>
-    <p>Being explicit about scope matters here, because power delivery is where this
-    series overlaps most with material that already exists.</p>
-
-    <table>
-        <thead><tr><th>Topic</th><th>Where it is treated</th></tr></thead>
-        <tbody>
-            <tr><td>Regulator topologies, multi-phase control, efficiency</td><td><a href="https://github.com/BrendanJamesLynskey/SoC">SoC</a> deck 09, and <a href="https://github.com/BrendanJamesLynskey/DCDC_Control_Techniques">DC-DC control techniques</a></td></tr>
-            <tr><td>On-package and on-die regulation, backside power delivery, deep-trench capacitors</td><td>SoC deck 09</td></tr>
-            <tr><td>IR drop, current density, electromigration</td><td>SoC deck 09</td></tr>
-            <tr><td>Thermal consequences</td><td>SoC deck 12</td></tr>
-            <tr><td>The plane pair as a resonant cavity</td><td>Deck 02 of this series</td></tr>
-            <tr><td>What the resulting jitter does to the eye</td><td>Deck 08 of this series</td></tr>
-        </tbody>
-    </table>
-
-    <p>What is here and not there is the computed path from impedance to jitter, and the
-    anti-resonance result &mdash; both of which are signal-integrity questions that
-    happen to be asked about the power network.</p>
-</section>
-
-<section class="slide" id="slide-11">
-    <div class="slide-number">11</div>
     <h2>Cheat Sheet</h2>
     <table>
-        <thead><tr><th>Quantity</th><th>Expression</th><th>Worth remembering</th></tr></thead>
+        <thead><tr><th>Idea</th><th>Statement</th><th>Consequence</th></tr></thead>
         <tbody>
-            <tr><td>Series resonance</td><td>$1/2\pi\sqrt{L_{\text{tot}}C}$</td><td>Set by mounting more than by the part</td></tr>
-            <tr><td>Target impedance</td><td>$V\cdot\text{ripple}/I$</td><td>A first cut, not a sign-off criterion</td></tr>
-            <tr><td>Anti-resonance</td><td>Between adjacent tiers</td><td>More of one value sharpens it; damping and spread values soften it</td></tr>
-            <tr><td>Simultaneous switching noise</td><td>$L\,N\,\Delta I/t_r$</td><td>Linear in driver count; near zero for differential</td></tr>
-            <tr><td>Supply to jitter</td><td>$\Delta\phi = K_{\text{VCO}} V_n / f_m$</td><td>Filtered by the loop below its bandwidth</td></tr>
-            <tr><td>Worst tone frequency</td><td>Just above the loop bandwidth</td><td>Place the regulator's switching frequency deliberately</td></tr>
+            <tr><td>Rule 1 and 5</td><td>It is about the bit error ratio</td><td>Anything not connected to an error ratio is decoration</td></tr>
+            <tr><td>Rule 2</td><td>Total jitter can only be measured on a BERT</td><td>Everything else is an estimate from a model</td></tr>
+            <tr><td>Rule 3</td><td>Measurement compares a test clock with a reference</td><td>Deck 09: which reference decides the answer</td></tr>
+            <tr><td>Rule 4</td><td>Timing and amplitude noise are not separable</td><td>Deck 10: the separation fails above about 10 Gb/s</td></tr>
+            <tr><td>Total jitter</td><td>$\mathrm{TJ(BER)} = T_b - \text{opening}$</td><td>A function of the error ratio, not a number</td></tr>
+            <tr><td>Measurement time</td><td>$\approx 10/\mathrm{BER}$ bits</td><td>Six minutes at $10^{-12}$ and 28 GBd; four days at $10^{-15}$</td></tr>
+            <tr><td>Random</td><td>Unbounded, Gaussian, adds in quadrature</td><td>Multiplied by $2Q$; fixed by a better oscillator</td></tr>
+            <tr><td>Deterministic</td><td>Bounded, adds arithmetically</td><td>Enters once, whatever the error ratio</td></tr>
+            <tr><td>BUJ</td><td>Bounded, uncorrelated, unmeasured</td><td>Usually crosstalk; usually counted as random by mistake</td></tr>
+            <tr><td>Stationarity</td><td>Assumed everywhere, stated nowhere</td><td>Repeat the measurement rather than lengthen it</td></tr>
         </tbody>
     </table>
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#60a5fa',teal:'#34d399',
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#c084fc',teal:'#34d399',
          cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
@@ -373,214 +365,131 @@ function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginP
   ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,h-p.b);ctx.lineTo(w-p.r,h-p.b);ctx.stroke();
   if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
   if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
-function fmtHz(f){return f>=1e9?(f/1e9).toFixed(2)+' GHz':f>=1e6?(f/1e6).toFixed(1)+' MHz':
-  f>=1e3?(f/1e3).toFixed(0)+' kHz':f.toFixed(0)+' Hz';}
+function dur(s){if(s<1e-3)return (s*1e6).toFixed(0)+' µs';
+  if(s<1)return (s*1e3).toFixed(0)+' ms'; if(s<120)return s.toFixed(1)+' s';
+  if(s<7200)return (s/60).toFixed(1)+' min'; if(s<172800)return (s/3600).toFixed(1)+' h';
+  if(s<3.15e7)return (s/86400).toFixed(1)+' days'; return (s/3.15e7).toFixed(1)+' years';}
 
-/* ---- 02 caps ---- */
+/* ---- 01 rules ---- */
 (function(){
-  const t=document.getElementById('cp-table'); if(!t||!SI.caps)return;
-  let html='<thead><tr><th>Capacitor</th><th>Value</th><th>ESR</th><th>Part ESL</th>'+
-    '<th>Resonance, part alone</th><th>With 0.6 nH mounting</th></tr></thead><tbody>';
-  Object.keys(SI.caps).forEach(function(k){const c=SI.caps[k];
-    html+='<tr><td>'+k+'</td><td>'+(c.c>=1e-6?(c.c*1e6).toFixed(0)+' µF':
-      (c.c*1e9).toFixed(0)+' nF')+'</td><td>'+(c.esr*1000).toFixed(0)+' mΩ</td><td>'+
-      (c.esl*1e9).toFixed(2)+' nH</td><td>'+fmtHz(c.srf_bare_hz)+'</td><td>'+
-      fmtHz(c.srf_hz)+'</td></tr>';});
-  html+='</tbody>'; t.innerHTML=html;
+  const g=document.getElementById('rules-grid'); if(!g||!SI.rules)return;
+  const cls=['accent-border','y','g','r','accent-border'];
+  g.innerHTML=SI.rules.map(function(r,i){
+    return '<div class="diagram-panel '+cls[i]+'"><h4>Rule '+(i+1)+'</h4><p>'+r+'</p></div>';
+  }).join('');
 })();
 
-/* ---- 03 mounting ---- */
+/* ---- 02 Q metrics ---- */
 (function(){
-  const el=document.getElementById('mt-metrics'); if(!el||!SI.mounting)return;
+  const el=document.getElementById('q-metrics'); if(!el||!SI.q)return;
   let html='';
-  SI.mounting.forEach(function(r){
-    html+=metric(r.vias+' via pair'+(r.vias>1?'s':''),r.l_ph.toFixed(0)+' pH');});
+  ['1e-06','1e-09','1e-12','1e-15'].forEach(function(k){
+    const v=SI.q[k]; if(v===undefined)return;
+    html+=metric('Q for '+k.replace('1e-','10⁻'),v.toFixed(3));});
   el.innerHTML=html;
 })();
 
-/* ---- 04 PDN ---- */
+/* ---- 03 BERT ---- */
 (function(){
-  const H=hidpi('pd-plot'); if(!H||!SI.z_ohm)return;
-  const {ctx,w,h}=H; clear(ctx,w,h);
-  const p={l:58,r:16,t:20,b:40};
-  const FLO=1e3,FHI=1e10;
-  const X=f=>p.l+(Math.log10(f)-Math.log10(FLO))/(Math.log10(FHI)-Math.log10(FLO))*(w-p.l-p.r);
-  const ZLO=-4,ZHI=2;
-  const Y=z=>h-p.b-(Math.log10(Math.max(z,1e-5))-ZLO)/(ZHI-ZLO)*(h-p.t-p.b);
-  axes(ctx,w,h,p,'frequency','impedance, Ω');
-  for(let e=ZLO;e<=ZHI;e++){ctx.strokeStyle=C.grid;ctx.beginPath();
-    ctx.moveTo(p.l,Y(Math.pow(10,e)));ctx.lineTo(w-p.r,Y(Math.pow(10,e)));ctx.stroke();
-    label(ctx,e<0?'1e'+e:''+Math.pow(10,e),p.l-6,Y(Math.pow(10,e))+3,C.dim,9,'right');}
-  [1e3,1e4,1e5,1e6,1e7,1e8,1e9,1e10].forEach(function(g){ctx.strokeStyle=C.grid;
-    ctx.beginPath();ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
-    label(ctx,fmtHz(g).replace(/\.\d+/,''),X(g),h-p.b+14,C.dim,8,'center');});
-  if(SI.parts) Object.keys(SI.parts).forEach(function(k){
-    ctx.strokeStyle='#3d444d';ctx.lineWidth=1;ctx.beginPath();let st=false;
-    SI.f_hz.forEach(function(f,i){const px=X(f),py=Y(SI.parts[k][i]);
-      st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
-    ctx.stroke();});
-  const zt=SI.target.z_target;
-  ctx.strokeStyle=C.pink;dashed(ctx,true);ctx.lineWidth=1.5;ctx.beginPath();
-  ctx.moveTo(p.l,Y(zt));ctx.lineTo(w-p.r,Y(zt));ctx.stroke();dashed(ctx,false);
-  label(ctx,'target '+(zt*1000).toFixed(0)+' mΩ',w-p.r-4,Y(zt)-5,C.pink,9,'right');
-  ctx.strokeStyle=C.accent;ctx.lineWidth=2.2;ctx.beginPath();let st=false;
-  SI.f_hz.forEach(function(f,i){const px=X(f),py=Y(SI.z_ohm[i]);
-    st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
-  ctx.stroke();
-  (SI.peaks||[]).slice(0,3).forEach(function(pk){
-    ctx.fillStyle=C.amber;ctx.beginPath();ctx.arc(X(pk.f_hz),Y(pk.z_ohm),4,0,6.3);ctx.fill();});
-  const worst=(SI.peaks||[])[0];
-  document.getElementById('pd-metrics').innerHTML=
-    metric('target impedance',(zt*1000).toFixed(0)+' mΩ')+
-    (worst?metric('worst peak',(worst.z_ohm*1000).toFixed(0)+' mΩ'):'')+
-    (worst?metric('at',fmtHz(worst.f_hz)):'')+
-    (worst?metric('over target','×'+(worst.z_ohm/zt).toFixed(1)):'');
-  if(worst)document.getElementById('pd-note').textContent=
-    'The network meets its target across most of the band and fails at '+
-    fmtHz(worst.f_hz)+', where two adjacent tiers resonate against each other and the '+
-    'impedance reaches '+(worst.z_ohm*1000).toFixed(0)+' milliohms — '+
-    (worst.z_ohm/zt).toFixed(1)+' times the target. That peak, not the average, is what '+
-    'a transient with content at that frequency will find.';
-})();
-
-/* ---- 05 more caps ---- */
-(function(){
-  const H=hidpi('mc-plot'); if(!H||!SI.more_caps)return;
-  const d=SI.more_caps; const {ctx,w,h}=H; clear(ctx,w,h);
-  const p={l:60,r:58,t:20,b:42};
-  const X=i=>p.l+(i+0.5)/d.length*(w-p.l-p.r);
-  let pm=0; d.forEach(function(r){if(r.worst_peak_ohm)pm=Math.max(pm,r.worst_peak_ohm);});
-  pm*=1.2;
-  const Y1=v=>h-p.b-v/pm*(h-p.t-p.b);
-  let zm=0; d.forEach(function(r){zm=Math.max(zm,r.z_at_100mhz);}); zm*=1.25;
-  const Y2=v=>h-p.b-v/zm*(h-p.t-p.b);
-  axes(ctx,w,h,p,'number of 100 nF capacitors','worst anti-resonant peak, Ω');
-  for(let i=0;i<=4;i++){const v=pm*i/4;ctx.strokeStyle=C.grid;ctx.beginPath();
-    ctx.moveTo(p.l,Y1(v));ctx.lineTo(w-p.r,Y1(v));ctx.stroke();
-    label(ctx,v.toFixed(2),p.l-6,Y1(v)+3,C.accent,9,'right');}
-  for(let i=0;i<=4;i++)label(ctx,(1000*zm*i/4).toFixed(0),w-p.r+6,Y2(zm*i/4)+3,C.teal,9,'left');
-  ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
-  d.forEach(function(r,i){if(!r.worst_peak_ohm)return;const px=X(i),py=Y1(r.worst_peak_ohm);
-    i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
-  ctx.stroke();
-  ctx.strokeStyle=C.teal;ctx.lineWidth=2;ctx.beginPath();
-  d.forEach(function(r,i){const px=X(i),py=Y2(r.z_at_100mhz);
-    i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
-  ctx.stroke();
-  d.forEach(function(r,i){
-    if(r.worst_peak_ohm){ctx.fillStyle=C.accent;ctx.beginPath();
-      ctx.arc(X(i),Y1(r.worst_peak_ohm),3.5,0,6.3);ctx.fill();}
-    ctx.fillStyle=C.teal;ctx.beginPath();ctx.arc(X(i),Y2(r.z_at_100mhz),3.5,0,6.3);ctx.fill();
-    label(ctx,r.count+'',X(i),h-p.b+15,C.dim,9,'center');});
-  const t=document.getElementById('mc-table');
-  let html='<thead><tr><th>100 nF capacitors</th><th>Impedance at 100 MHz</th>'+
-    '<th>Impedance at 1 GHz</th><th>Worst anti-resonant peak</th><th>At</th></tr></thead><tbody>';
-  d.forEach(function(r){
-    html+='<tr><td>'+r.count+'</td><td>'+(1000*r.z_at_100mhz).toFixed(1)+' mΩ</td><td>'+
-      (1000*r.z_at_1ghz).toFixed(0)+' mΩ</td><td>'+
-      (r.worst_peak_ohm?(1000*r.worst_peak_ohm).toFixed(0)+' mΩ':'—')+'</td><td>'+
-      (r.worst_peak_hz?fmtHz(r.worst_peak_hz):'—')+'</td></tr>';});
-  html+='</tbody>'; t.innerHTML=html;
-  const a=d[0],z=d[d.length-1];
-  document.getElementById('mc-note').textContent=
-    'Going from '+a.count+' to '+z.count+' capacitors of the same value lowers the '+
-    'impedance at 100 MHz from '+(1000*a.z_at_100mhz).toFixed(1)+' to '+
-    (1000*z.z_at_100mhz).toFixed(1)+' milliohms, which is the intended effect, and '+
-    (z.worst_peak_ohm>a.worst_peak_ohm?'raises':'lowers')+' the worst anti-resonant peak '+
-    'from '+(1000*a.worst_peak_ohm).toFixed(0)+' to '+(1000*z.worst_peak_ohm).toFixed(0)+
-    ' milliohms, which is not. Sixteen times the parts, and the peak that decides the '+
-    'design has moved the wrong way.';
-})();
-
-/* ---- 06 target ---- */
-(function(){
-  const el=document.getElementById('tg-metrics'); if(!el||!SI.target)return;
-  const t=SI.target;
-  el.innerHTML=metric('rail',t.v_rail.toFixed(2)+' V')+
-    metric('ripple allowed',t.ripple_pct.toFixed(0)+' %')+
-    metric('transient current',t.i_transient.toFixed(0)+' A')+
-    metric('target impedance',(t.z_target*1000).toFixed(1)+' mΩ');
-})();
-
-/* ---- 07 SSN ---- */
-(function(){
-  const H=hidpi('ss-plot'); if(!H||!SI.ssn)return;
-  const d=SI.ssn; const {ctx,w,h}=H; clear(ctx,w,h);
-  const p={l:58,r:16,t:20,b:42};
-  const X=i=>p.l+(i+0.5)/d.length*(w-p.l-p.r);
-  let ym=0; d.forEach(function(r){ym=Math.max(ym,r.v_noise_mv);}); ym*=1.15;
-  const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
-  axes(ctx,w,h,p,'drivers switching simultaneously','supply disturbance, mV');
-  for(let i=0;i<=5;i++){const v=ym*i/5;ctx.strokeStyle=C.grid;ctx.beginPath();
-    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
-    label(ctx,v.toFixed(0),p.l-6,Y(v)+3,C.dim,9,'right');}
-  ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
-  d.forEach(function(r,i){const px=X(i),py=Y(r.v_noise_mv);i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
-  ctx.stroke();
-  d.forEach(function(r,i){ctx.fillStyle=C.accent;ctx.beginPath();
-    ctx.arc(X(i),Y(r.v_noise_mv),3.5,0,6.3);ctx.fill();
-    label(ctx,r.n_drivers+'',X(i),h-p.b+15,C.dim,9,'center');});
-  const last=d[d.length-1];
-  document.getElementById('ss-metrics').innerHTML=
-    metric('shared inductance',last.l_loop_ph.toFixed(0)+' pH')+
-    metric('64 drivers, di/dt',last.di_dt_a_per_ns.toFixed(1)+' A/ns')+
-    metric('disturbance',last.v_noise_mv.toFixed(0)+' mV')+
-    metric('one driver',d[0].v_noise_mv.toFixed(1)+' mV');
-  document.getElementById('ss-note').textContent=
-    'Sixty pico-henries of shared inductance — a realistic figure for a package '+
-    'power path — and 20 mA per driver switching in 25 ps gives '+
-    last.v_noise_mv.toFixed(0)+' millivolts across the rail when 64 drivers switch '+
-    'together, against '+d[0].v_noise_mv.toFixed(1)+' millivolts for one. On a '+
-    '0.9 volt rail that is '+(100*last.v_noise_mv/900).toFixed(1)+' per cent, which is '+
-    'most of the ripple budget spent by the interface on itself.';
-})();
-
-/* ---- 08 ripple to jitter ---- */
-(function(){
-  const H=hidpi('rj-plot'); if(!H||!SI.ripple)return;
-  const sel=document.getElementById('rj-psrr');
-  (SI.psrr||[]).forEach(function(r,i){const o=document.createElement('option');
-    o.value=i;o.textContent=r.psrr_db+' dB';sel.appendChild(o);});
-  const d=SI.ripple;
+  const H=hidpi('bt-plot'); if(!H||!SI.bert_28)return;
+  const rows=SI.bert_28;
+  const sl=document.getElementById('bt-rate'); sl.max=rows.length-1;
   function draw(i){
     const {ctx,w,h}=H; clear(ctx,w,h);
-    const p={l:58,r:16,t:20,b:40};
-    const FLO=1e3,FHI=1e9;
-    const X=f=>p.l+(Math.log10(f)-Math.log10(FLO))/(Math.log10(FHI)-Math.log10(FLO))*(w-p.l-p.r);
-    const scale=(SI.psrr&&SI.psrr[i])?Math.pow(10,(SI.psrr[i].psrr_db+20)/20):1;
-    let ym=0; d.jitter_pp_ps.forEach(function(v){ym=Math.max(ym,v*scale);}); ym*=1.15;
-    const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
-    axes(ctx,w,h,p,'frequency of the supply tone','jitter, ps peak to peak');
-    for(let k=0;k<=5;k++){const v=ym*k/5;ctx.strokeStyle=C.grid;ctx.beginPath();
-      ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
-      label(ctx,v.toFixed(2),p.l-6,Y(v)+3,C.dim,9,'right');}
-    [1e3,1e4,1e5,1e6,1e7,1e8,1e9].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
-      ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
-      label(ctx,fmtHz(g).replace(/\.\d+/,''),X(g),h-p.b+14,C.dim,8,'center');});
+    const p={l:60,r:16,t:20,b:42};
+    const X=j=>p.l+(j+0.5)/rows.length*(w-p.l-p.r);
+    const LO=-4,HI=8;
+    const Y=s=>h-p.b-(Math.log10(Math.max(s,1e-4))-LO)/(HI-LO)*(h-p.t-p.b);
+    axes(ctx,w,h,p,'target bit error ratio','time to a confident measurement');
+    for(let e=LO;e<=HI;e+=2){ctx.strokeStyle=C.grid;ctx.beginPath();
+      ctx.moveTo(p.l,Y(Math.pow(10,e)));ctx.lineTo(w-p.r,Y(Math.pow(10,e)));ctx.stroke();
+      label(ctx,dur(Math.pow(10,e)),p.l-6,Y(Math.pow(10,e))+3,C.dim,9,'right');}
     ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
-    ctx.moveTo(X(d.pll_bw_hz),p.t);ctx.lineTo(X(d.pll_bw_hz),h-p.b);ctx.stroke();dashed(ctx,false);
-    label(ctx,'loop bandwidth',X(d.pll_bw_hz)+5,p.t+14,C.amber,10,'left');
-    ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();let st=false;
-    d.f_hz.forEach(function(f,k){const px=X(f),py=Y(d.jitter_pp_ps[k]*scale);
-      st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
+    ctx.moveTo(p.l,Y(28800));ctx.lineTo(w-p.r,Y(28800));ctx.stroke();dashed(ctx,false);
+    label(ctx,'one working day',w-p.r-4,Y(28800)-5,C.amber,9,'right');
+    ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
+    rows.forEach(function(r,j){const px=X(j),py=Y(r.seconds);
+      j?ctx.lineTo(px,py):ctx.moveTo(px,py);});
     ctx.stroke();
-    let wi=0; d.jitter_pp_ps.forEach(function(v,k){if(v>d.jitter_pp_ps[wi])wi=k;});
-    ctx.fillStyle=C.pink;ctx.beginPath();
-    ctx.arc(X(d.f_hz[wi]),Y(d.jitter_pp_ps[wi]*scale),4.5,0,6.3);ctx.fill();
-    document.getElementById('rj-metrics').innerHTML=
-      metric('supply tone','20 mV')+
-      metric('supply rejection',(SI.psrr&&SI.psrr[i]?SI.psrr[i].psrr_db:-20)+' dB')+
-      metric('worst frequency',fmtHz(d.f_hz[wi]))+
-      metric('jitter there',(d.jitter_pp_ps[wi]*scale).toFixed(3)+' ps');
-    document.getElementById('rj-note').textContent=
-      'Twenty millivolts of ripple produces at most '+
-      (d.jitter_pp_ps[wi]*scale).toFixed(3)+' picoseconds peak to peak, and it does so '+
-      'at '+fmtHz(d.f_hz[wi])+' — just above the loop bandwidth, exactly where the '+
-      'feedback has stopped correcting and the modulation index has not yet fallen. '+
-      'Against a 35.7 picosecond unit interval that is '+
-      (100*d.jitter_pp_ps[wi]*scale/35.7).toFixed(2)+' per cent of the eye.';
+    rows.forEach(function(r,j){ctx.fillStyle=j===i?C.text:C.accent;ctx.beginPath();
+      ctx.arc(X(j),Y(r.seconds),j===i?5.5:3.5,0,6.3);ctx.fill();
+      label(ctx,'10'+String(Math.round(Math.log10(r.ber))).replace('-','⁻'),
+            X(j),h-p.b+15,C.dim,9,'center');});
+    const r=rows[i];
+    document.getElementById('bt-rate-val').textContent='BER 10'+
+      String(Math.round(Math.log10(r.ber))).replace('-','⁻');
+    document.getElementById('bt-metrics').innerHTML=
+      metric('bits required',r.bits.toExponential(1))+
+      metric('one error every',dur(r.one_error_every_s))+
+      metric('confident measurement',dur(r.seconds))+
+      metric('at 2.5 Gb/s instead',dur(r.seconds*28.0/2.5));
+    const v=document.getElementById('bt-verdict');
+    v.className='verdict '+(r.seconds<28800?'ok':'bad');
+    v.textContent=r.seconds<28800
+      ? 'measurable inside a working day at 28 Gb/s'
+      : 'takes '+dur(r.seconds)+' at 28 Gb/s — this is why the model in deck 08 exists';
+    document.getElementById('bt-note').textContent=
+      'Confidence needs roughly ten errors, so about ten divided by the error ratio in '+
+      'bits. At 28 Gb/s an error ratio of 10⁻¹² means one error every '+
+      dur(rows[2].one_error_every_s)+' and a defensible measurement in '+
+      dur(rows[2].seconds)+'. Three decades further down costs a thousand times as '+
+      'long, which is the wall every jitter standard is written against.';
   }
-  sel.addEventListener('input',function(){draw(+sel.value);});
-  draw(1);
+  sl.addEventListener('input',function(){draw(+sl.value);});
+  draw(3);
+})();
+
+/* ---- 04 Q table ---- */
+(function(){
+  const t=document.getElementById('q-table'); if(!t||!SI.q)return;
+  let html='<thead><tr><th>Error ratio</th><th>Communications Q</th>'+
+    '<th>Multiplier on RJ, 2Q</th></tr></thead><tbody>';
+  Object.keys(SI.q).sort(function(a,b){return parseFloat(b)-parseFloat(a);})
+    .forEach(function(k){
+      const q=SI.q[k];
+      html+='<tr><td>'+k.replace('1e-','10<sup>−')+'</sup></td><td>'+
+        q.toFixed(3)+'</td><td>'+(2*q).toFixed(3)+'</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+
+/* ---- 05 taxonomy ---- */
+(function(){
+  const t=document.getElementById('tax-table'); if(!t||!SI.taxonomy)return;
+  let html='<thead><tr><th>Component</th><th>Bounded?</th><th>Correlated with the victim data?</th>'+
+    '<th>Where it comes from</th><th>What fixes it</th></tr></thead><tbody>';
+  SI.taxonomy.forEach(function(r){
+    html+='<tr><td><strong>'+r.acronym+'</strong> &mdash; '+r.name+'</td><td class="'+
+      (r.bounded?'ok':'bad')+'">'+(r.bounded?'bounded':'unbounded')+'</td><td>'+
+      r.correlated+'</td><td>'+r.source+'</td><td>'+r.fixed_by+'</td></tr>';});
+  html+='</tbody>'; t.innerHTML=html;
+})();
+
+/* ---- 07 DDJ distribution ---- */
+(function(){
+  const H=hidpi('ddj-plot'); if(!H||!SI.ddj)return;
+  const d=SI.ddj; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:52,r:16,t:20,b:40};
+  const bins=d.bins, cnt=d.hist;
+  const x0=bins[0], x1=bins[bins.length-1];
+  const X=v=>p.l+(v-x0)/(x1-x0)*(w-p.l-p.r);
+  const ym=Math.max.apply(null,cnt)*1.12;
+  const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+  axes(ctx,w,h,p,'zero-crossing position, unit intervals from the mean','patterns');
+  for(let i=0;i<cnt.length;i++){
+    const a=X(bins[i]), b=X(bins[i+1]);
+    ctx.fillStyle=C.accent; ctx.fillRect(a+0.5,Y(cnt[i]),Math.max(b-a-1,1),h-p.b-Y(cnt[i]));}
+  for(let g=-1;g<=1;g+=0.25){ if(g<x0||g>x1) continue;
+    label(ctx,g.toFixed(2),X(g),h-p.b+14,C.dim,9,'center');}
+  document.getElementById('ddj-metrics').innerHTML=
+    metric('patterns enumerated',d.n)+
+    metric('spread, peak to peak',d.pp_ui.toFixed(3)+' UI')+
+    metric('in picoseconds',d.pp_ps.toFixed(1)+' ps')+
+    metric('standard deviation',d.std_ui.toFixed(4)+' UI');
+  document.getElementById('ddj-note').textContent=
+    'Every one of the '+d.n+' histories of the preceding bits produces its own crossing, '+
+    'and they spread over '+d.pp_ui.toFixed(2)+' unit intervals on the unequalised '+
+    'backplane channel. The distribution is lumpy, asymmetric and bounded — nothing '+
+    'like the two impulses the dual-Dirac model replaces it with, which is exactly why '+
+    'deck 08 has to be careful about what that model’s output means.';
 })();
 </script>

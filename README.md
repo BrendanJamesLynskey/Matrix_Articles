@@ -18,7 +18,7 @@ a model changes.
 | [Matrix Methods in Network Parameters](https://brendanjameslynskey.github.io/Matrix_Methods_Network_Parameters/) | 20-slide deck + 14 pp PDF | `deck_network_body.html`, `build_network.py`, `figs_network.py` |
 | [Matrix Concepts in Digital Filters](https://brendanjameslynskey.github.io/Matrix_Concepts_Digital_Filters/) | 12-slide deck + 7 pp PDF | `deck_filters_body.html`, `build_filters.py`, `figs_filters.py` |
 | [Equalisation in High-Speed Serial Links](https://brendanjameslynskey.github.io/SerDes_Equalisation/) | 20-slide deck + 27 pp PDF | `deck_serdes_body.html`, `build_serdes.py`, `figs_serdes.py`, **`serdes_model.py`** |
-| [Signal Integrity & High-Speed Digital Design](https://brendanjameslynskey.github.io/Signal_Integrity/) | 11 decks, 130 slides | `deck_si_*_body.html`, `assemble_si.py`, **`si_models/`** |
+| [Signal Integrity & High-Speed Digital Design](https://brendanjameslynskey.github.io/Signal_Integrity/) | 17 decks, 188 slides | `deck_si_*_body.html`, `assemble_si.py`, **`si_models/`** |
 
 ---
 
@@ -64,7 +64,7 @@ One module per deck, plus a shared field solver.
 ```bash
 # the signal-integrity series
 python3 si_models/run_all.py          # compute everything -> _si_data/*.json
-python3 assemble_si.py                # build the 11 decks + landing page
+python3 assemble_si.py                # build the 17 decks + landing page
 python3 make_si_readme.py             # regenerate that repo's README
 
 # the three matrix-methods decks

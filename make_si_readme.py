@@ -3,7 +3,7 @@ import json
 import os
 import re
 
-from assemble_si import DECKS, REPO, DATA
+from assemble_si import DECKS, REPO, DATA, SECTIONS, REDIRECTS
 
 PAGES = "https://brendanjameslynskey.github.io/Signal_Integrity"
 GH = "https://github.com/BrendanJamesLynskey"
@@ -15,7 +15,7 @@ try:
     from pypdf import PdfReader
     PDF_PAGES = len(PdfReader(os.path.join(REPO, 'Signal_Integrity.pdf')).pages)
 except Exception:
-    PDF_PAGES = 22
+    PDF_PAGES = 32
 slides = {}
 for d in DECKS:
     f = os.path.join(REPO, d['slug'], 'index.html')
@@ -41,28 +41,51 @@ HIGHLIGHTS = {
        "shown to lower a 100 &Omega; pair by 9.7 %; tight coupling priced at 1.45 dB "
        "over ten inches at 14 GHz",
     6: "The field solver gives L&#8320;/L = C&#8320;/C to six decimals in stripline, so "
-       "far-end crosstalk vanishes exactly; in microstrip the ratio is 1.9&times; and it "
-       "does not",
-    7: "An anti-resonance that gets *worse* as capacitors of one value are added; the "
-       "path from supply ripple to jitter computed through the loop's own rejection, "
-       "worst just above the loop bandwidth",
-    8: "A bathtub extrapolation from 10&#8315;&#8310; that overstates the eye by "
-       "5.3&times; while the fitted random jitter is identical to three decimal places; "
-       "the communications-Q / resonator-Q collision flagged explicitly",
-    9: "Flight time shown to exceed propagation delay by 5&times; on a weakly driven "
-       "line; statistical budgeting shown to save 47&ndash;67 % at 3&sigma; and "
-       "&minus;24 % to +22 % at 10&#8315;&#185;&#178;",
-    10: "An identical reflection placed at different delays gives identical insertion-loss "
+       "far-end crosstalk vanishes exactly; far-end coupling shown to saturate at half "
+       "the swing rather than growing without bound as the first-order formula predicts",
+    7: "Stephens's five rules as the spine. A confident measurement at 10&#8315;&#185;&#178; "
+       "takes six minutes at 28 Gb/s and four days at 10&#8315;&#185;&#8309;; the real "
+       "data-dependent distribution computed from the channel, and it is nothing like "
+       "two impulses",
+    8: "**DJ(&delta;&delta;) computed against the true peak-to-peak** &mdash; the model's "
+       "deterministic jitter comes out 8&ndash;28 % *smaller* than the real spread, and "
+       "the fitted random jitter 1.27&ndash;1.32&times; too large, because the fit "
+       "absorbs smooth deterministic width",
+    9: "Jitter transfer against error response, the golden PLL, and a tolerance mask "
+       "shown to be the loop restated as a test; the same oscillator yielding jitter "
+       "figures a hundredfold apart depending only on the integration band",
+    10: "Rule four computed: a 1 mV disturbance is worth 0.17 ps on this channel, and "
+        "amplitude-induced jitter rises **212&times;** from 1 to 56 Gb/s because the "
+        "channel, not the transmitter, sets the edge &mdash; the knee falling at about "
+        "10 Gb/s, where Stephens put it from quite different reasoning",
+    11: "Target impedance and its limits; the frequency-domain target-impedance method, "
+        "which shows the **number of capacitors is set by mounting inductance and not by "
+        "capacitance at all**; and adding capacitors of one value making the peak worse",
+    12: "Spreading inductance, cavity impedance that depends on where you probe, and the "
+        "**Bandini Mountain** &mdash; the antiresonance between on-die capacitance and "
+        "package inductance that board capacitors cannot reach, with its optimum damping "
+        "computed at the characteristic impedance",
+    13: "Why a reflection measurement floors at about an ohm on directivity alone, how "
+        "two-port shunt-through reaches a milliohm at &minus;88 dB, and the cable-braid "
+        "ground loop that always reads *low*",
+    14: "Four routes from the rail to the eye, and the observation that two of them are "
+        "return-path problems rather than power problems; the worst supply-tone "
+        "frequency computed to sit *on* the loop bandwidth for a type-II loop, while a "
+        "type-I loop has no worst frequency at all &mdash; its response is flat",
+    15: "Flight time shown to exceed propagation delay by 5&times; on a weakly driven "
+        "line; statistical budgeting shown to save 47&ndash;67 % at 3&sigma; and "
+        "&minus;24 % to +22 % at 10&#8315;&#185;&#178;",
+    16: "An identical reflection placed at different delays gives identical insertion-loss "
         "agreement (0.15 dB rms) and eye errors from +1.3 % to &minus;5.5 %; the DC point "
         "alone is worth 7.9 % of the eye",
-    11: "COM on the SerDes_Equalisation channel passes at 11.96 dB while the same channel "
+    17: "COM on the SerDes_Equalisation channel passes at 11.96 dB while the same channel "
         "misses an uncoded 10&#8315;&#185;&#178; by 4.98 dB &mdash; reconciled by the "
         "pre-FEC error ratio the threshold assumes",
 }
 
 L = []
 L.append("# ⬡ Signal Integrity & High-Speed Digital Design\n")
-L.append("Eleven interactive slide decks on getting a signal from one chip to another "
+L.append("Seventeen interactive slide decks on getting a signal from one chip to another "
          "intact — the physics of the channel, the mechanisms that close an eye, and "
          "the arithmetic a standard uses to decide a channel is legal.\n")
 L.append("## ▶ [Open the Series Landing Page](%s/)\n" % PAGES)
@@ -72,14 +95,19 @@ L.append("**Every number on every slide is computed.** Each deck embeds the JSON
          "against it and the disagreement is reported on the landing page.\n" % GH)
 L.append("---\n")
 L.append("## The decks\n")
-L.append("| # | Deck | Slides | What it establishes |")
-L.append("|---|------|--------|---------------------|")
-for d in DECKS:
-    L.append("| %02d | [%s](%s/%s/) | %d | %s |"
-             % (d['n'], d['title'], PAGES, d['slug'], slides[d['n']],
-                HIGHLIGHTS.get(d['n'], d['blurb'])))
-L.append("")
-L.append("**%d slides across eleven decks.** Single-page HTML, KaTeX-rendered maths, "
+for title, lo, hi, intro in SECTIONS:
+    L.append("### %s &mdash; decks %02d&ndash;%02d\n" % (title, lo, hi))
+    L.append(intro + "\n")
+    L.append("| # | Deck | Slides | What it establishes |")
+    L.append("|---|------|--------|---------------------|")
+    for d in DECKS:
+        if not (lo <= d['n'] <= hi):
+            continue
+        L.append("| %02d | [%s](%s/%s/) | %d | %s |"
+                 % (d['n'], d['title'], PAGES, d['slug'], slides[d['n']],
+                    HIGHLIGHTS.get(d['n'], d['blurb'])))
+    L.append("")
+L.append("**%d slides across seventeen decks.** Single-page HTML, KaTeX-rendered maths, "
          "no build step — open any `index.html` directly.\n" % total)
 L.append("## Long-form companion\n")
 L.append("The same material as a written report: "
@@ -88,16 +116,20 @@ L.append("The same material as a written report: "
          "generated from the same computations, so a number cannot differ between the "
          "two.\n" % PDF_PAGES)
 L.append("---\n")
-L.append("## Verified against published work\n")
+L.append("## Verified\n")
 L.append("A model that agrees only with itself is not worth much. Every cross-check the "
-         "series makes against an independently published result:\n")
-L.append("| Quantity | This series | Published | Difference | Source |")
+         "series makes against an independently published result, followed by the "
+         "places where two computations inside the series have to agree with each "
+         "other:\n")
+L.append("| Quantity | This series | Reference value | Difference | Source |")
 L.append("|---|---|---|---|---|")
 worst = 0.0
 rows = [(k, v) for k, v in sorted(ver.items())
         if isinstance(v, dict) and 'err_pct' in v]
+rows.sort(key=lambda kv: (str(kv[1].get('source', '')).startswith('internal'), kv[0]))
 for k, v in rows:
-    worst = max(worst, abs(v['err_pct']))
+    if not str(v.get('source', '')).startswith('internal'):
+        worst = max(worst, abs(v['err_pct']))
     def f(x):
         a = abs(x)
         return ('%.4g' % x) if (a >= 1e9 or (0 < a < 1e-3)) else ('%.5g' % x)
@@ -105,7 +137,7 @@ for k, v in rows:
              % (k.split('/')[-1].replace('_', ' '), f(v['ours']),
                 f(v['published']), v['err_pct'], v['source']))
 L.append("")
-L.append("Worst disagreement across every check: **%.2f %%**.\n" % worst)
+L.append("Worst disagreement against published work: **%.2f %%**.\n" % worst)
 L.append("---\n")
 L.append("""## How the series is built
 

@@ -379,7 +379,7 @@ def f_xtalk():
 
 # ------------------------------------------------------------- chapter 7 ---
 def f_pdn():
-    d = D(7)
+    d = D(11)
     fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.4))
     ax = axes[0]
     for k in d['parts']:
@@ -406,7 +406,7 @@ def f_pdn():
 
 
 def f_ripple():
-    d = D(7)['ripple']
+    d = D(14)['ripple']
     fig, ax = plt.subplots(figsize=(4.6, 2.2))
     ax.semilogx(d['f_hz'], d['jitter_pp_ps'], color=NAVY, lw=1.6)
     ax.axvline(d['pll_bw_hz'], color=AMBER, ls='--', lw=1.0)
@@ -431,7 +431,7 @@ def f_bathtub():
     tidy(ax, 'sampling position, ps', 'error ratio')
     ax.legend(loc='upper center', fontsize=6.0)
     ax = axes[1]
-    jt = D(8)['jtol_bw']
+    jt = D(9)['jtol_bw']
     for k, col in zip(jt, (TEAL, NAVY, RED)):
         ax.loglog(jt[k]['f_hz'], jt[k]['tol_ui'], lw=1.4, color=col,
                   label=k + ' loop')
@@ -442,7 +442,7 @@ def f_bathtub():
 
 # ------------------------------------------------------------- chapter 9 ---
 def f_bus():
-    d = D(9)['bus']
+    d = D(15)['bus']
     fig, ax = plt.subplots(figsize=(4.8, 2.5))
     r = d['rows']
     x = [q['rate_gbps'] for q in r]
@@ -462,7 +462,7 @@ def f_bus():
 
 # ------------------------------------------------------------ chapter 10 ---
 def f_echo():
-    d = D(10)
+    d = D(16)
     fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3))
     ax = axes[0]
     c = d['channel']
@@ -486,7 +486,7 @@ def f_echo():
 
 # ------------------------------------------------------------ chapter 11 ---
 def f_com():
-    d = D(11)
+    d = D(17)
     fig, ax = plt.subplots(figsize=(6.2, 3.0))
     rows = d['sensitivity']
     y = np.arange(len(rows))
@@ -503,7 +503,7 @@ def f_com():
 
 
 def f_ild():
-    d = D(11)['ild']
+    d = D(17)['ild']
     fig, ax = plt.subplots(figsize=(4.8, 2.3))
     ax.plot(d['f_ghz'], d['il_db'], color=NAVY, lw=1.3, label='insertion loss')
     ax.plot(d['f_ghz'], d['fit_db'], color=GREY, lw=1.0, ls='--',
@@ -517,9 +517,242 @@ def f_ild():
     save(fig, 'ild')
 
 
+
+
+# --------------------------------------------------- chapters 7 to 10 ---
+def f_bert():
+    """Rule one made quantitative, and the data-dependent distribution."""
+    d = D(7)
+    fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3))
+    ax = axes[0]
+    for rows, col, lab in ((d['bert'], NAVY, '2.5 Gb/s'),
+                           (d['bert_28'], TEAL, '28 Gb/s')):
+        ax.loglog([r['ber'] for r in rows], [max(r['seconds'], 1e-6) for r in rows],
+                  'o-', color=col, lw=1.4, ms=3.2, label=lab)
+    import matplotlib.transforms as mtransforms
+    tr = mtransforms.blended_transform_factory(ax.transAxes, ax.transData)
+    for secs, lab in ((60, 'a minute'), (3600, 'an hour'),
+                      (86400, 'a day'), (86400 * 30, 'a month')):
+        ax.axhline(secs, color='#DDE3EA', lw=0.7, zorder=0)
+        ax.text(0.98, secs * 1.5, lab, fontsize=6.0, color=GREY,
+                ha='right', transform=tr)
+    ax.invert_xaxis()
+    tidy(ax, 'error ratio to be confirmed', 'time for 10 errors, s')
+    ax.legend(loc='upper left', fontsize=6.4)
+    ax = axes[1]
+    dd = d['ddj']
+    ctr = 0.5 * (np.array(dd['bins'][:-1]) + np.array(dd['bins'][1:]))
+    ax.bar(ctr, dd['hist'], width=(ctr[1] - ctr[0]) * 0.95, color=NAVY)
+    ax.axvline(0, color=GREY, lw=0.8)
+    tidy(ax, 'crossing position, UI', 'histories')
+    ax.set_title('all %d histories of the preceding bits' % dd['n'], fontsize=7)
+    save(fig, 'bert')
+
+
+def f_dualdirac():
+    """What the dual-Dirac model claims against what the channel does."""
+    d = D(8)
+    fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3))
+    ax = axes[0]
+    # On a Q-scale the dual-Dirac model is a straight line by construction, so
+    # any curvature in the computed data is the model failing.
+    t = np.array(d['qscale']['t_ui'])
+    q = np.array(d['qscale']['q'])
+    ax.plot(t, q, color=NAVY, lw=1.6, label='computed from the channel')
+    lo, hi = 3.72, 4.27          # the Q range of a 1e-4 to 1e-9 measurement
+    m = (q >= lo) & (q <= hi)
+    if m.sum() > 2:
+        c = np.polyfit(t[m], q[m], 1)
+        tt = np.linspace(t[m].min() - 0.10, t.max(), 40)
+        ax.plot(tt, np.polyval(c, tt), color=RED, lw=1.3, ls='--',
+                label='dual-Dirac straight line')
+        ax.plot(t[m], q[m], color=AMBER, lw=4.0, alpha=0.7,
+                label='where it was fitted')
+    ax.axhline(7.03, color=GREY, ls=':', lw=0.9)
+    ax.text(t.min(), 7.16, '$10^{-12}$', fontsize=6.2, color=GREY)
+    ax.set_ylim(0, 8.4)
+    tidy(ax, 'sampling position, UI', 'Q')
+    ax.legend(loc='upper right', fontsize=5.8)
+    ax = axes[1]
+    rows = d['dd_vs_true']
+    x = np.arange(len(rows))
+    ax.bar(x - 0.18, [100 * r['dj_dd_ui'] / r['dj_pp_ui'] for r in rows],
+           0.34, color=NAVY, label='DJ($\\delta\\delta$) as % of true peak-to-peak')
+    ax.bar(x + 0.18, [100 * r['rj_inflation'] for r in rows],
+           0.34, color=RED, label='fitted RJ as % of true')
+    ax.axhline(100, color=GREY, ls='--', lw=0.9)
+    ax.set_xticks(x)
+    ax.set_xticklabels(['%.0f%%' % (100 * r['rj_true_ui']) for r in rows],
+                       fontsize=6.4)
+    tidy(ax, 'true random jitter, % of a UI', 'per cent of the true value')
+    ax.legend(loc='lower left', fontsize=5.8)
+    save(fig, 'dualdirac')
+
+
+def f_cdr():
+    """The loop seen twice: what it passes, and what it must tolerate."""
+    d = D(9)
+    fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3))
+    ax = axes[0]
+    c = d['cdr']
+    ax.semilogx(c['f_hz'], c['transfer_db'], color=NAVY, lw=1.5,
+                label='jitter transfer')
+    ax.semilogx(c['f_hz'], c['error_db'], color=RED, lw=1.5,
+                label='error response')
+    ax.axhline(-3, color=GREY, ls='--', lw=0.8)
+    ax.set_ylim(-45, 8)
+    tidy(ax, 'jitter frequency, Hz', 'dB')
+    ax.legend(loc='center left', fontsize=6.4)
+    ax = axes[1]
+    for k, col in zip(d['jtol_bw'], (TEAL, NAVY, RED)):
+        j = d['jtol_bw'][k]
+        ax.loglog(j['f_hz'], j['tol_ui'], lw=1.4, color=col, label=k + ' loop')
+    tidy(ax, 'jitter frequency, Hz', 'tolerance, UI peak to peak')
+    ax.legend(loc='upper right', fontsize=6.4)
+    save(fig, 'cdr')
+
+
+def f_sep():
+    """Rule four: amplitude noise becoming jitter, and how that scales."""
+    d = D(10)
+    fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3))
+    ax = axes[0]
+    rows = d['separability']['rows']
+    r = [x['rate_gbps'] for x in rows]
+    ax.loglog(r, [x['rise_time_ps'] for x in rows], 'o-', color=NAVY, lw=1.5,
+              ms=3.5, label='rise time at the receiver')
+    ax.loglog(r, [x['ui_ps'] for x in rows], 's--', color=GREY, lw=1.2, ms=3.0,
+              label='unit interval')
+    tidy(ax, 'signalling rate, Gb/s', 'ps')
+    ax.legend(loc='upper right', fontsize=6.4)
+    ax = axes[1]
+    ax.loglog(r, [100 * x['jitter_pp_ui_at_1e12'] for x in rows], 'o-',
+              color=RED, lw=1.6, ms=3.5)
+    tidy(ax, 'signalling rate, Gb/s',
+         'jitter from %.0f mV rms, %% of a UI' % d['separability']['noise_mv_rms'])
+    save(fig, 'sep')
+
+
+# --------------------------------------------------- chapters 11 to 14 ---
+def f_fdtim():
+    """How many capacitors, and what actually decides the number."""
+    d = D(11)
+    fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3))
+    ax = axes[0]
+    sw = d['fdtim_sweep']
+    ax.plot([r['l_mount_ph'] for r in sw], [r['n_min'] for r in sw], 'o-',
+            color=NAVY, lw=1.6, ms=4)
+    tidy(ax, 'mounting inductance per capacitor, pH',
+         'capacitors needed')
+    ax = axes[1]
+    tg = d['fdtim_targets']
+    ax.loglog([r['z_target_mohm'] for r in tg], [r['n_min'] for r in tg], 'o-',
+              color=RED, lw=1.6, ms=4)
+    tidy(ax, 'target impedance, m\u03a9', 'capacitors needed')
+    save(fig, 'fdtim')
+
+
+def f_bandini():
+    """The antiresonance board capacitors cannot reach, and its damping."""
+    d = D(12)
+    fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3))
+    ax = axes[0]
+    b = d['bandini']
+    ax.loglog(b['f_hz'], b['z_ohm'], color=NAVY, lw=1.6)
+    ax.plot([b['f_peak_hz']], [b['z_peak_ohm']], 'o', color=RED, ms=5)
+    ax.annotate('Bandini Mountain\n%.0f m\u03a9 at %.0f MHz'
+                % (1000 * b['z_peak_ohm'], b['f_peak_hz'] / 1e6),
+                xy=(b['f_peak_hz'], b['z_peak_ohm']),
+                xytext=(0.46, 0.12), textcoords='axes fraction',
+                fontsize=6.4, color=RED)
+    tidy(ax, 'frequency, Hz', 'impedance, \u03a9')
+    ax = axes[1]
+    rows = d['bandini_damping']['rows']
+    ax.semilogx([r['r_mohm'] for r in rows],
+                [r['z_peak_mohm'] for r in rows], 'o-', color=NAVY, lw=1.6,
+                ms=3.5)
+    ax.axhline(d['bandini_damping']['z_bm_mohm'], color=TEAL, ls='--', lw=1.0)
+    ax.text(2.2, d['bandini_damping']['z_bm_mohm'] * 1.06,
+            'characteristic impedance $\\sqrt{L/C}$', fontsize=6.2, color=TEAL)
+    tidy(ax, 'series resistance in the package path, m\u03a9',
+         'peak impedance, m\u03a9')
+    save(fig, 'bandini')
+
+
+def f_spread():
+    """Inductance that is not in any component, and the droop it causes."""
+    d = D(12)
+    fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3))
+    ax = axes[0]
+    rows = d['spreading']
+    hs = sorted({r['h_um'] for r in rows})
+    for h, col in zip(hs, (TEAL, NAVY, AMBER, RED)):
+        sub = [r for r in rows if r['h_um'] == h]
+        ax.semilogx([r['d_mm'] for r in sub], [r['l_ph'] for r in sub],
+                    lw=1.4, color=col, label='%d \u00b5m separation' % h)
+    tidy(ax, 'distance from the load, mm', 'spreading inductance, pH')
+    ax.legend(loc='upper left', fontsize=6.0)
+    ax = axes[1]
+    t = d['transient']
+    tt, vv = np.array(t['t_ns']), np.array(t['v_mv'])
+    k = tt <= 60
+    ax.plot(tt[k], vv[k], color=NAVY, lw=1.4)
+    ax.axhline(0, color=GREY, lw=0.8)
+    dc = -t['i_step_a'] * t['r_dc_mohm']
+    ax.axhline(dc, color=GREY, ls='--', lw=0.9)
+    ax.text(58, dc - 22, 'eventual DC level, %.0f mV' % dc, fontsize=6.0,
+            color=GREY, ha='right')
+    ax.plot([t['worst_at_ns']], [t['worst_mv']], 'o', color=RED, ms=4)
+    tidy(ax, 'time, ns', 'rail deviation, mV')
+    ax.set_title('%.0f A step: %.1f m\u03a9/A at the worst point, against a '
+                 '%.1f m\u03a9 impedance peak'
+                 % (t['i_step_a'], t['worst_as_impedance_mohm'],
+                    t['z_peak_mohm']), fontsize=6.4)
+    save(fig, 'spread')
+
+
+def f_shunt():
+    """Why one measurement floors at an ohm and the other reaches a milliohm."""
+    d = D(13)
+    fig, ax = plt.subplots(figsize=(5.4, 2.6))
+    c = d['shunt_curve']
+    ax.semilogx(c['z_ohm'], c['s21_db'], color=NAVY, lw=1.6,
+                label='two-port shunt-through, $S_{21}$')
+    ax.semilogx(c['z_ohm'], c['s11_db'], color=RED, lw=1.6,
+                label='one-port reflection, $S_{11}$')
+    fl = d['sensitivity']['reflection_floor_ohm']
+    ax.axvline(fl, color=AMBER, ls='--', lw=1.0)
+    ax.text(fl * 1.25, -20, 'reflection floor\nat %.0f dB directivity'
+            % d['sensitivity']['directivity_db'], fontsize=6.2, color=AMBER)
+    tidy(ax, 'impedance under test, \u03a9', 'magnitude, dB')
+    ax.legend(loc='lower right', fontsize=6.4)
+    save(fig, 'shunt')
+
+
+def f_ssn():
+    """Four routes from the rail to the eye, priced."""
+    d = D(14)
+    fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3))
+    ax = axes[0]
+    rows = d['ssn']
+    ax.loglog([r['n_drivers'] for r in rows], [r['v_noise_mv'] for r in rows],
+              'o-', color=NAVY, lw=1.6, ms=4)
+    tidy(ax, 'drivers switching together', 'ground bounce, mV')
+    ax = axes[1]
+    rows = d['psrr']
+    ax.plot([r['psrr_db'] for r in rows], [r['jitter_pp_ps'] for r in rows],
+            'o-', color=RED, lw=1.6, ms=4)
+    ax.set_yscale('log')
+    tidy(ax, 'supply rejection at the oscillator, dB',
+         'jitter from a 20 mV tone, ps p-p')
+    save(fig, 'ssn')
+
+
 ALL = [f_regions, f_coax, f_tdr, f_return, f_slot, f_rough, f_laminates,
        f_causal, f_weave, f_stub, f_viaopt, f_coupling, f_skewconv, f_xtalk,
-       f_pdn, f_ripple, f_bathtub, f_bus, f_echo, f_com, f_ild]
+       f_bert, f_dualdirac, f_cdr, f_sep,
+       f_pdn, f_fdtim, f_bandini, f_spread, f_shunt, f_ripple, f_ssn,
+       f_bathtub, f_bus, f_echo, f_com, f_ild]
 
 if __name__ == '__main__':
     print('figures ->', OUT)

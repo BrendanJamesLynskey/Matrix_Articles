@@ -300,3 +300,255 @@ def jitter_tolerance(f=None, bw_hz=4e6, zeta=1.0, budget_ui=0.15,
     return dict(f_hz=np.asarray(f).tolist(), tol_ui=tol.tolist(),
                 bw_hz=bw_hz, budget_ui=budget_ui,
                 corner_hz=float(bw_hz))
+
+
+# ==========================================================================
+# The material below follows Ransom Stephens's treatment, whose organising
+# idea is that jitter analysis exists to predict a bit error ratio and that
+# almost every practical difficulty comes from forgetting it. Four of his
+# points are computed here rather than quoted: how long a real measurement
+# takes, how far the dual-Dirac deterministic jitter sits from the actual
+# peak-to-peak value, how readily deterministic jitter is mistaken for random
+# jitter, and how amplitude noise becomes jitter through the slew rate.
+# ==========================================================================
+
+def bert_time(ber, rate_gbps, confidence_bits=10.0):
+    """How long a bit error ratio tester needs to measure down to `ber`.
+
+    Observing an error ratio requires seeing errors, and seeing enough of them
+    to believe the number requires roughly `confidence_bits` divided by the
+    ratio. That is the arithmetic behind Stephens's second rule: total jitter
+    at a low error ratio can only be *measured* on a bit error ratio tester,
+    and everything an oscilloscope reports is an estimate.
+    """
+    bits = confidence_bits / ber
+    secs = bits / (rate_gbps * 1e9)
+    return dict(ber=ber, rate_gbps=rate_gbps, bits=float(bits),
+                seconds=float(secs), minutes=float(secs / 60),
+                hours=float(secs / 3600), days=float(secs / 86400),
+                one_error_every_s=float(1.0 / (ber * rate_gbps * 1e9)))
+
+
+def ddj_crossings(pulse, samples_per_ui, cursor_index, depth=8):
+    """Every zero crossing the data pattern can produce, in unit intervals.
+
+    This is the true data-dependent jitter distribution for a pattern depth,
+    computed from the channel's own pulse response rather than assumed. It is
+    emphatically not two delta functions, which is what makes it the right
+    thing to test the dual-Dirac model against.
+    """
+    p = np.asarray(pulse, float)
+    m = samples_per_ui
+    out = []
+    for k in range(2 ** depth):
+        bits = [(k >> i) & 1 for i in range(depth)]
+        wave = p.copy()
+        for i, b in enumerate(bits):
+            sh = (i + 1) * m
+            if sh < len(p):
+                wave[sh:] += (1 if b else -1) * p[:len(p) - sh]
+        lo = max(cursor_index - 2 * m, 1)
+        hi = min(cursor_index, len(wave) - 1)
+        seg = wave[lo:hi]
+        idx = np.nonzero(np.diff(np.sign(seg)) != 0)[0]
+        if idx.size:
+            i0 = idx[-1]
+            y0, y1 = seg[i0], seg[i0 + 1]
+            frac = -y0 / (y1 - y0) if (y1 - y0) != 0 else 0.0
+            out.append((lo + i0 + frac) / m)
+    c = np.array(out)
+    if c.size == 0:
+        return dict(ok=False)
+    c = c - np.mean(c)
+    return dict(ok=True, crossings_ui=c, n=int(c.size),
+                pp_ui=float(c.max() - c.min()), std_ui=float(np.std(c)))
+
+
+def ber_from_distribution(crossings_ui, rj_rms_ui, ui_ps, n=1400,
+                          span_ui=1.0):
+    """Bit error ratio against sampling position, from a real jitter pdf.
+
+    The deterministic crossings are treated as equally likely and each is
+    convolved with the Gaussian random part, which is the honest calculation
+    the dual-Dirac model approximates.
+    """
+    c = np.asarray(crossings_ui, float)
+    t = np.linspace(-0.5 * span_ui, 0.5 * span_ui, n)
+    left = np.zeros(n)
+    right = np.zeros(n)
+    for x in c:
+        left += 0.5 * erfc((t - x) / (rj_rms_ui * np.sqrt(2)))
+        right += 0.5 * erfc(((1.0 + x) - t) / (rj_rms_ui * np.sqrt(2)))
+    left /= c.size
+    right /= c.size
+    ber = 0.5 * (left + right)
+    return dict(t_ui=t, ber=np.clip(ber, 1e-30, 1.0),
+                left=np.clip(left, 1e-30, 1.0),
+                right=np.clip(right, 1e-30, 1.0), ui_ps=ui_ps)
+
+
+def q_scale(t_ui, ber_side):
+    """Convert one flank of a bathtub to the Q scale.
+
+    Replacing log(BER) with Q(BER) on the vertical axis turns a pure Gaussian
+    tail into a straight line, which is what makes the dual-Dirac fit a
+    straight-line fit: the slope is the random jitter and the intercept is the
+    model's deterministic jitter. It also makes a non-Gaussian tail obvious by
+    inspection, which a logarithmic axis does not.
+    """
+    b = np.asarray(ber_side, float)
+    m = (b > 1e-30) & (b < 0.4)
+    q = np.array([q_from_ber(v) for v in b[m]])
+    return np.asarray(t_ui)[m], q
+
+
+def dual_dirac_vs_true(crossings_ui, rj_rms_ui, ui_ps, ber_fit=(1e-9, 1e-4),
+                       ber_target=1e-12):
+    """Fit the dual-Dirac model to a real jitter distribution and compare.
+
+    The headline comparison of the model's limits. The deterministic jitter
+    the dual-Dirac fit reports is a parameter of the fit, obtained by
+    extrapolating the Gaussian tails back to where they would have come from
+    if the deterministic distribution really were two impulses. The actual
+    peak-to-peak spread of the deterministic distribution is a different
+    quantity and is larger; Stephens writes them DJ(dd) and DJ(p-p) and is
+    emphatic that confusing them is the commonest error in the field.
+    """
+    d = ber_from_distribution(crossings_ui, rj_rms_ui, ui_ps)
+    t, left = d['t_ui'], d['left']
+    m = (left >= ber_fit[0]) & (left <= ber_fit[1])
+    if m.sum() < 5:
+        return dict(ok=False)
+    q = np.array([q_from_ber(v) for v in left[m]])
+    # t = -sigma*Q + mu_L  on the left flank
+    a, b0 = np.polyfit(q, t[m], 1)
+    sigma_fit = abs(a)
+    mu_l = b0
+    dj_dd = 2.0 * abs(mu_l)          # symmetric distribution: |mu_L - mu_R|
+    c = np.asarray(crossings_ui, float)
+    dj_pp = float(c.max() - c.min())
+    qt = q_from_ber(ber_target)
+    tj_dd = dj_dd + 2 * qt * sigma_fit
+    # true total jitter at the target, read off the computed curve
+    ok = t[(d['ber'] <= ber_target)]
+    tj_true = 1.0 - float(ok.max() - ok.min()) if ok.size else 1.0
+    return dict(ok=True,
+                rj_true_ui=float(rj_rms_ui), rj_fitted_ui=float(sigma_fit),
+                rj_inflation=float(sigma_fit / rj_rms_ui),
+                dj_dd_ui=float(dj_dd), dj_pp_ui=float(dj_pp),
+                dj_ratio=float(dj_dd / dj_pp) if dj_pp else None,
+                tj_dual_dirac_ui=float(tj_dd), tj_true_ui=float(tj_true),
+                tj_err_pct=float(100 * (tj_dd / tj_true - 1)) if tj_true else None,
+                ui_ps=ui_ps, ber_target=ber_target, ber_fit=list(ber_fit))
+
+
+def rj_contamination(rj_rms_ui=0.02, dj_shape='uniform', dj_pp_ui=0.25,
+                     ui_ps=35.71, ber_fit=(1e-9, 1e-4), n_dj=64):
+    """How much a deterministic distribution inflates the fitted random jitter.
+
+    A fit to the tails cannot tell whether width comes from the Gaussian or
+    from a deterministic distribution that happens to be smooth. The more the
+    deterministic part resembles a Gaussian, the more of it is counted as
+    random -- and random jitter is multiplied by fourteen at an error ratio of
+    1e-12 while deterministic jitter is not, so the mistake is expensive in
+    exactly one direction.
+    """
+    if dj_shape == 'dual_dirac':
+        c = np.array([-dj_pp_ui / 2, dj_pp_ui / 2])
+    elif dj_shape == 'uniform':
+        c = np.linspace(-dj_pp_ui / 2, dj_pp_ui / 2, n_dj)
+    elif dj_shape == 'gaussian_like':
+        u = np.linspace(-2.2, 2.2, n_dj)
+        c = (dj_pp_ui / 2) * u / 2.2
+        w = np.exp(-0.5 * u ** 2)
+        c = np.repeat(c, np.maximum(1, (w * 12).astype(int)))
+    else:
+        c = np.array([0.0])
+    r = dual_dirac_vs_true(c, rj_rms_ui, ui_ps, ber_fit)
+    if not r.get('ok'):
+        return dict(ok=False)
+    r['dj_shape'] = dj_shape
+    return r
+
+
+# ------------------------------------------- rule four: the other dimension --
+
+def amplitude_to_jitter(dv_mv, slew_mv_per_ps):
+    """Timing error produced by a voltage disturbance, through the slew rate.
+
+    Stephens's fourth rule is that timing noise and amplitude noise are not
+    really separable. The conversion is geometric and immediate: a signal
+    displaced vertically by dV crosses its threshold earlier or later by
+    dV divided by the slope it crosses at.
+
+    The consequence is that the separation gets worse as edges get faster in
+    absolute terms but the unit interval shrinks faster still, which is why he
+    puts the breakdown somewhere around ten gigabits per second.
+    """
+    if slew_mv_per_ps <= 0:
+        return float('nan')
+    return float(dv_mv / slew_mv_per_ps)
+
+
+def slew_from_pulse(pulse, samples_per_ui, ui_ps, amp_mv=400.0):
+    """Slew rate at the zero crossing of a channel's own pulse response."""
+    p = np.asarray(pulse, float)
+    m = samples_per_ui
+    pk = int(np.argmax(np.abs(p)))
+    lo = max(pk - 2 * m, 1)
+    seg = p[lo:pk]
+    idx = np.nonzero(np.diff(np.sign(seg)) != 0)[0]
+    i0 = (lo + idx[-1]) if idx.size else max(pk - m, 1)
+    dt_ps = ui_ps / m
+    d = (p[i0 + 1] - p[i0 - 1]) / (2 * dt_ps)
+    return dict(slew_mv_per_ps=float(abs(d) * amp_mv / max(abs(p[pk]), 1e-12)),
+                crossing_index=int(i0),
+                rise_time_ps=float(0.8 * amp_mv /
+                                   max(abs(d) * amp_mv /
+                                       max(abs(p[pk]), 1e-12), 1e-12)))
+
+
+def crosstalk_jitter(xt_mv_rms, slew_mv_per_ps, ui_ps, n_sigma=7.0):
+    """Crosstalk expressed as jitter rather than as voltage.
+
+    Crosstalk is the canonical bounded uncorrelated jitter: it is not random,
+    because it is a deterministic function of somebody else's data; it is not
+    data-dependent, because that data is not the victim's; and it is bounded,
+    because the aggressor's swing is. Converting it through the slew rate puts
+    it on the same axis as everything else in the budget and shows why a
+    crosstalk problem so often presents as a jitter problem.
+    """
+    rms_ps = amplitude_to_jitter(xt_mv_rms, slew_mv_per_ps)
+    return dict(xt_mv_rms=xt_mv_rms, slew_mv_per_ps=slew_mv_per_ps,
+                jitter_rms_ps=float(rms_ps),
+                jitter_pp_ps=float(n_sigma * rms_ps),
+                jitter_rms_ui=float(rms_ps / ui_ps),
+                jitter_pp_ui=float(n_sigma * rms_ps / ui_ps),
+                n_sigma=n_sigma)
+
+
+def separability(rows):
+    """Summarise where treating jitter and voltage noise separately fails.
+
+    `rows` must come from `sparam_qc.separability_from_channel`, which measures
+    the received amplitude and the slew rate at the crossing on a real channel
+    for each symbol rate. Doing it that way matters: assuming instead that the
+    edge is a fixed fraction of the unit interval makes the amplitude-induced
+    jitter a constant fraction of the interval at every rate, which is both
+    wrong and vacuous.
+
+    What actually happens is that the channel, not the transmitter, sets the
+    received edge. Its bandwidth does not improve because the data rate went
+    up, so as the interval shrinks the edge occupies more of it and the
+    received amplitude falls as well. The slew rate therefore stops improving
+    and eventually worsens, while the interval keeps shrinking -- so the jitter
+    a fixed receiver voltage noise produces grows as a fraction of the
+    interval. That is the quantitative form of Stephens's fourth rule.
+    """
+    out = []
+    for r in rows:
+        out.append(dict(r))
+    base = out[0]['jitter_rms_ui'] if out else 1.0
+    for r in out:
+        r['relative_to_slowest'] = float(r['jitter_rms_ui'] / base) if base else None
+    return dict(rows=out)

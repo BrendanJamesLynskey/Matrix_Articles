@@ -1,26 +1,25 @@
 <header class="hero">
-    <div class="series-label">Signal Integrity &amp; High-Speed Digital Design &mdash; Deck 10</div>
-    <h1>Measurement, De-embedding and <span class="accent">Correlation</span></h1>
-    <p class="subtitle">Where S-parameters come from, the four ways they arrive damaged,
-    and the uncomfortable demonstration that a model can match insertion loss to a
-    fraction of a decibel and still get the eye wrong.</p>
+    <div class="series-label">Signal Integrity &mdash; Jitter, Deck 10 of 17</div>
+    <h1>Crosstalk, Amplitude Noise <span class="accent">and the Two-Dimensional View</span></h1>
+    <p class="subtitle">The fourth rule, and the one the previous three quietly depend on
+    being false only a little: timing noise and amplitude noise are not separable. On the
+    channel this series works against, the separation stops being safe at about ten
+    gigabits per second.</p>
 
     <div class="tags">
-        <span class="tag">VNA and TDR</span><span class="tag">calibration</span>
-        <span class="tag">de-embedding</span><span class="tag">passivity</span>
-        <span class="tag">causality</span><span class="tag">correlation</span>
+        <span class="tag">rule four</span><span class="tag">slew rate</span>
+        <span class="tag">BUJ</span><span class="tag">crosstalk</span>
+        <span class="tag">RJ(h) / RJ(v)</span><span class="tag">2-D noise</span>
     </div>
 
     <div class="pipeline">
-        <span class="pipeline-step">instrument</span>
+        <span class="pipeline-step">voltage noise</span>
+        <span class="pipeline-arrow">&divide;</span>
+        <span class="pipeline-step">$dV/dt$</span>
         <span class="pipeline-arrow">&rarr;</span>
-        <span class="pipeline-step">calibration</span>
+        <span class="pipeline-step">jitter</span>
         <span class="pipeline-arrow">&rarr;</span>
-        <span class="pipeline-step">de-embedding</span>
-        <span class="pipeline-arrow">&rarr;</span>
-        <span class="pipeline-step">quality checks</span>
-        <span class="pipeline-arrow">&rarr;</span>
-        <span class="pipeline-step">a usable channel</span>
+        <span class="pipeline-step">the same budget</span>
     </div>
     __NAV__
 </header>
@@ -29,280 +28,295 @@
     <div class="slide-number">00</div>
     <h2>Topics We'll Cover</h2>
     <ul class="contents-list">
-        <li><a href="#slide-01">Two instruments, one measurement</a></li>
-        <li><a href="#slide-02">Calibration decides where the measurement begins</a></li>
-        <li><a href="#slide-03">Fixture removal, and getting it wrong</a></li>
-        <li><a href="#slide-04">Passivity: energy the model invents</a></li>
-        <li><a href="#slide-05">Causality, tested two ways</a></li>
-        <li><a href="#slide-06">Interactive: where the measurement stopped</a></li>
-        <li><a href="#slide-07">The point nobody measures</a></li>
-        <li><a href="#slide-08">All four defects, priced in eye height</a></li>
-        <li><a href="#slide-09">Interactive: what correlation honestly means</a></li>
-        <li><a href="#slide-10">Cheat sheet</a></li>
+        <li><a href="#slide-01">Rule four: noise is noise</a></li>
+        <li><a href="#slide-02">How amplitude noise becomes jitter</a></li>
+        <li><a href="#slide-03">Interactive: the conversion on the real channel</a></li>
+        <li><a href="#slide-04">Interactive: where the separation stops being safe</a></li>
+        <li><a href="#slide-05">Crosstalk is the canonical bounded uncorrelated jitter</a></li>
+        <li><a href="#slide-06">Crosstalk in both dimensions at once</a></li>
+        <li><a href="#slide-07">The two-dimensional picture</a></li>
+        <li><a href="#slide-08">Receiver tolerance testing, with crosstalk</a></li>
+        <li><a href="#slide-09">Cheat sheet</a></li>
     </ul>
 </section>
 
 <section class="slide" id="slide-01">
     <div class="slide-number">01</div>
-    <h2>Two Instruments, One Measurement</h2>
-    <p>A vector network analyser sweeps a sinusoid and measures the ratio of what comes
-    back and what goes through to what went in, in magnitude and phase, at each
-    frequency. A time-domain reflectometer launches a step and records the reflection
-    against time. These sound like different experiments and they are the same one: the
-    two data sets are Fourier transforms of each other, and every modern instrument will
-    show you either view of whichever it measured.</p>
+    <h2>Rule Four: Noise Is Noise</h2>
+    <p>Everything in the three previous decks treats jitter as a one-dimensional problem:
+    transitions move horizontally, and the question is by how much. Look at an eye
+    diagram and the assumption is obviously incomplete. The noise on it is visible in
+    both directions, and the two are not independent.</p>
+
+    <p>The voltage noise that reduces the signal-to-noise ratio does not only cause
+    amplitude errors. It also moves the instant at which the waveform crosses its
+    threshold, which is jitter by any definition. Equally, phase noise does not only
+    cause timing errors &mdash; at a fixed sampling instant on a sloping edge it produces
+    an amplitude error.</p>
 
     <div class="diagram-grid cols-2">
         <div class="diagram-panel accent-border">
-            <h4>What each is good at</h4>
-            <p>The frequency domain has the better dynamic range and the better defined
-            calibration, so it is where characterisation is done. The time domain is
-            where a human can see <em>which</em> feature is responsible, because position
-            along the trace maps to time, which is why debugging is done there.</p>
+            <h4>The idealisation</h4>
+            <p>With infinitely fast edges, jitter would be caused by phase noise alone
+            and amplitude noise would cause no timing error whatever. Separating the two
+            would then be exact rather than convenient.</p>
         </div>
-        <div class="diagram-panel y">
-            <h4>Where they genuinely differ</h4>
-            <p>A network analyser measures only the frequencies it sweeps, so everything
-            below the first point and above the last has to be supplied by assumption.
-            Those assumptions are the subject of slides 06 and 07, and they do more
-            damage than most measurement error.</p>
+        <div class="diagram-panel r">
+            <h4>The reality</h4>
+            <p>Real transitions have finite slope. A vertical displacement therefore
+            produces a horizontal one, in a ratio set entirely by that slope &mdash; and
+            the slope, on a lossy channel, is set by the channel rather than by the
+            transmitter.</p>
         </div>
     </div>
 
-    <p>The channel used throughout this deck is the one from
-    <a href="https://brendanjameslynskey.github.io/SerDes_Equalisation/">SerDes_Equalisation</a>,
-    imported rather than re-fitted, so nothing that article quotes is disturbed by
-    anything done here.</p>
-
-    <div class="canvas-wrap">
-        <canvas id="ch-plot" width="780" height="270"></canvas>
-        <div class="legend">
-            <span><i style="background:#fb923c"></i>insertion loss</span>
-            <span><i style="background:#8b949e"></i>return loss</span>
-        </div>
-    </div>
+    <p>Stephens's formulation is that jitter analysis considers one dimension of a
+    two-dimensional problem, and that this is useful rather than correct. The purpose of
+    this deck is to find where it stops being useful, which turns out to be a computable
+    question with an uncomfortable answer.</p>
 </section>
 
 <section class="slide" id="slide-02">
     <div class="slide-number">02</div>
-    <h2>Calibration Decides Where the Measurement Begins</h2>
-    <p>An instrument measures at its own connectors. Everything between there and the
-    thing you care about &mdash; cables, adapters, launch structures, a length of trace
-    on a test coupon &mdash; is in the measurement unless it is removed, and calibration
-    is how the reference plane gets moved.</p>
+    <h2>How Amplitude Noise Becomes Jitter</h2>
+    <p>The conversion is geometric and immediate. A waveform displaced vertically by
+    $\delta V$ crosses its threshold earlier or later by that displacement divided by the
+    slope it crosses at:</p>
 
-    <table>
-        <thead><tr><th>Method</th><th>What it needs</th><th>Where it is used</th></tr></thead>
-        <tbody>
-            <tr><td>SOLT (short, open, load, through)</td><td>Characterised standards, whose behaviour is known as a function of frequency</td><td>Coaxial work; entirely routine well past 20 GHz with good standards</td></tr>
-            <tr><td>TRL (through, reflect, line)</td><td>Only a through, some repeatable reflection, and a line of known length &mdash; the impedance of the line defines the reference</td><td>On-board and on-wafer, where good standards cannot be made; the reference impedance is the line's, not 50 &Omega;</td></tr>
-            <tr><td>2x-thru / automatic fixture removal</td><td>A fixture built as two back-to-back copies of the launch</td><td>The usual method for board-level channels, because the fixture is easy to fabricate alongside the coupon</td></tr>
-        </tbody>
-    </table>
+    <p>$$\delta t \approx \frac{\delta V}{dV/dt}.$$</p>
 
-    <div class="callout">
-        <div class="callout-label">A correction worth making</div>
-        <p>It is sometimes said that open and short standards are hopeless at gigahertz
-        frequencies and that this is why scattering parameters exist. Neither half is
-        right. Characterised open, short and load standards are used routinely well into
-        the tens of gigahertz, and TRL goes higher still. Scattering parameters exist
-        because travelling waves are the natural variables of transmission-line theory
-        &mdash; the natural bookkeeping for magnitude and phase from port to port &mdash;
-        and matched terminations are a secondary convenience. The companion deck
-        <a href="https://brendanjameslynskey.github.io/Matrix_Methods_Network_Parameters/">Matrix
-        Methods in Network Parameters</a> makes that argument properly.</p>
+    <p>Three things follow, and none of them is obvious from the one-dimensional
+    picture.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel y">
+            <h4>Slow edges convert more</h4>
+            <p>The slower the transition, the more timing error a given voltage
+            disturbance produces. An equaliser that restores amplitude without restoring
+            the edge does not help with this term.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>The channel sets the slope</h4>
+            <p>Not the transmitter. Past the channel's bandwidth the received edge stops
+            getting faster however hard the driver is pushed, so the conversion factor is
+            a property of the board.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Every voltage term reappears</h4>
+            <p>Receiver noise, crosstalk, supply ripple, reflections: each has a jitter
+            equivalent, and adding them in the voltage budget and again in the timing
+            budget double-counts, while adding them in only one under-counts.</p>
+        </div>
     </div>
+
+    <p>The vocabulary extends in the obvious way. Random jitter has a counterpart in
+    random noise, deterministic jitter in deterministic noise, data-dependent jitter in
+    data-dependent noise; and each can be split further into the part contributed by
+    phase noise and the part contributed by amplitude noise &mdash; written
+    RJ(h) and RJ(v) for the horizontal and vertical contributions.</p>
 </section>
 
 <section class="slide" id="slide-03">
     <div class="slide-number">03</div>
-    <h2>Fixture Removal, and Getting It Wrong</h2>
-    <p>De-embedding inverts a model of the fixture and applies the inverse to the
-    measurement. It is exact if the model of the fixture is exact. The fixture, however,
-    is fabricated to the same tolerances as everything else on the board, so its
-    impedance is known to about ten per cent &mdash; and inverting a slightly wrong
-    fixture leaves a residue behind that was never in the device under test.</p>
+    <h2>Interactive: The Conversion on the Real Channel</h2>
+    <p>The slope is measured from the equalised pulse response of the same 28.8-inch
+    backplane the rest of this series uses, so the conversion factor below is that
+    channel's, not a generic one.</p>
 
-    <p>Worse, the residue is a reflection, and a reflection is the one kind of error the
-    later slides show to be most damaging, because it lands in the time domain wherever
-    the fixture's electrical length puts it.</p>
-
-    <div class="canvas-wrap" style="overflow-x:auto">
-        <table id="de-table"></table>
+    <div class="control-panel">
+        <div class="metric-grid" id="sl-metrics"></div>
     </div>
 
-    <p class="note" id="de-note"></p>
+    <div class="canvas-wrap">
+        <canvas id="av-plot" width="780" height="280"></canvas>
+        <div class="legend">
+            <span><i style="background:#d946ef"></i>jitter produced by a voltage disturbance</span>
+            <span><i style="background:#fbbf24"></i>the crosstalk computed in deck 06</span>
+        </div>
+    </div>
+
+    <p class="note" id="av-note"></p>
 </section>
 
 <section class="slide" id="slide-04">
     <div class="slide-number">04</div>
-    <h2>Passivity: Energy the Model Invents</h2>
-    <p>A passive network cannot deliver more power than it receives. For a reciprocal,
-    symmetric two-port that reduces to a condition testable at every frequency:</p>
+    <h2>Interactive: Where the Separation Stops Being Safe</h2>
+    <p>Here is the result that makes this deck worth computing. Hold the transmitter's
+    amplitude and the receiver's voltage noise fixed, and let the symbol rate rise on the
+    same physical channel.</p>
 
-    <p>$$|S_{11}|^2 + |S_{21}|^2 \le 1.$$</p>
+    <p>It is tempting to assume the edge scales with the rate, in which case the
+    amplitude-induced jitter would stay a constant fraction of the unit interval and
+    nothing interesting would happen. That assumption is wrong, and it is wrong in the
+    direction that matters: the <em>channel</em> sets the received rise time, and the
+    channel's bandwidth does not improve because the data rate went up.</p>
 
-    <p>Measured data violates this routinely by small amounts, from noise, from
-    calibration residue, and above all from de-embedding, which subtracts a model from a
-    measurement and can easily subtract slightly too much. The consequence is not
-    cosmetic: a time-domain simulator handed a channel that creates energy can oscillate,
-    and a model that gains two per cent in amplitude reports an eye two per cent too
-    open.</p>
+    <div class="canvas-wrap">
+        <canvas id="sp-plot" width="780" height="310"></canvas>
+        <div class="legend">
+            <span><i style="background:#d946ef"></i>amplitude-induced jitter, in UI</span>
+            <span><i style="background:#22d3ee"></i>received rise time, in UI</span>
+            <span><i style="background:#fbbf24"></i>about ten gigabits per second</span>
+        </div>
+    </div>
 
-    <div class="metric-grid" id="pa-metrics"></div>
+    <div class="canvas-wrap" style="overflow-x:auto">
+        <table id="sp-table"></table>
+    </div>
 
-    <p class="note">Enforcing passivity is a standard post-processing step and it is not
-    free: it perturbs the data to make it obey the constraint, and where it perturbs it
-    is a choice the algorithm makes rather than one the measurement supports. A data set
-    that needs a large passivity correction should be re-measured rather than repaired.</p>
+    <p class="note" id="sp-note"></p>
 </section>
 
 <section class="slide" id="slide-05">
     <div class="slide-number">05</div>
-    <h2>Causality, Tested Two Ways</h2>
-    <p>A causal network produces no output before its input. Two tests follow from that,
-    and they catch different failures.</p>
+    <h2>Crosstalk Is the Canonical Bounded Uncorrelated Jitter</h2>
+    <p>Deck 07 introduced bounded uncorrelated jitter as the category the industry uses
+    for organising its ignorance. Crosstalk is its best example, and it earns the place
+    by failing every other classification.</p>
 
-    <p>The <strong>time-domain</strong> test transforms the data and looks for energy
-    ahead of the first arrival. It is direct and interpretable. The
-    <strong>minimum-phase</strong> test compares the measured phase against the phase the
-    measured magnitude implies through the Kramers&ndash;Kronig relations &mdash; the same
-    relations that deck 03 applied to a dielectric, here applied to a transfer function.
-    It catches a failure the first test misses: a magnitude that has been edited without
-    the dispersion that must accompany it.</p>
-
-    <div class="canvas-wrap">
-        <canvas id="mp-plot" width="780" height="280"></canvas>
-        <div class="legend">
-            <span><i style="background:#fb923c"></i>departure from minimum phase</span>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Not random</h4>
+            <p>It is an exact, deterministic function of the aggressor's data. Nothing
+            about it is stochastic; there is no underlying Gaussian process.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Not data-dependent either</h4>
+            <p>It is a function of somebody <em>else's</em> data, which the victim's
+            receiver has never seen and cannot predict. So the equaliser, which removes
+            data-dependent jitter by construction, does nothing about it.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Bounded</h4>
+            <p>By the aggressor's swing, so it cannot grow without limit the way a
+            Gaussian can. That is what puts it on the deterministic side of the tree
+            despite being unpredictable.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>And it looks Gaussian</h4>
+            <p>Several uncorrelated aggressors with random data sum towards a bell shape,
+            which is exactly the condition deck 08 showed inflates the fitted random
+            jitter. Crosstalk is therefore routinely counted as random and multiplied by
+            fourteen on its way into the total.</p>
         </div>
     </div>
 
-    <div class="metric-grid" id="mp-metrics"></div>
-
-    <p class="note" id="mp-note"></p>
+    <p class="note">This is why the decomposition tree has a branch that is defined by
+    what it is not. The category is an admission that the measurement cannot separate
+    these contributions, and the remedy is experimental rather than analytical: measure
+    with the aggressors quiet, then with them driven.</p>
 </section>
 
 <section class="slide" id="slide-06">
     <div class="slide-number">06</div>
-    <h2>Interactive: Where the Measurement Stopped</h2>
-    <p>An instrument sweeps to some upper frequency and stops. Three things then go wrong
-    at once and it is worth separating them. Removing the high frequencies removes real
-    signal content. Cutting abruptly multiplies the spectrum by a rectangle, whose
-    transform rings. And the sampled spectrum makes the inverse transform periodic, so
-    energy that should have gone off the end of the record wraps round to the beginning.</p>
+    <h2>Crosstalk in Both Dimensions at Once</h2>
+    <p>Deck 06 computed the crosstalk on this channel as a voltage: four near-end
+    aggressors at three trace widths on an inner layer, combining in power. Rule four says
+    that voltage has a timing equivalent, and the slew rate of slide 03 converts it.</p>
 
-    <div class="canvas-wrap" style="overflow-x:auto">
-        <table id="tr-table"></table>
-    </div>
+    <div class="metric-grid" id="xt-metrics"></div>
 
-    <p class="note" id="tr-note"></p>
+    <p id="xt-note"></p>
 
     <div class="callout">
-        <div class="callout-label">How far is far enough</div>
-        <p>The usual guidance is to measure to at least three times the Nyquist frequency
-        of the intended data rate, and five times for anything with sharp features such
-        as a via stub resonance. The reason is not that there is much energy up there
-        &mdash; there is not &mdash; but that the pulse response's shape near the cursor
-        depends on the phase relationships across the whole band, and truncation
-        disturbs them.</p>
+        <div class="callout-label">The double-counting trap</div>
+        <p>The same physical disturbance now appears in two budgets. It must be counted
+        once, not twice &mdash; and which budget it belongs in depends on where the
+        receiver's margin is tightest. A receiver limited by its voltage threshold should
+        carry it as voltage; one limited by its sampling window should carry it as
+        timing. Carrying it in both is the commonest way a budget comes out pessimistic
+        by a factor that nobody can locate afterwards.</p>
     </div>
 </section>
 
 <section class="slide" id="slide-07">
     <div class="slide-number">07</div>
-    <h2>The Point Nobody Measures</h2>
-    <p>A vector network analyser cannot measure at direct current. Every S-parameter file
-    therefore begins at some lowest swept frequency and the value at zero has to be
-    supplied. That single missing point sets the baseline the entire time-domain response
-    sits on, because it is the integral of the impulse response.</p>
+    <h2>The Two-Dimensional Picture</h2>
+    <p>The resolution, when the one-dimensional treatment stops being trustworthy, is to
+    stop projecting. Instead of an eye opening measured horizontally at a fixed voltage
+    or vertically at a fixed time, the honest object is a two-dimensional region of the
+    time-voltage plane within which the error ratio is acceptable.</p>
 
-    <div class="canvas-wrap" style="overflow-x:auto">
-        <table id="dc-table"></table>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>What it buys</h4>
+            <p>It stops the double-counting of the previous slide, because each
+            disturbance is placed once in the plane rather than projected onto both axes.
+            And it makes visible the fact that the worst case is usually a diagonal
+            &mdash; a bit that is both late and low &mdash; rather than either extreme.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>What it costs</h4>
+            <p>Two dimensions of measurement instead of one, so the observation time for
+            a given confidence goes up sharply; and a specification language that most
+            standards do not have. This is why the industry still specifies jitter and
+            amplitude separately even where everyone agrees it is an approximation.</p>
+        </div>
     </div>
 
-    <p class="note" id="dc-note"></p>
-
-    <p>The correct treatment is to extrapolate the measured low-frequency behaviour down
-    to zero, respecting the fact that a passive interconnect has a real, finite
-    transmission at direct current set by its series resistance. Assuming zero &mdash;
-    which some tools do by default, on the reasonable-sounding grounds that no data
-    means no signal &mdash; removes the baseline and produces a response that droops.</p>
+    <p>The channel operating margin of deck 17 is a partial answer: it combines the noise
+    terms into a single signal-to-noise ratio at the sampling instant, which is a
+    projection onto the voltage axis after the timing terms have been converted into
+    voltage through the slope. That is the same conversion as slide 02, run in the
+    opposite direction, and it is why that calculation carries a jitter term at all.</p>
 </section>
 
 <section class="slide" id="slide-08">
     <div class="slide-number">08</div>
-    <h2>All Four Defects, Priced in Eye Height</h2>
-    <p>Each defect is now applied to the same channel and the equaliser is redesigned
-    against the damaged version, which is the honest comparison: a real receiver adapts
-    to whatever it is given, so the question is not how much the waveform changed but how
-    much margin survives adaptation.</p>
+    <h2>Receiver Tolerance Testing, With Crosstalk</h2>
+    <p>Compliance testing of a receiver applies a deliberately degraded signal and checks
+    that the error ratio is still met. The stress is specified as a list: so much
+    sinusoidal jitter, so much random jitter, so much bounded uncorrelated jitter, a
+    defined amount of intersymbol interference, and an amplitude.</p>
 
-    <div class="canvas-wrap" style="overflow-x:auto">
-        <table class="checktab" id="qc-table"></table>
-    </div>
+    <p>Adding crosstalk to that list is comparatively recent and it changes the test in a
+    way the list format hides. The other impairments are one-dimensional by construction
+    &mdash; sinusoidal jitter is purely timing, an amplitude reduction is purely voltage.
+    Crosstalk is neither, and calibrating it means calibrating a two-dimensional
+    disturbance with instruments that report projections.</p>
 
-    <p class="note" id="qc-note"></p>
-
-    <div class="callout">
-        <div class="callout-label">Note which one is harmless</div>
-        <p>Moving the reference plane by fifteen picoseconds looks alarming on a phase
-        plot and changes nothing that matters: a pure delay is a perfectly causal
-        operation, and shifting where a measurement begins is what de-embedding is
-        <em>for</em>. A quality check that flagged it would be worse than useless, because
-        it would train its users to ignore it.</p>
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel y">
+            <h4>Calibration is the hard part</h4>
+            <p>The stress has to be verified at the receiver's pins, through the test
+            fixture, with the aggressors driven. Every impairment interacts with the
+            fixture, and the fixture has to be de-embedded &mdash; which is deck 16.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Why it is worth doing</h4>
+            <p>A receiver that passes with one-dimensional stress and fails with
+            crosstalk is a common outcome, because its adaptation loops can converge on a
+            setting that is optimal for the clean case and poor for the noisy one.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>And why it is contentious</h4>
+            <p>The amount of crosstalk to apply is a judgement about the systems the part
+            will be used in, not a measurement. Deck 17 shows the crosstalk assumption
+            moving a compliance verdict further than any receiver parameter does.</p>
+        </div>
     </div>
 </section>
 
 <section class="slide" id="slide-09">
     <div class="slide-number">09</div>
-    <h2>Interactive: What Correlation Honestly Means</h2>
-    <p>Correlation between a model and a measurement is almost always judged on insertion
-    loss, because insertion loss is one curve and it is easy to overlay. Here is why that
-    is not sufficient.</p>
-
-    <p>Give the channel a small internal reflection &mdash; an echo, as an unnoticed
-    impedance step anywhere along the line would produce. Its effect on the magnitude of
-    the transfer function is second order in the reflection coefficient and hides inside
-    the ripple everyone tolerates. Its effect on the pulse response is to put energy at a
-    particular delay, and whether that matters depends entirely on whether the
-    decision-feedback taps can reach it.</p>
-
-    <div class="canvas-wrap" style="overflow-x:auto">
-        <table id="ec-table"></table>
-    </div>
-
-    <p class="note" id="ec-note"></p>
-
-    <div class="callout">
-        <div class="callout-label">What to correlate on instead</div>
-        <p>Correlate on the pulse response, or on something derived from it &mdash; the
-        cursor, the residual intersymbol interference after a defined equaliser, the eye
-        height, or the channel operating margin of deck 11. All of those are sensitive to
-        where in time the energy lands, which is what the receiver is sensitive to.
-        Insertion loss is a useful first check and a poor final one.</p>
-    </div>
-</section>
-
-<section class="slide" id="slide-10">
-    <div class="slide-number">10</div>
     <h2>Cheat Sheet</h2>
     <table>
-        <thead><tr><th>Check</th><th>Test</th><th>What failure means</th></tr></thead>
+        <thead><tr><th>Idea</th><th>Statement</th><th>Consequence</th></tr></thead>
         <tbody>
-            <tr><td>Passivity</td><td>$|S_{11}|^2+|S_{21}|^2\le 1$</td><td>The model creates energy; simulators may oscillate</td></tr>
-            <tr><td>Reciprocity</td><td>$S_{21}=S_{12}$</td><td>Measurement error, or a genuinely non-reciprocal device</td></tr>
-            <tr><td>Causality, time domain</td><td>Energy before the first arrival</td><td>Phase inconsistent with magnitude somewhere</td></tr>
-            <tr><td>Causality, minimum phase</td><td>Phase against the Hilbert transform of log-magnitude</td><td>Catches magnitude-only edits; baseline is nonzero for a channel with reflections</td></tr>
-            <tr><td>Band</td><td>Three to five times Nyquist</td><td>Truncation rings and distorts the pulse near the cursor</td></tr>
-            <tr><td>DC point</td><td>Extrapolate, do not assume</td><td>Assuming zero removes the baseline</td></tr>
-            <tr><td>Correlation</td><td>On the pulse response, not on insertion loss</td><td>Magnitude agreement does not imply time-domain agreement</td></tr>
+            <tr><td>Rule 4</td><td>Timing and amplitude noise are not separable</td><td>Useful, not correct; find where it fails</td></tr>
+            <tr><td>Conversion</td><td>$\delta t \approx \delta V / (dV/dt)$</td><td>Every voltage term has a timing equivalent</td></tr>
+            <tr><td>Who sets the slope</td><td>The channel, not the transmitter</td><td>Past the channel bandwidth the edge stops improving</td></tr>
+            <tr><td>Where it fails</td><td>Around 10 Gb/s on this channel</td><td>Rise time overtakes the unit interval; see slide 04</td></tr>
+            <tr><td>Crosstalk</td><td>Bounded, uncorrelated, looks Gaussian</td><td>Counted as random jitter and multiplied by 14</td></tr>
+            <tr><td>Double counting</td><td>One disturbance, two budgets</td><td>Count it once, in whichever budget is tighter</td></tr>
+            <tr><td>The honest object</td><td>A region of the time-voltage plane</td><td>The worst case is a diagonal, not an axis</td></tr>
+            <tr><td>Tolerance testing</td><td>Crosstalk is two-dimensional stress</td><td>Calibration, not generation, is the hard part</td></tr>
         </tbody>
     </table>
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#fb923c',teal:'#34d399',
+const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#d946ef',teal:'#34d399',
          cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
@@ -320,197 +334,125 @@ function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginP
   if(xl)label(ctx,xl,(p.l+w-p.r)/2,h-6,C.dim,10,'center');
   if(yl)label(ctx,yl,p.l,p.t-10,C.dim,10,'left');}
 
-/* ---- 01 channel ---- */
+/* ---- 03 amplitude to jitter ---- */
 (function(){
-  const H=hidpi('ch-plot'); if(!H||!SI.channel)return;
-  const d=SI.channel; const {ctx,w,h}=H; clear(ctx,w,h);
-  const p={l:54,r:16,t:20,b:38}, FHI=50;
-  const X=f=>p.l+f/FHI*(w-p.l-p.r);
-  const LO=-80,HI=2, Y=v=>h-p.b-(v-LO)/(HI-LO)*(h-p.t-p.b);
-  axes(ctx,w,h,p,'frequency, GHz','dB');
-  for(let v=LO;v<=HI;v+=20){ctx.strokeStyle=C.grid;ctx.beginPath();
+  const H=hidpi('av-plot'); if(!H||!SI.amp_to_jitter)return;
+  const d=SI.amp_to_jitter, sl=SI.slew, ui=SI.ui_ps||35.71;
+  document.getElementById('sl-metrics').innerHTML=
+    metric('slew at the crossing',sl.slew_mv_per_ps.toFixed(3)+' mV/ps')+
+    metric('equivalent rise time',sl.rise_time_ps.toFixed(1)+' ps')+
+    metric('unit interval',ui.toFixed(2)+' ps')+
+    metric('1 mV becomes',(1/sl.slew_mv_per_ps).toFixed(3)+' ps');
+  const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:58,r:16,t:20,b:42};
+  const xm=d[d.length-1].dv_mv*1.05;
+  const X=v=>p.l+v/xm*(w-p.l-p.r);
+  const ym=d[d.length-1].jitter_ps*1.15;
+  const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+  axes(ctx,w,h,p,'voltage disturbance, mV','jitter produced, ps');
+  for(let i=0;i<=4;i++){const v=ym*i/4;ctx.strokeStyle=C.grid;ctx.beginPath();
     ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
-    label(ctx,v+'',p.l-6,Y(v)+3,C.dim,9,'right');}
-  [0,10,20,30,40,50].forEach(function(g){ctx.strokeStyle=C.grid;ctx.beginPath();
+    label(ctx,v.toFixed(2),p.l-6,Y(v)+3,C.dim,9,'right');}
+  for(let g=0;g<=xm;g+=5){ctx.strokeStyle=C.grid;ctx.beginPath();
     ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
-    label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');});
-  ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
-  ctx.moveTo(X(14),p.t);ctx.lineTo(X(14),h-p.b);ctx.stroke();dashed(ctx,false);
-  label(ctx,'Nyquist',X(14)+5,p.t+14,C.amber,10,'left');
-  function ser(arr,col,wd){ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.beginPath();let st=false;
-    d.f_ghz.forEach(function(f,i){const px=X(f),py=Y(Math.max(LO,Math.min(HI,arr[i])));
-      st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
-    ctx.stroke();}
-  ser(d.s21_db,C.accent,2); ser(d.s11_db,C.dim,1.4);
-})();
-
-/* ---- 03 de-embed ---- */
-(function(){
-  const t=document.getElementById('de-table'); if(!t||!SI.deembed)return;
-  const d=SI.deembed;
-  if(d.error){t.innerHTML='<tbody><tr><td>de-embedding study unavailable</td></tr></tbody>';
-    return;}
-  let html='<thead><tr><th>Fixture model used</th><th>Insertion loss agreement</th>'+
-    '<th>Worst return loss</th><th>Equalised eye</th><th>Error</th></tr></thead><tbody>';
-  const truth=d.truth;
-  Object.keys(d).forEach(function(k){
-    if(k==='truth')return; const r=d[k];
-    html+='<tr><td>'+k+'</td><td>'+r.il_rms_err_db.toFixed(4)+' dB rms</td><td>'+
-      r.rl_max_db.toFixed(1)+' dB</td><td>'+r.eye_height.toFixed(4)+'</td><td class="'+
-      (Math.abs(r.eye_err_pct)<1?'ok':'bad')+'">'+(r.eye_err_pct>=0?'+':'')+
-      r.eye_err_pct.toFixed(2)+' %</td></tr>';});
-  html+='</tbody>'; t.innerHTML=html;
-  const keys=Object.keys(d).filter(function(k){return k!=='truth';});
-  if(keys.length>1){const a=d[keys[0]],b=d[keys[1]];
-    document.getElementById('de-note').textContent=
-      'De-embedding with the correct fixture model recovers the channel to '+
-      a.il_rms_err_db.toFixed(4)+' dB. Getting the fixture impedance wrong by fifteen '+
-      'ohms — well inside normal fabrication tolerance — leaves '+
-      b.il_rms_err_db.toFixed(3)+' dB of error and a worst return loss of '+
-      b.rl_max_db.toFixed(1)+' dB that belongs to the fixture rather than to the '+
-      'channel. This is why impedance-corrected de-embedding exists.';}
-})();
-
-/* ---- 04 passivity ---- */
-(function(){
-  const el=document.getElementById('pa-metrics'); if(!el||!SI.qc)return;
-  const base=SI.qc[0];
-  const bad=SI.qc.filter(function(r){return r.violates;})[0];
-  el.innerHTML=metric('clean channel, max power',base.max_power.toFixed(4))+
-    (bad?metric('violated case',bad.max_power.toFixed(4)):'')+
-    (bad?metric('energy created',(100*bad.excess).toFixed(1)+' %'):'')+
-    (bad?metric('eye reported too open',(bad.eye_err_pct>=0?'+':'')+
-         bad.eye_err_pct.toFixed(2)+' %'):'');
-})();
-
-/* ---- 05 minimum phase ---- */
-(function(){
-  const H=hidpi('mp-plot'); if(!H||!SI.minphase_sweep)return;
-  const d=SI.minphase_sweep; const {ctx,w,h}=H; clear(ctx,w,h);
-  const p={l:60,r:16,t:20,b:44};
-  const X=i=>p.l+(i+0.5)/d.length*(w-p.l-p.r);
-  let lo=1e9,hi=0; d.forEach(function(r){lo=Math.min(lo,r.rms_phase_err_deg);
-    hi=Math.max(hi,r.rms_phase_err_deg);});
-  const pad=(hi-lo)*0.3||1; lo-=pad; hi+=pad;
-  const Y=v=>h-p.b-(v-lo)/(hi-lo)*(h-p.t-p.b);
-  axes(ctx,w,h,p,'depth of a magnitude-only notch, dB','rms departure, degrees');
-  for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4;ctx.strokeStyle=C.grid;ctx.beginPath();
-    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
-    label(ctx,v.toFixed(1),p.l-6,Y(v)+3,C.dim,9,'right');}
+    label(ctx,g+'',X(g),h-p.b+14,C.dim,9,'center');}
   ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();
-  d.forEach(function(r,i){const px=X(i),py=Y(r.rms_phase_err_deg);
+  d.forEach(function(r,i){const px=X(r.dv_mv),py=Y(r.jitter_ps);
     i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
   ctx.stroke();
-  d.forEach(function(r,i){ctx.fillStyle=C.accent;ctx.beginPath();
-    ctx.arc(X(i),Y(r.rms_phase_err_deg),4,0,6.3);ctx.fill();
-    label(ctx,r.depth_db.toFixed(0)+' dB',X(i),h-p.b+15,C.dim,9,'center');});
-  const base=d[0], worst=d[d.length-1];
-  document.getElementById('mp-metrics').innerHTML=
-    metric('clean channel',base.rms_phase_err_deg.toFixed(2)+'°')+
-    metric('with an 8 dB notch',worst.rms_phase_err_deg.toFixed(2)+'°')+
-    metric('implied delay',base.implied_delay_ps.toFixed(0)+' ps');
-  document.getElementById('mp-note').textContent=
-    'The baseline is '+base.rms_phase_err_deg.toFixed(1)+' degrees rather than zero, '+
-    'and it should be: every internal reflection between a via and a connector '+
-    'contributes an all-pass factor, and an all-pass factor is causal but not minimum '+
-    'phase. The metric is therefore a relative indicator — a file reading a few '+
-    'degrees worse than its peers deserves a look, and one reading two orders of '+
-    'magnitude worse has been cut off at the band edge.';
+  d.forEach(function(r){ctx.fillStyle=C.accent;ctx.beginPath();
+    ctx.arc(X(r.dv_mv),Y(r.jitter_ps),3.5,0,6.3);ctx.fill();});
+  if(SI.xt_jitter){const x=SI.xt_jitter;
+    ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
+    ctx.moveTo(X(x.xt_mv_rms),p.t);ctx.lineTo(X(x.xt_mv_rms),h-p.b);ctx.stroke();
+    dashed(ctx,false);
+    label(ctx,'crosstalk, '+x.xt_mv_rms.toFixed(2)+' mV rms',X(x.xt_mv_rms)+5,
+          p.t+14,C.amber,10,'left');}
+  document.getElementById('av-note').textContent=
+    'On this channel the equalised edge crosses at '+sl.slew_mv_per_ps.toFixed(2)+
+    ' millivolts per picosecond, so every millivolt of voltage disturbance is worth '+
+    (1/sl.slew_mv_per_ps).toFixed(3)+' picoseconds of timing error — '+
+    (100/sl.slew_mv_per_ps/ui).toFixed(2)+' per cent of a unit interval. That factor is '+
+    'a property of the board and the equaliser together, and it is the exchange rate '+
+    'between the two budgets.';
 })();
 
-/* ---- 06 truncation ---- */
+/* ---- 04 separability ---- */
 (function(){
-  const t=document.getElementById('tr-table'); if(!t||!SI.truncation)return;
-  const d=SI.truncation;
-  let html='<thead><tr><th>Measurement stops at</th><th>Cursor error</th>'+
-    '<th>Eye height</th><th>Eye error</th></tr></thead><tbody>';
-  d.rows.forEach(function(r){
-    html+='<tr><td>'+r.band_ghz+' GHz</td><td>'+(r.cursor_err_pct>=0?'+':'')+
-      r.cursor_err_pct.toFixed(2)+' %</td><td>'+r.eye_height.toFixed(5)+
-      '</td><td class="'+(Math.abs(r.eye_err_pct)<0.5?'ok':'bad')+'">'+
-      (r.eye_err_pct>=0?'+':'')+r.eye_err_pct.toFixed(2)+' %</td></tr>';});
+  const H=hidpi('sp-plot'); if(!H||!SI.separability)return;
+  const rows=SI.separability.rows; const {ctx,w,h}=H; clear(ctx,w,h);
+  const p={l:60,r:56,t:22,b:44};
+  const X=i=>p.l+(i+0.5)/rows.length*(w-p.l-p.r);
+  let ym=0; rows.forEach(function(r){ym=Math.max(ym,r.jitter_rms_ui);}); ym*=1.15;
+  const Y=v=>h-p.b-v/ym*(h-p.t-p.b);
+  let rm=0; rows.forEach(function(r){rm=Math.max(rm,r.rise_time_ui||0);}); rm*=1.15;
+  const Y2=v=>h-p.b-v/rm*(h-p.t-p.b);
+  axes(ctx,w,h,p,'symbol rate, Gb/s','amplitude-induced jitter, UI rms');
+  for(let i=0;i<=4;i++){const v=ym*i/4;ctx.strokeStyle=C.grid;ctx.beginPath();
+    ctx.moveTo(p.l,Y(v));ctx.lineTo(w-p.r,Y(v));ctx.stroke();
+    label(ctx,v.toFixed(2),p.l-6,Y(v)+3,C.accent,9,'right');}
+  for(let i=0;i<=4;i++)label(ctx,(rm*i/4).toFixed(1),w-p.r+6,Y2(rm*i/4)+3,C.cyan,9,'left');
+  let i10=0; rows.forEach(function(r,i){if(Math.abs(r.rate_gbps-10)<Math.abs(rows[i10].rate_gbps-10))i10=i;});
+  ctx.strokeStyle=C.amber;dashed(ctx,true);ctx.beginPath();
+  ctx.moveTo(X(i10),p.t);ctx.lineTo(X(i10),h-p.b);ctx.stroke();dashed(ctx,false);
+  ctx.strokeStyle=C.cyan;ctx.lineWidth=1.6;ctx.beginPath();
+  rows.forEach(function(r,i){const px=X(i),py=Y2(r.rise_time_ui||0);
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2.2;ctx.beginPath();
+  rows.forEach(function(r,i){const px=X(i),py=Y(r.jitter_rms_ui);
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+  ctx.stroke();
+  rows.forEach(function(r,i){ctx.fillStyle=C.accent;ctx.beginPath();
+    ctx.arc(X(i),Y(r.jitter_rms_ui),3.5,0,6.3);ctx.fill();
+    label(ctx,r.rate_gbps+'',X(i),h-p.b+16,C.dim,9,'center');});
+  const t=document.getElementById('sp-table');
+  let html='<thead><tr><th>Rate</th><th>Unit interval</th><th>Received rise time</th>'+
+    '<th>Rise time / UI</th><th>Cursor</th><th>Slew</th>'+
+    '<th>Amplitude-induced jitter</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    html+='<tr><td>'+r.rate_gbps+' Gb/s</td><td>'+r.ui_ps.toFixed(1)+' ps</td><td>'+
+      (r.rise_time_ps||0).toFixed(0)+' ps</td><td class="'+
+      ((r.rise_time_ui||0)>1?'bad':'ok')+'">'+(r.rise_time_ui||0).toFixed(2)+
+      '</td><td>'+r.cursor_mv.toFixed(0)+' mV</td><td>'+
+      r.slew_mv_per_ps.toFixed(2)+' mV/ps</td><td>'+
+      r.jitter_rms_ui.toFixed(4)+' UI</td></tr>';});
   html+='</tbody>'; t.innerHTML=html;
-  const a=d.rows[0];
-  document.getElementById('tr-note').textContent=
-    'Stopping at '+a.band_ghz+' GHz — only '+(a.band_ghz/14).toFixed(1)+
-    ' times the Nyquist frequency of a 28 GBd lane — changes the unequalised eye '+
-    'by '+Math.abs(a.eye_err_pct).toFixed(2)+' per cent. The error is modest here '+
-    'because this channel is smooth; on a channel with a stub resonance just above the '+
-    'cut it would be far larger, because the truncation would remove the resonance '+
-    'entirely and the model would report a channel that works.';
+  const a=rows[0], z=rows[rows.length-1];
+  let best=rows[0]; rows.forEach(function(r){if(r.jitter_rms_ui<best.jitter_rms_ui)best=r;});
+  document.getElementById('sp-note').textContent=
+    'The received rise time barely changes across the whole sweep — from '+
+    (a.rise_time_ps||0).toFixed(0)+' to '+(z.rise_time_ps||0).toFixed(0)+
+    ' picoseconds — because it is the channel, not the transmitter, that sets it. '+
+    'The unit interval, meanwhile, falls by a factor of '+(a.ui_ps/z.ui_ps).toFixed(0)+
+    ', so the edge grows from '+(a.rise_time_ui||0).toFixed(2)+' of a unit interval to '+
+    (z.rise_time_ui||0).toFixed(1)+', the cursor falls from '+a.cursor_mv.toFixed(0)+
+    ' to '+z.cursor_mv.toFixed(0)+' mV, and the slew rate peaks and then declines. '+
+    'The jitter that '+SI.separability.noise_mv_rms+
+    ' mV of receiver noise produces therefore rises from '+
+    a.jitter_rms_ui.toFixed(4)+' to '+z.jitter_rms_ui.toFixed(3)+
+    ' unit intervals — a factor of '+(z.jitter_rms_ui/best.jitter_rms_ui).toFixed(0)+
+    ' from its best point, which falls at about '+best.rate_gbps+
+    ' Gb/s. Stephens put the breakdown of the one-dimensional treatment at around ten '+
+    'gigabits per second from quite different reasoning; this channel agrees.';
 })();
 
-/* ---- 07 DC ---- */
+/* ---- 06 crosstalk as jitter ---- */
 (function(){
-  const t=document.getElementById('dc-table'); if(!t||!SI.dc)return;
-  const d=SI.dc;
-  const names={extrapolate:'extrapolated from the lowest measured points',
-    zero:'assumed to be zero',unity:'assumed to be lossless'};
-  let html='<thead><tr><th>Treatment of the DC point</th><th>Eye height</th>'+
-    '<th>Error</th><th>Baseline drift</th></tr></thead><tbody>';
-  d.rows.forEach(function(r){
-    html+='<tr><td>'+(names[r.dc_mode]||r.dc_mode)+'</td><td>'+
-      r.eye_height.toFixed(5)+'</td><td class="'+
-      (Math.abs(r.eye_err_pct)<1?'ok':'bad')+'">'+(r.eye_err_pct>=0?'+':'')+
-      r.eye_err_pct.toFixed(2)+' %</td><td>'+r.baseline_drift.toExponential(2)+
-      '</td></tr>';});
-  html+='</tbody>'; t.innerHTML=html;
-  const z=d.rows.filter(function(r){return r.dc_mode==='zero';})[0];
-  if(z)document.getElementById('dc-note').textContent=
-    'Assuming the transmission is zero at direct current costs '+
-    Math.abs(z.eye_err_pct).toFixed(1)+' per cent of the eye and leaves a baseline '+
-    'drift of '+z.baseline_drift.toExponential(1)+' — from one missing point at '+
-    'one end of a sweep with sixteen thousand of them. It is the single highest-leverage '+
-    'number in an S-parameter file.';
-})();
-
-/* ---- 08 QC ---- */
-(function(){
-  const t=document.getElementById('qc-table'); if(!t||!SI.qc)return;
-  let html='<thead><tr><th>Case</th><th>Max power</th><th>Precursor energy</th>'+
-    '<th>Minimum-phase departure</th><th>Equalised eye</th><th>Error</th></tr></thead><tbody>';
-  SI.qc.forEach(function(r){
-    html+='<tr><td>'+r.case+'</td><td class="'+(r.violates?'bad':'ok')+'">'+
-      r.max_power.toFixed(4)+'</td><td>'+r.precursor_energy_db.toFixed(1)+' dB</td><td>'+
-      r.rms_phase_err_deg.toFixed(2)+'°</td><td>'+r.eye_v.toFixed(5)+
-      ' V</td><td class="'+(Math.abs(r.eye_err_pct)<0.5?'ok':'bad')+'">'+
-      (r.eye_err_pct>=0?'+':'')+r.eye_err_pct.toFixed(2)+' %</td></tr>';});
-  html+='</tbody>'; t.innerHTML=html;
-  const pass=SI.qc.filter(function(r){return r.violates;})[0];
-  document.getElementById('qc-note').textContent=
-    'The passivity violation is the only one that makes the channel look '+
-    '<em>better</em> than it is, and it is the most dangerous for that reason: a model '+
-    'that gains energy reports margin that does not exist. The truncation and the '+
-    'magnitude-only notch both cost a fraction of a per cent here, and the reference-'+
-    'plane shift costs essentially nothing, as it should.';
-})();
-
-/* ---- 09 echo ---- */
-(function(){
-  const t=document.getElementById('ec-table'); if(!t||!SI.echo)return;
-  const d=SI.echo;
-  let html='<thead><tr><th>Echo delay</th><th>In unit intervals</th>'+
-    '<th>Insertion loss agreement</th><th>Equalised eye</th><th>Eye error</th>'+
-    '</tr></thead><tbody>';
-  d.rows.forEach(function(r){
-    html+='<tr><td>'+r.delay_ps+' ps</td><td>'+r.delay_ui.toFixed(2)+'</td><td>'+
-      r.il_rms_err_db.toFixed(4)+' dB rms</td><td>'+r.eye_v.toFixed(5)+
-      ' V</td><td class="'+(Math.abs(r.eye_err_pct)<1?'ok':'bad')+'">'+
-      (r.eye_err_pct>=0?'+':'')+r.eye_err_pct.toFixed(2)+' %</td></tr>';});
-  html+='</tbody>'; t.innerHTML=html;
-  const rows=d.rows;
-  let ilmin=9,ilmax=0,emin=9,emax=-9;
-  rows.forEach(function(r){ilmin=Math.min(ilmin,r.il_rms_err_db);
-    ilmax=Math.max(ilmax,r.il_rms_err_db);
-    emin=Math.min(emin,r.eye_err_pct);emax=Math.max(emax,r.eye_err_pct);});
-  document.getElementById('ec-note').textContent=
-    'Every row has the same reflection magnitude, so every row agrees with the truth '+
-    'on insertion loss to between '+ilmin.toFixed(3)+' and '+ilmax.toFixed(3)+
-    ' dB rms — a spread of '+(ilmax-ilmin).toFixed(3)+
-    ' dB, which no reviewer would notice. The eye error ranges from '+
-    emax.toFixed(1)+' to '+emin.toFixed(1)+' per cent, and the only thing that '+
-    'differs between the rows is where in time the reflection arrives. Within the '+
-    'reach of the decision-feedback taps the receiver simply subtracts it; beyond '+
-    'their span nothing does.';
+  const el=document.getElementById('xt-metrics'); if(!el||!SI.xt_jitter)return;
+  const x=SI.xt_jitter, ui=SI.ui_ps||35.71;
+  el.innerHTML=metric('crosstalk, from deck 06',x.xt_mv_rms.toFixed(2)+' mV rms')+
+    metric('as jitter',x.jitter_rms_ps.toFixed(3)+' ps rms')+
+    metric('in unit intervals',x.jitter_rms_ui.toFixed(4)+' UI')+
+    metric('peak to peak at 1e-12',x.jitter_pp_ui.toFixed(4)+' UI');
+  document.getElementById('xt-note').textContent=
+    'The '+x.xt_mv_rms.toFixed(2)+' millivolts of integrated crosstalk noise computed '+
+    'in deck 06 is also '+x.jitter_rms_ps.toFixed(3)+' picoseconds of jitter, or '+
+    (100*x.jitter_rms_ui).toFixed(2)+' per cent of a unit interval rms. It is the same '+
+    'disturbance described twice. Treated as a Gaussian at an error ratio of '+
+    '10⁻¹² it would close '+(100*x.jitter_pp_ui).toFixed(1)+
+    ' per cent of the eye — and because it is bounded rather than Gaussian, that '+
+    'treatment is pessimistic, which is precisely the ambiguity the category exists to '+
+    'record.';
 })();
 </script>
