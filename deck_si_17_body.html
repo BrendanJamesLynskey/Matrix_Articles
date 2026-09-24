@@ -116,10 +116,10 @@
     <div class="canvas-wrap">
         <canvas id="nb-plot" width="780" height="270"></canvas>
         <div class="legend">
-            <span><i style="background:#4ade80"></i>signal</span>
-            <span><i style="background:#f472b6"></i>residual ISI</span>
-            <span><i style="background:#fbbf24"></i>crosstalk</span>
-            <span><i style="background:#22d3ee"></i>receiver noise</span>
+            <span><i style="background:#6fc8ad"></i>signal</span>
+            <span><i style="background:#d78da4"></i>residual ISI</span>
+            <span><i style="background:#eea465"></i>crosstalk</span>
+            <span><i style="background:#95c7db"></i>receiver noise</span>
         </div>
     </div>
 
@@ -181,8 +181,8 @@
     <div class="canvas-wrap">
         <canvas id="sn-plot" width="780" height="330"></canvas>
         <div class="legend">
-            <span><i style="background:#4ade80"></i>margin, dB</span>
-            <span><i style="background:#f472b6"></i>the 3 dB threshold</span>
+            <span><i style="background:#6fc8ad"></i>margin, dB</span>
+            <span><i style="background:#d78da4"></i>the 3 dB threshold</span>
         </div>
     </div>
 
@@ -206,9 +206,9 @@
     <div class="canvas-wrap">
         <canvas id="il-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#4ade80"></i>insertion loss</span>
-            <span><i style="background:#8b949e"></i>the fitted smooth curve</span>
-            <span><i style="background:#f472b6"></i>the deviation</span>
+            <span><i style="background:#6fc8ad"></i>insertion loss</span>
+            <span><i style="background:#8e9a96"></i>the fitted smooth curve</span>
+            <span><i style="background:#d78da4"></i>the deviation</span>
         </div>
     </div>
 
@@ -314,8 +314,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#4ade80',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#6fc8ad',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);

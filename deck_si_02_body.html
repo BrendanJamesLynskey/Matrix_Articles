@@ -99,8 +99,8 @@
     <div class="canvas-wrap">
         <canvas id="rp-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#34d399"></i>return-current density</span>
-            <span><i style="background:#fbbf24"></i>the band you are keeping</span>
+            <span><i style="background:#6fbba9"></i>return-current density</span>
+            <span><i style="background:#eea465"></i>the band you are keeping</span>
         </div>
     </div>
 
@@ -130,8 +130,8 @@
     <div class="canvas-wrap">
         <canvas id="sv-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#34d399"></i>analytic Lorentzian</span>
-            <span><i style="background:#22d3ee"></i>field solver</span>
+            <span><i style="background:#6fbba9"></i>analytic Lorentzian</span>
+            <span><i style="background:#95c7db"></i>field solver</span>
         </div>
     </div>
 
@@ -204,8 +204,8 @@
     <div class="canvas-wrap">
         <canvas id="sl-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#34d399"></i>insertion loss</span>
-            <span><i style="background:#f472b6"></i>return loss</span>
+            <span><i style="background:#6fbba9"></i>insertion loss</span>
+            <span><i style="background:#d78da4"></i>return loss</span>
         </div>
     </div>
 
@@ -231,9 +231,9 @@
     <div class="canvas-wrap">
         <canvas id="st-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#34d399"></i>one return via</span>
-            <span><i style="background:#22d3ee"></i>two return vias</span>
-            <span><i style="background:#fbbf24"></i>four return vias</span>
+            <span><i style="background:#6fbba9"></i>one return via</span>
+            <span><i style="background:#95c7db"></i>two return vias</span>
+            <span><i style="background:#eea465"></i>four return vias</span>
         </div>
     </div>
 
@@ -308,8 +308,8 @@
     <div class="canvas-wrap">
         <canvas id="pz-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#34d399"></i>impedance between the planes</span>
-            <span><i style="background:#8b949e"></i>the capacitance alone</span>
+            <span><i style="background:#6fbba9"></i>impedance between the planes</span>
+            <span><i style="background:#8e9a96"></i>the capacitance alone</span>
         </div>
     </div>
 
@@ -373,9 +373,9 @@
 </section>
 
 <script>
-const C = { bg:'#0d1117', grid:'#21262d', dim:'#8b949e', accent:'#34d399',
-            teal:'#34d399', cyan:'#22d3ee', pink:'#f472b6', amber:'#fbbf24',
-            text:'#e6edf3' };
+const C = { bg:'#172122', grid:'#293636', dim:'#8e9a96', accent:'#6fbba9',
+            teal:'#6fbba9', cyan:'#95c7db', pink:'#d78da4', amber:'#eea465',
+            text:'#ede5d9' };
 function hidpi(id){const c=document.getElementById(id); if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
@@ -405,7 +405,7 @@ function axes(ctx,w,h,pad,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.begi
     for(let x=-8;x<=8;x+=2){ctx.strokeStyle=C.grid;ctx.beginPath();
       ctx.moveTo(X(x),pad.t);ctx.lineTo(X(x),h-pad.b);ctx.stroke();
       label(ctx,x+'',X(x),h-pad.b+14,C.dim,9,'center');}
-    ctx.fillStyle='rgba(251,191,36,.13)';
+    ctx.fillStyle='rgba(238,164,101,.13)';
     ctx.fillRect(X(-k),pad.t,X(k)-X(-k),h-pad.t-pad.b);
     ctx.strokeStyle=C.teal;ctx.lineWidth=2;ctx.beginPath();
     SI.profile.x_over_h.forEach((x,i)=>{const px=X(x),py=Y(SI.profile.j[i]);

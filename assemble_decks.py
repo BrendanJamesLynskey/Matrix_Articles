@@ -48,8 +48,8 @@ EXTRA_CSS = """
         .legend{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;margin-top:.6rem;font-family:var(--font-mono);font-size:.72rem;color:var(--text-secondary)}
         .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:.35rem;vertical-align:middle}
         .verdict{font-family:var(--font-mono);font-size:.8rem;padding:.35rem .7rem;border-radius:4px;display:inline-block;margin-top:.5rem}
-        .verdict.ok{color:var(--accent-4);border:1px solid var(--accent-4);background:rgba(52,211,153,.12)}
-        .verdict.bad{color:var(--accent-2);border:1px solid var(--accent-2);background:rgba(244,114,182,.12)}
+        .verdict.ok{color:var(--accent-4);border:1px solid var(--accent-4);background:rgba(111,187,169,.12)}
+        .verdict.bad{color:var(--accent-2);border:1px solid var(--accent-2);background:rgba(215,141,164,.12)}
         .canvas-wrap canvas{image-rendering:auto}
         .metric-label .katex,.callout-label .katex,.series-label .katex,
         .metric-label .katex *,.callout-label .katex *{text-transform:none}
@@ -85,7 +85,7 @@ def build_all():
           "<a href=\"https://brendanjameslynskey.github.io/SerDes_Equalisation/\">"
           "Equalisation in High-Speed Serial Links</a>.",
           "Matrix_Methods_Network_Parameters",
-          {"#a78bfa": "#22d3ee", "rgba(167,139,250,.25)": "rgba(34,211,238,.25)"})
+          {"#a896c7": "#95c7db", "rgba(168,150,199,.25)": "rgba(149,199,219,.25)"})
 
     build("deck_filters_body.html",
           os.path.join(ROOT, "Matrix_Concepts_Digital_Filters", "index.html"),
@@ -96,7 +96,7 @@ def build_all():
           "<a href=\"https://brendanjameslynskey.github.io/SerDes_Equalisation/\">"
           "Equalisation in High-Speed Serial Links</a>.",
           "Matrix_Concepts_Digital_Filters",
-          {"#a78bfa": "#34d399", "rgba(167,139,250,.25)": "rgba(52,211,153,.25)"})
+          {"#a896c7": "#6fbba9", "rgba(168,150,199,.25)": "rgba(111,187,169,.25)"})
 
     build("deck_serdes_body.html",
           os.path.join(ROOT, "SerDes_Equalisation", "index.html"),
@@ -107,7 +107,7 @@ def build_all():
           "<a href=\"https://brendanjameslynskey.github.io/Matrix_Concepts_Digital_Filters/\">"
           "Digital Filter Design</a>.",
           "SerDes_Equalisation",
-          {"#a78bfa": "#f59e0b", "rgba(167,139,250,.25)": "rgba(245,158,11,.25)"})
+          {"#a896c7": "#d88954", "rgba(168,150,199,.25)": "rgba(216,137,84,.25)"})
 
 
 if __name__ == "__main__":

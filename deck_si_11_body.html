@@ -143,9 +143,9 @@
     <div class="canvas-wrap">
         <canvas id="pd-plot" width="780" height="320"></canvas>
         <div class="legend">
-            <span><i style="background:#60a5fa"></i>the complete network</span>
-            <span><i style="background:#8b949e"></i>individual tiers</span>
-            <span><i style="background:#f472b6"></i>target impedance</span>
+            <span><i style="background:#83a9c9"></i>the complete network</span>
+            <span><i style="background:#8e9a96"></i>individual tiers</span>
+            <span><i style="background:#d78da4"></i>target impedance</span>
         </div>
     </div>
 
@@ -165,8 +165,8 @@
     <div class="canvas-wrap">
         <canvas id="mc-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#f472b6"></i>worst anti-resonant peak</span>
-            <span><i style="background:#34d399"></i>impedance at 100 MHz</span>
+            <span><i style="background:#d78da4"></i>worst anti-resonant peak</span>
+            <span><i style="background:#6fbba9"></i>impedance at 100 MHz</span>
         </div>
     </div>
 
@@ -234,7 +234,7 @@
     <div class="canvas-wrap">
         <canvas id="fd-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#60a5fa"></i>capacitors required</span>
+            <span><i style="background:#83a9c9"></i>capacitors required</span>
         </div>
     </div>
 
@@ -300,8 +300,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#60a5fa',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#83a9c9',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
@@ -365,7 +365,7 @@ function ohm(z){return z>=1?z.toFixed(2)+' Ω':z>=1e-3?(1e3*z).toFixed(1)+' mΩ'
     ctx.moveTo(X(g),p.t);ctx.lineTo(X(g),h-p.b);ctx.stroke();
     label(ctx,fmtHz(g),X(g),h-p.b+14,C.dim,9,'center');});
   if(SI.parts) Object.keys(SI.parts).forEach(function(k){
-    ctx.strokeStyle='#3d444d';ctx.lineWidth=0.8;ctx.beginPath();let st=false;
+    ctx.strokeStyle='#3d4b4a';ctx.lineWidth=0.8;ctx.beginPath();let st=false;
     SI.f_hz.forEach(function(f,i){const px=X(f),py=Y(SI.parts[k][i]);
       st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});
     ctx.stroke();});

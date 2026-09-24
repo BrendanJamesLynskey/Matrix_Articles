@@ -148,8 +148,8 @@
     <div class="canvas-wrap">
         <canvas id="tk-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#a78bfa"></i>differential impedance</span>
-            <span><i style="background:#8b949e"></i>Cohn, zero thickness</span>
+            <span><i style="background:#a896c7"></i>differential impedance</span>
+            <span><i style="background:#8e9a96"></i>Cohn, zero thickness</span>
         </div>
     </div>
 
@@ -187,8 +187,8 @@
     <div class="canvas-wrap">
         <canvas id="cc-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#a78bfa"></i>trace width needed for 100 &Omega;</span>
-            <span><i style="background:#f472b6"></i>extra loss over 10 in at 14 GHz</span>
+            <span><i style="background:#a896c7"></i>trace width needed for 100 &Omega;</span>
+            <span><i style="background:#d78da4"></i>extra loss over 10 in at 14 GHz</span>
         </div>
     </div>
 
@@ -253,9 +253,9 @@
     <div class="canvas-wrap">
         <canvas id="sk-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#f472b6"></i>differential to common, $S_{cd21}$</span>
-            <span><i style="background:#a78bfa"></i>differential through, $S_{dd21}$</span>
-            <span><i style="background:#fbbf24"></i>Nyquist, 14 GHz</span>
+            <span><i style="background:#d78da4"></i>differential to common, $S_{cd21}$</span>
+            <span><i style="background:#a896c7"></i>differential through, $S_{dd21}$</span>
+            <span><i style="background:#eea465"></i>Nyquist, 14 GHz</span>
         </div>
     </div>
 </section>
@@ -277,7 +277,7 @@
     <div class="canvas-wrap">
         <canvas id="mv-plot" width="780" height="270"></canvas>
         <div class="legend">
-            <span><i style="background:#f472b6"></i>conversion from modal velocity difference</span>
+            <span><i style="background:#d78da4"></i>conversion from modal velocity difference</span>
         </div>
     </div>
 
@@ -355,8 +355,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#a78bfa',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#a896c7',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);

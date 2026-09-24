@@ -105,8 +105,8 @@
     <div class="canvas-wrap">
         <canvas id="sd-plot" width="780" height="260"></canvas>
         <div class="legend">
-            <span><i style="background:#fbbf24"></i>skin depth in copper</span>
-            <span><i style="background:#8b949e"></i>foil thicknesses</span>
+            <span><i style="background:#eea465"></i>skin depth in copper</span>
+            <span><i style="background:#8e9a96"></i>foil thicknesses</span>
         </div>
     </div>
 
@@ -148,9 +148,9 @@
     <div class="canvas-wrap">
         <canvas id="rf-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#fbbf24"></i>Hammerstad</span>
-            <span><i style="background:#f472b6"></i>Huray</span>
-            <span><i style="background:#8b949e"></i>Hammerstad's ceiling of 2</span>
+            <span><i style="background:#eea465"></i>Hammerstad</span>
+            <span><i style="background:#d78da4"></i>Huray</span>
+            <span><i style="background:#8e9a96"></i>Hammerstad's ceiling of 2</span>
         </div>
     </div>
 
@@ -231,9 +231,9 @@
     <div class="canvas-wrap">
         <canvas id="lm-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#22d3ee"></i>conductor</span>
-            <span><i style="background:#f472b6"></i>dielectric</span>
-            <span><i style="background:#fbbf24"></i>total</span>
+            <span><i style="background:#95c7db"></i>conductor</span>
+            <span><i style="background:#d78da4"></i>dielectric</span>
+            <span><i style="background:#eea465"></i>total</span>
         </div>
     </div>
 
@@ -264,9 +264,9 @@
     <div class="canvas-wrap">
         <canvas id="ca-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#34d399"></i>causal model</span>
-            <span><i style="background:#f472b6"></i>constant Dk and Df</span>
-            <span><i style="background:#8b949e"></i>time of flight</span>
+            <span><i style="background:#6fbba9"></i>causal model</span>
+            <span><i style="background:#d78da4"></i>constant Dk and Df</span>
+            <span><i style="background:#8e9a96"></i>time of flight</span>
         </div>
     </div>
 
@@ -295,8 +295,8 @@
     <div class="canvas-wrap">
         <canvas id="ds-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#22d3ee"></i>Dk</span>
-            <span><i style="background:#f472b6"></i>Df</span>
+            <span><i style="background:#95c7db"></i>Dk</span>
+            <span><i style="background:#d78da4"></i>Df</span>
         </div>
     </div>
 
@@ -359,8 +359,8 @@
     <div class="canvas-wrap">
         <canvas id="fw-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#f472b6"></i>differential to common conversion</span>
-            <span><i style="background:#fbbf24"></i>Nyquist, 14 GHz</span>
+            <span><i style="background:#d78da4"></i>differential to common conversion</span>
+            <span><i style="background:#eea465"></i>Nyquist, 14 GHz</span>
         </div>
     </div>
 </section>
@@ -381,7 +381,7 @@
     <div class="canvas-wrap">
         <canvas id="fa-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#34d399"></i>residual skew over 10 inches</span>
+            <span><i style="background:#6fbba9"></i>residual skew over 10 inches</span>
         </div>
     </div>
 
@@ -425,8 +425,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#fbbf24',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#eea465',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);

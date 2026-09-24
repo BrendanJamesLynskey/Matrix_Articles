@@ -638,8 +638,8 @@
     <div class="canvas-wrap">
         <canvas id="vs-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#f472b6"></i>excess loss from the stub</span>
-            <span><i style="background:#fbbf24"></i>Nyquist, 14 GHz</span>
+            <span><i style="background:#d78da4"></i>excess loss from the stub</span>
+            <span><i style="background:#eea465"></i>Nyquist, 14 GHz</span>
         </div>
     </div>
 
@@ -792,9 +792,9 @@
             <canvas id="eq-budget" width="380" height="300"></canvas>
         </div>
         <div class="legend">
-            <span><i style="background:#34d399"></i>cursor</span>
-            <span><i style="background:#f472b6"></i>ISI the equalisers left</span>
-            <span><i style="background:#22d3ee"></i>cancelled by the DFE</span>
+            <span><i style="background:#6fbba9"></i>cursor</span>
+            <span><i style="background:#d78da4"></i>ISI the equalisers left</span>
+            <span><i style="background:#95c7db"></i>cancelled by the DFE</span>
         </div>
     </div>
 
@@ -850,9 +850,9 @@
     <div class="canvas-wrap">
         <canvas id="st-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#f472b6"></i>signal to non-ISI noise — can only fall</span>
-            <span><i style="background:#34d399"></i>signal to residual ISI — what you buy</span>
-            <span><i style="background:#22d3ee"></i>the two combined, 20 log Q</span>
+            <span><i style="background:#d78da4"></i>signal to non-ISI noise — can only fall</span>
+            <span><i style="background:#6fbba9"></i>signal to residual ISI — what you buy</span>
+            <span><i style="background:#95c7db"></i>the two combined, 20 log Q</span>
         </div>
     </div>
 
@@ -1298,9 +1298,9 @@
 
 <script>
 /* ---------- shared canvas helpers -------------------------------------- */
-const C = { bg:'#0d1117', panel:'#161b22', grid:'#21262d', dim:'#8b949e',
-            accent:'#f59e0b', teal:'#34d399', cyan:'#22d3ee', pink:'#f472b6',
-            amber:'#fbbf24', text:'#e6edf3' };
+const C = { bg:'#172122', panel:'#1e292a', grid:'#293636', dim:'#8e9a96',
+            accent:'#d88954', teal:'#6fbba9', cyan:'#95c7db', pink:'#d78da4',
+            amber:'#eea465', text:'#ede5d9' };
 
 function hidpi(id) {
     const c = document.getElementById(id);

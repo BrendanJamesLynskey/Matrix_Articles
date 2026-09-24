@@ -130,8 +130,8 @@
     <div class="canvas-wrap">
         <canvas id="av-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#d946ef"></i>jitter produced by a voltage disturbance</span>
-            <span><i style="background:#fbbf24"></i>the crosstalk computed in deck 06</span>
+            <span><i style="background:#b07cc6"></i>jitter produced by a voltage disturbance</span>
+            <span><i style="background:#eea465"></i>the crosstalk computed in deck 06</span>
         </div>
     </div>
 
@@ -154,9 +154,9 @@
     <div class="canvas-wrap">
         <canvas id="sp-plot" width="780" height="310"></canvas>
         <div class="legend">
-            <span><i style="background:#d946ef"></i>amplitude-induced jitter, in UI</span>
-            <span><i style="background:#22d3ee"></i>received rise time, in UI</span>
-            <span><i style="background:#fbbf24"></i>about ten gigabits per second</span>
+            <span><i style="background:#b07cc6"></i>amplitude-induced jitter, in UI</span>
+            <span><i style="background:#95c7db"></i>received rise time, in UI</span>
+            <span><i style="background:#eea465"></i>about ten gigabits per second</span>
         </div>
     </div>
 
@@ -316,8 +316,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#d946ef',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#b07cc6',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);

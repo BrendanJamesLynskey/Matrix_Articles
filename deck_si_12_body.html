@@ -129,8 +129,8 @@
     <div class="canvas-wrap">
         <canvas id="pb-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#3b82f6"></i>impedance between the chosen points</span>
-            <span><i style="background:#8b949e"></i>the other cases</span>
+            <span><i style="background:#5c8ab5"></i>impedance between the chosen points</span>
+            <span><i style="background:#8e9a96"></i>the other cases</span>
         </div>
     </div>
 
@@ -163,9 +163,9 @@
     <div class="canvas-wrap">
         <canvas id="bm-plot" width="780" height="310"></canvas>
         <div class="legend">
-            <span><i style="background:#3b82f6"></i>impedance seen from the die</span>
-            <span><i style="background:#fbbf24"></i>the predicted resonance</span>
-            <span><i style="background:#f472b6"></i>its characteristic impedance</span>
+            <span><i style="background:#5c8ab5"></i>impedance seen from the die</span>
+            <span><i style="background:#eea465"></i>the predicted resonance</span>
+            <span><i style="background:#d78da4"></i>its characteristic impedance</span>
         </div>
     </div>
 
@@ -195,8 +195,8 @@
     <div class="canvas-wrap">
         <canvas id="bd-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#3b82f6"></i>peak impedance</span>
-            <span><i style="background:#f472b6"></i>the characteristic impedance</span>
+            <span><i style="background:#5c8ab5"></i>peak impedance</span>
+            <span><i style="background:#d78da4"></i>the characteristic impedance</span>
         </div>
     </div>
 
@@ -261,8 +261,8 @@
     <div class="canvas-wrap">
         <canvas id="tr-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#3b82f6"></i>rail voltage</span>
-            <span><i style="background:#8b949e"></i>the eventual DC level, $I R_{\mathrm{dc}}$</span>
+            <span><i style="background:#5c8ab5"></i>rail voltage</span>
+            <span><i style="background:#8e9a96"></i>the eventual DC level, $I R_{\mathrm{dc}}$</span>
         </div>
     </div>
 
@@ -337,8 +337,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#3b82f6',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#5c8ab5',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
@@ -416,7 +416,7 @@ function logx(p,w,lo,hi){return f=>p.l+(Math.log10(f)-Math.log10(lo))/(Math.log1
       label(ctx,fmtHz(g),X(g),h-p.b+14,C.dim,9,'center');});
     keys.forEach(function(k){
       const d=SI.probe[k], sel2=(k===key);
-      ctx.strokeStyle=sel2?C.accent:'#3d444d'; ctx.lineWidth=sel2?2.2:1;
+      ctx.strokeStyle=sel2?C.accent:'#3d4b4a'; ctx.lineWidth=sel2?2.2:1;
       ctx.beginPath(); let st=false;
       d.f_hz.forEach(function(f,i){if(f<FLO||f>FHI)return;
         const px=X(f),py=Y(d.z_ohm[i]);
@@ -576,7 +576,7 @@ function logx(p,w,lo,hi){return f=>p.l+(Math.log10(f)-Math.log10(lo))/(Math.log1
       ctx.stroke();dashed(ctx,false);
       label(ctx,'eventual DC level, '+dc.toFixed(1)+' mV',w-p.r-4,Y(dc)-5,C.dim,9,'right');}
     cases.forEach(function(c,j){
-      ctx.strokeStyle=j===i?C.accent:'#3d444d'; ctx.lineWidth=j===i?2.2:1;
+      ctx.strokeStyle=j===i?C.accent:'#3d4b4a'; ctx.lineWidth=j===i?2.2:1;
       ctx.beginPath(); let st=false;
       c.t_ns.forEach(function(t,k){if(t>TM)return;const px=X(t),py=Y(c.v_mv[k]);
         st?ctx.lineTo(px,py):(ctx.moveTo(px,py),st=true);});

@@ -91,7 +91,7 @@
     <div class="canvas-wrap">
         <canvas id="ss-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#38bdf8"></i>supply disturbance</span>
+            <span><i style="background:#8ab7d2"></i>supply disturbance</span>
         </div>
     </div>
 
@@ -144,9 +144,9 @@
     <div class="canvas-wrap">
         <canvas id="rj-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#38bdf8"></i>second-order loop (type II)</span>
-            <span><i style="background:#64748b"></i>first-order loop, for contrast</span>
-            <span><i style="background:#fbbf24"></i>loop bandwidth</span>
+            <span><i style="background:#8ab7d2"></i>second-order loop (type II)</span>
+            <span><i style="background:#606d6c"></i>first-order loop, for contrast</span>
+            <span><i style="background:#eea465"></i>loop bandwidth</span>
         </div>
     </div>
 
@@ -238,7 +238,7 @@
     <div class="canvas-wrap">
         <canvas id="dc-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#38bdf8"></i>impedance in series with the signal at 1 GHz</span>
+            <span><i style="background:#8ab7d2"></i>impedance in series with the signal at 1 GHz</span>
         </div>
     </div>
 
@@ -346,8 +346,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#38bdf8',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#8ab7d2',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);

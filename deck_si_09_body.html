@@ -117,9 +117,9 @@
     <div class="canvas-wrap">
         <canvas id="cd-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#34d399"></i>jitter transfer $H(f)$ &mdash; tracked, harmless</span>
-            <span><i style="background:#f472b6"></i>error response $1-H(f)$ &mdash; seen by the sampler</span>
-            <span><i style="background:#fbbf24"></i>loop bandwidth</span>
+            <span><i style="background:#6fbba9"></i>jitter transfer $H(f)$ &mdash; tracked, harmless</span>
+            <span><i style="background:#d78da4"></i>error response $1-H(f)$ &mdash; seen by the sampler</span>
+            <span><i style="background:#eea465"></i>loop bandwidth</span>
         </div>
     </div>
 
@@ -182,7 +182,7 @@
     <div class="canvas-wrap">
         <canvas id="pn-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#8b5cf6"></i>phase noise</span>
+            <span><i style="background:#876daf"></i>phase noise</span>
         </div>
     </div>
 
@@ -213,8 +213,8 @@
     <div class="canvas-wrap">
         <canvas id="jt-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#8b5cf6"></i>tolerance mask</span>
-            <span><i style="background:#fbbf24"></i>loop bandwidth</span>
+            <span><i style="background:#876daf"></i>tolerance mask</span>
+            <span><i style="background:#eea465"></i>loop bandwidth</span>
         </div>
     </div>
 
@@ -242,10 +242,10 @@
     <div class="canvas-wrap">
         <canvas id="zt-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#34d399"></i>$\zeta = 0.5$</span>
-            <span><i style="background:#8b5cf6"></i>$\zeta = 0.707$</span>
-            <span><i style="background:#fbbf24"></i>$\zeta = 1$</span>
-            <span><i style="background:#f472b6"></i>$\zeta = 2$</span>
+            <span><i style="background:#6fbba9"></i>$\zeta = 0.5$</span>
+            <span><i style="background:#876daf"></i>$\zeta = 0.707$</span>
+            <span><i style="background:#eea465"></i>$\zeta = 1$</span>
+            <span><i style="background:#d78da4"></i>$\zeta = 2$</span>
         </div>
     </div>
 
@@ -306,8 +306,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#8b5cf6',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#876daf',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);

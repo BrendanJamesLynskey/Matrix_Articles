@@ -157,9 +157,9 @@
         </div>
         <canvas id="pe-imp" width="780" height="190" style="margin-top:.75rem"></canvas>
         <div class="legend">
-            <span><i style="background:#f472b6"></i>poles &times;</span>
-            <span><i style="background:#34d399"></i>$|H(e^{j\omega})|$</span>
-            <span><i style="background:#fbbf24"></i>envelope $r^{\,n}$</span>
+            <span><i style="background:#d78da4"></i>poles &times;</span>
+            <span><i style="background:#6fbba9"></i>$|H(e^{j\omega})|$</span>
+            <span><i style="background:#eea465"></i>envelope $r^{\,n}$</span>
         </div>
     </div>
 
@@ -283,9 +283,9 @@
     <div class="canvas-wrap">
         <canvas id="ef-resp" width="780" height="250"></canvas>
         <div class="legend">
-            <span><i style="background:#34d399"></i>your taps</span>
-            <span><i style="background:#22d3ee"></i>smallest eigenvector</span>
-            <span><i style="background:#f472b6"></i>stopband</span>
+            <span><i style="background:#6fbba9"></i>your taps</span>
+            <span><i style="background:#95c7db"></i>smallest eigenvector</span>
+            <span><i style="background:#d78da4"></i>stopband</span>
         </div>
     </div>
 
@@ -371,10 +371,10 @@
     <div class="canvas-wrap">
         <canvas id="pu-sig" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#8b949e"></i>input $x[n]$</span>
-            <span><i style="background:#34d399"></i>subband 0</span>
-            <span><i style="background:#22d3ee"></i>subband 1</span>
-            <span><i style="background:#f472b6"></i>reconstruction error</span>
+            <span><i style="background:#8e9a96"></i>input $x[n]$</span>
+            <span><i style="background:#6fbba9"></i>subband 0</span>
+            <span><i style="background:#95c7db"></i>subband 1</span>
+            <span><i style="background:#d78da4"></i>reconstruction error</span>
         </div>
     </div>
 
@@ -478,9 +478,9 @@
 
 <script>
 /* ---------- shared canvas helpers -------------------------------------- */
-const C = { bg:'#0d1117', panel:'#161b22', grid:'#21262d', dim:'#8b949e',
-            accent:'#34d399', cyan:'#22d3ee', pink:'#f472b6', amber:'#fbbf24',
-            text:'#e6edf3' };
+const C = { bg:'#172122', panel:'#1e292a', grid:'#293636', dim:'#8e9a96',
+            accent:'#6fbba9', cyan:'#95c7db', pink:'#d78da4', amber:'#eea465',
+            text:'#ede5d9' };
 
 function hidpi(id) {
     const c = document.getElementById(id);
@@ -554,7 +554,7 @@ function jacobiEig(Ain, n) {
         const { ctx, w, h } = PL;
         clear(ctx, w, h);
         const cx = w / 2, cy = h / 2 + 4, R = Math.min(w, h) * 0.30;
-        ctx.fillStyle = 'rgba(52,211,153,0.06)';
+        ctx.fillStyle = 'rgba(111,187,169,0.06)';
         ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI); ctx.fill();
         ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(cx - R * 1.5, cy); ctx.lineTo(cx + R * 1.5, cy); ctx.stroke();
@@ -696,7 +696,7 @@ function jacobiEig(Ain, n) {
         const DBMIN = -60, DBMAX = 12;
         const X = a => padL + a / Math.PI * (w - padL - padR);
         const Y = d => h - padB - (d - DBMIN) / (DBMAX - DBMIN) * (h - padT - padB);
-        ctx.fillStyle = 'rgba(244,114,182,0.10)';
+        ctx.fillStyle = 'rgba(215,141,164,0.10)';
         ctx.fillRect(X(ws), padT, X(Math.PI) - X(ws), h - padT - padB);
         ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
         for (let d = DBMIN; d <= DBMAX; d += 12) {

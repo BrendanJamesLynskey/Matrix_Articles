@@ -113,9 +113,9 @@
     <div class="canvas-wrap">
         <canvas id="sh-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#0ea5e9"></i>transmission through the shunt</span>
-            <span><i style="background:#f472b6"></i>reflection from it</span>
-            <span><i style="background:#fbbf24"></i>the directivity floor</span>
+            <span><i style="background:#74a2bf"></i>transmission through the shunt</span>
+            <span><i style="background:#d78da4"></i>reflection from it</span>
+            <span><i style="background:#eea465"></i>the directivity floor</span>
         </div>
     </div>
 
@@ -271,8 +271,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#0ea5e9',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#74a2bf',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
@@ -329,7 +329,7 @@ function ohm(z){return z>=1?z.toFixed(2)+' Ω':z>=1e-3?(1e3*z).toFixed(2)+' mΩ'
     ctx.moveTo(X(Math.pow(10,e)),p.t);ctx.lineTo(X(Math.pow(10,e)),h-p.b);ctx.stroke();
     label(ctx,ohm(Math.pow(10,e)),X(Math.pow(10,e)),h-p.b+14,C.dim,9,'center');}
   if(SI.sensitivity){const fl=SI.sensitivity.reflection_floor_ohm;
-    ctx.fillStyle='rgba(251,191,36,.10)';
+    ctx.fillStyle='rgba(238,164,101,.10)';
     ctx.fillRect(p.l,p.t,X(fl)-p.l,h-p.t-p.b);
     label(ctx,'below the directivity floor',p.l+8,p.t+16,C.amber,10,'left');}
   function ser(arr,col){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();let st=false;

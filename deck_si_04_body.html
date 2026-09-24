@@ -128,8 +128,8 @@
     <div class="canvas-wrap">
         <canvas id="vm-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#f59e0b"></i>return loss, pi model</span>
-            <span><i style="background:#34d399"></i>insertion loss, pi model</span>
+            <span><i style="background:#d88954"></i>return loss, pi model</span>
+            <span><i style="background:#6fbba9"></i>insertion loss, pi model</span>
         </div>
     </div>
 
@@ -157,9 +157,9 @@
     <div class="canvas-wrap">
         <canvas id="ap-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#f59e0b"></i>differential impedance of the barrel pair</span>
-            <span><i style="background:#f472b6"></i>via capacitance</span>
-            <span><i style="background:#8b949e"></i>100 &Omega; target</span>
+            <span><i style="background:#d88954"></i>differential impedance of the barrel pair</span>
+            <span><i style="background:#d78da4"></i>via capacitance</span>
+            <span><i style="background:#8e9a96"></i>100 &Omega; target</span>
         </div>
     </div>
 
@@ -227,8 +227,8 @@
     <div class="canvas-wrap">
         <canvas id="bd-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#f59e0b"></i>excess loss at Nyquist</span>
-            <span><i style="background:#f472b6"></i>your setting</span>
+            <span><i style="background:#d88954"></i>excess loss at Nyquist</span>
+            <span><i style="background:#d78da4"></i>your setting</span>
         </div>
     </div>
 
@@ -262,9 +262,9 @@
     <div class="canvas-wrap">
         <canvas id="op-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#f59e0b"></i>return loss at 14 GHz</span>
-            <span><i style="background:#34d399"></i>bandwidth to the 10 dB line</span>
-            <span><i style="background:#8b949e"></i>barrel matched to 100 &Omega;</span>
+            <span><i style="background:#d88954"></i>return loss at 14 GHz</span>
+            <span><i style="background:#6fbba9"></i>bandwidth to the 10 dB line</span>
+            <span><i style="background:#8e9a96"></i>barrel matched to 100 &Omega;</span>
         </div>
     </div>
 
@@ -283,7 +283,7 @@
     <div class="canvas-wrap">
         <canvas id="th-plot" width="780" height="270"></canvas>
         <div class="legend">
-            <span><i style="background:#f59e0b"></i>return loss at 14 GHz</span>
+            <span><i style="background:#d88954"></i>return loss at 14 GHz</span>
         </div>
     </div>
 
@@ -319,7 +319,7 @@
     <div class="canvas-wrap">
         <canvas id="vx-plot" width="780" height="260"></canvas>
         <div class="legend">
-            <span><i style="background:#f472b6"></i>mutual inductance through the shared return</span>
+            <span><i style="background:#d78da4"></i>mutual inductance through the shared return</span>
         </div>
     </div>
 
@@ -386,8 +386,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#f59e0b',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#d88954',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);

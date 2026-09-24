@@ -109,8 +109,8 @@
     <div class="canvas-wrap">
         <canvas id="qs-plot" width="780" height="310"></canvas>
         <div class="legend">
-            <span><i style="background:#a855f7"></i>the real distribution on a Q scale</span>
-            <span><i style="background:#8b949e"></i>the straight line the model fits</span>
+            <span><i style="background:#9673b8"></i>the real distribution on a Q scale</span>
+            <span><i style="background:#8e9a96"></i>the straight line the model fits</span>
         </div>
     </div>
 
@@ -135,8 +135,8 @@
     <div class="canvas-wrap">
         <canvas id="bt-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#a855f7"></i>error ratio against sampling position</span>
-            <span><i style="background:#fbbf24"></i>$10^{-12}$</span>
+            <span><i style="background:#9673b8"></i>error ratio against sampling position</span>
+            <span><i style="background:#eea465"></i>$10^{-12}$</span>
         </div>
     </div>
 
@@ -228,8 +228,8 @@
     <div class="canvas-wrap">
         <canvas id="ct-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#a855f7"></i>random jitter the fit reports</span>
-            <span><i style="background:#8b949e"></i>the random jitter actually present</span>
+            <span><i style="background:#9673b8"></i>random jitter the fit reports</span>
+            <span><i style="background:#8e9a96"></i>the random jitter actually present</span>
         </div>
     </div>
 
@@ -324,8 +324,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#a855f7',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#9673b8',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);

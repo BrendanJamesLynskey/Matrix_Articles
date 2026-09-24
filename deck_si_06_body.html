@@ -174,10 +174,10 @@
     <div class="canvas-wrap">
         <canvas id="ln-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#f472b6"></i>near end, microstrip</span>
-            <span><i style="background:#fbbf24"></i>far end, microstrip</span>
-            <span><i style="background:#34d399"></i>near end, stripline</span>
-            <span><i style="background:#22d3ee"></i>far end, stripline</span>
+            <span><i style="background:#d78da4"></i>near end, microstrip</span>
+            <span><i style="background:#eea465"></i>far end, microstrip</span>
+            <span><i style="background:#6fbba9"></i>near end, stripline</span>
+            <span><i style="background:#95c7db"></i>far end, stripline</span>
         </div>
     </div>
 
@@ -229,8 +229,8 @@
     <div class="canvas-wrap">
         <canvas id="sp-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#f472b6"></i>near-end crosstalk</span>
-            <span><i style="background:#8b949e"></i>1 % of the aggressor</span>
+            <span><i style="background:#d78da4"></i>near-end crosstalk</span>
+            <span><i style="background:#8e9a96"></i>1 % of the aggressor</span>
         </div>
     </div>
 
@@ -335,8 +335,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#f472b6',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#d78da4',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);

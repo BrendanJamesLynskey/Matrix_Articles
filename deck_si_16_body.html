@@ -77,8 +77,8 @@
     <div class="canvas-wrap">
         <canvas id="ch-plot" width="780" height="270"></canvas>
         <div class="legend">
-            <span><i style="background:#fb923c"></i>insertion loss</span>
-            <span><i style="background:#8b949e"></i>return loss</span>
+            <span><i style="background:#d6845c"></i>insertion loss</span>
+            <span><i style="background:#8e9a96"></i>return loss</span>
         </div>
     </div>
 </section>
@@ -174,7 +174,7 @@
     <div class="canvas-wrap">
         <canvas id="mp-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#fb923c"></i>departure from minimum phase</span>
+            <span><i style="background:#d6845c"></i>departure from minimum phase</span>
         </div>
     </div>
 
@@ -302,8 +302,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#fb923c',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#d6845c',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);

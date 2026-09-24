@@ -47,111 +47,111 @@ SECTIONS = [
 
 DECKS = [
     dict(n=1, slug="01-transmission-lines", body="deck_si_01_body.html",
-         data="deck01", accent="#22d3ee",
+         data="deck01", accent="#95c7db",
          title="The Transmission Line and the Physical Channel",
          short="Transmission lines",
          blurb="When a trace stops being a wire, where the fifty-ohm "
                "convention comes from, and what a reflection actually is."),
     dict(n=2, slug="02-return-paths", body="deck_si_02_body.html",
-         data="deck02", accent="#34d399",
+         data="deck02", accent="#6fbba9",
          title="Return Paths and Reference Planes",
          short="Return paths",
          blurb="Every signal current is a loop. Where the other half of it "
                "flows, and what happens when the board will not let it."),
     dict(n=3, slug="03-materials-and-loss", body="deck_si_03_body.html",
-         data="deck03", accent="#fbbf24",
+         data="deck03", accent="#eea465",
          title="Materials, Loss and Causality",
          short="Materials and loss",
          blurb="Copper roughness, dielectric loss, and why a constant "
                "dielectric constant describes a material that cannot exist."),
     dict(n=4, slug="04-vias-and-discontinuities", body="deck_si_04_body.html",
-         data="deck04", accent="#f59e0b",
+         data="deck04", accent="#d88954",
          title="Vias, Connectors and Discontinuities",
          short="Vias",
          blurb="The only part of a channel made by drilling, and the one "
                "that decides whether the link runs at 28 gigabaud."),
     dict(n=5, slug="05-differential-signalling", body="deck_si_05_body.html",
-         data="deck05", accent="#a78bfa",
+         data="deck05", accent="#a896c7",
          title="Differential Signalling",
          short="Differential pairs",
          blurb="Why every fast link is differential, what tight coupling "
                "really costs, and how symmetry is lost."),
     dict(n=6, slug="06-crosstalk", body="deck_si_06_body.html",
-         data="deck06", accent="#f472b6",
+         data="deck06", accent="#d78da4",
          title="Crosstalk",
          short="Crosstalk",
          blurb="The impairment no equaliser can remove, and the one place "
                "near-end and far-end coupling genuinely differ."),
     dict(n=7, slug="07-total-jitter", body="deck_si_07_body.html",
-         data="deck07", accent="#c084fc",
+         data="deck07", accent="#b297cc",
          title="Total Jitter and the Bit Error Ratio",
          short="Total jitter",
          blurb="Why jitter is defined against an error ratio, what a bit "
                "error ratio tester does that nothing else can, and the "
                "decomposition tree done properly."),
     dict(n=8, slug="08-dual-dirac", body="deck_si_08_body.html",
-         data="deck08", accent="#a855f7",
+         data="deck08", accent="#9673b8",
          title="The Dual-Dirac Model and Its Limits",
          short="Dual-Dirac",
          blurb="Five assumptions, a fitting parameter that is not the "
                "peak-to-peak deterministic jitter, and the tails a "
                "measurement cannot reach."),
     dict(n=9, slug="09-clock-recovery", body="deck_si_09_body.html",
-         data="deck09", accent="#8b5cf6",
+         data="deck09", accent="#876daf",
          title="Clock Recovery, the Reference Clock and Tolerance",
          short="Clock recovery",
          blurb="Every jitter measurement compares a test clock against a "
                "reference. Which reference, how much it tracks, and what the "
                "tolerance mask is really testing."),
     dict(n=10, slug="10-amplitude-noise", body="deck_si_10_body.html",
-         data="deck10", accent="#d946ef",
+         data="deck10", accent="#b07cc6",
          title="Crosstalk, Amplitude Noise and the Two-Dimensional View",
          short="Amplitude noise",
          blurb="Timing noise and amplitude noise are not separable, the "
                "separation fails above about ten gigabits per second, and "
                "crosstalk is where it fails first."),
     dict(n=11, slug="11-pdn-impedance", body="deck_si_11_body.html",
-         data="deck11", accent="#60a5fa",
+         data="deck11", accent="#83a9c9",
          title="The Power Delivery Network as an Impedance",
          short="PDN impedance",
          blurb="Target impedance and what the rule is worth, real capacitors, "
                "and why the number of parts is set by inductance rather than "
                "by capacitance."),
     dict(n=12, slug="12-planes-and-ecology", body="deck_si_12_body.html",
-         data="deck12", accent="#3b82f6",
+         data="deck12", accent="#5c8ab5",
          title="Planes, Cavities and the PDN Ecology",
          short="Planes and ecology",
          blurb="Spreading inductance, cavity resonances, and the Bandini "
                "Mountain \u2014 the peak the board cannot reach because it is "
                "behind the package."),
     dict(n=13, slug="13-measuring-low-impedance", body="deck_si_13_body.html",
-         data="deck13", accent="#0ea5e9",
+         data="deck13", accent="#74a2bf",
          title="Measuring Low Impedance",
          short="Measuring milliohms",
          blurb="Why a reflection measurement stops at about an ohm, how the "
                "two-port shunt-through method reaches a milliohm, and the "
                "ground loop that ruins it."),
     dict(n=14, slug="14-pi-meets-si", body="deck_si_14_body.html",
-         data="deck14", accent="#38bdf8",
+         data="deck14", accent="#8ab7d2",
          title="Power Integrity Meets Signal Integrity",
          short="PI meets SI",
          blurb="The routes by which a disturbance on the supply becomes an "
                "error at a receiver \u2014 switching noise, cavity coupling, "
                "and supply-induced jitter."),
     dict(n=15, slug="15-timing-and-budgets", body="deck_si_15_body.html",
-         data="deck15", accent="#2dd4bf",
+         data="deck15", accent="#79bdb5",
          title="Timing, Flight Time and the Budget",
          short="Timing budgets",
          blurb="Flight time is not propagation delay, and the arithmetic "
                "that ended the wide parallel bus."),
     dict(n=16, slug="16-measurement-and-correlation",
-         body="deck_si_16_body.html", data="deck16", accent="#fb923c",
+         body="deck_si_16_body.html", data="deck16", accent="#d6845c",
          title="Measurement, De-embedding and Correlation",
          short="Measurement",
          blurb="Where S-parameters come from, how they are damaged, and "
                "what correlation honestly means."),
     dict(n=17, slug="17-com-and-compliance", body="deck_si_17_body.html",
-         data="deck17", accent="#4ade80",
+         data="deck17", accent="#6fc8ad",
          title="Channel Operating Margin and Compliance",
          short="COM and compliance",
          blurb="How a standard decides a channel is legal, run on the same "
@@ -172,8 +172,8 @@ EXTRA_CSS = """
         .legend{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;margin-top:.6rem;font-family:var(--font-mono);font-size:.72rem;color:var(--text-secondary)}
         .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:.35rem;vertical-align:middle}
         .verdict{font-family:var(--font-mono);font-size:.8rem;padding:.35rem .7rem;border-radius:4px;display:inline-block;margin-top:.5rem}
-        .verdict.ok{color:var(--accent-4);border:1px solid var(--accent-4);background:rgba(52,211,153,.12)}
-        .verdict.bad{color:var(--accent-2);border:1px solid var(--accent-2);background:rgba(244,114,182,.12)}
+        .verdict.ok{color:var(--accent-4);border:1px solid var(--accent-4);background:rgba(111,187,169,.12)}
+        .verdict.bad{color:var(--accent-2);border:1px solid var(--accent-2);background:rgba(215,141,164,.12)}
         .canvas-wrap canvas{image-rendering:auto}
         .metric-label .katex,.callout-label .katex,.series-label .katex,
         .metric-label .katex *,.callout-label .katex *{text-transform:none}
@@ -241,9 +241,9 @@ def build_deck(d, quiet=False):
     body_path = os.path.join(HERE, d['body'])
     if not os.path.exists(body_path):
         return None
-    style = STYLE.replace('#a78bfa', d['accent'])
+    style = STYLE.replace('#a896c7', d['accent'])
     r, g, b = (int(d['accent'][i:i + 2], 16) for i in (1, 3, 5))
-    style = style.replace('rgba(167,139,250,.25)', 'rgba(%d,%d,%d,.25)' % (r, g, b))
+    style = style.replace('rgba(168,150,199,.25)', 'rgba(%d,%d,%d,.25)' % (r, g, b))
     style = style.replace('    </style>', EXTRA_CSS + '    </style>')
 
     data = {}
@@ -281,9 +281,9 @@ REDIRECT_HTML = '''<!DOCTYPE html>
 <meta http-equiv="refresh" content="0; url=../__TARGET__/">
 <link rel="canonical" href="__PAGES__/__TARGET__/">
 <title>Moved &mdash; Signal Integrity &amp; High-Speed Digital Design</title>
-<style>body{background:#0a0a0a;color:#e6edf3;font-family:system-ui,sans-serif;
+<style>body{background:#121a1b;color:#ede5d9;font-family:system-ui,sans-serif;
 max-width:38rem;margin:18vh auto;padding:0 1.5rem;line-height:1.7}
-a{color:#22d3ee}</style>
+a{color:#95c7db}</style>
 </head>
 <body>
 <h1>This deck has moved</h1>
@@ -335,20 +335,20 @@ LANDING_HEAD = """<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
-  :root { --bg:#0a0a0f; --surface:#131318; --border:#23232a; --text:#d4d4d8;
-          --text2:#a1a1aa; --dim:#71717a; --accent:#22d3ee; --green:#10b981;
-          --purple:#8b5cf6; --blue:#60a5fa; --red:#ef4444; }
+  :root { --bg:#121a1b; --surface:#192324; --border:#273434; --text:#d4d4ca;
+          --text2:#9ea8a4; --dim:#5f6c6b; --accent:#95c7db; --green:#5aa393;
+          --purple:#876daf; --blue:#83a9c9; --red:#ce4138; }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; scroll-behavior: smooth; }
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text);
          line-height:1.6; min-height:100vh; }
   a { color: var(--blue); text-decoration: none; }
-  a:hover { color: #93c5fd; }
+  a:hover { color: #abc5db; }
   .container { max-width: 980px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
   header { text-align: center; margin-bottom: 2.5rem; }
   header .icon { font-size: 3rem; margin-bottom: 0.5rem; }
   header h1 { font-family:'Playfair Display',serif; font-weight:900; font-size:2.6rem;
-              letter-spacing:-0.02em; color:#fafafa; margin-bottom:0.3rem; line-height:1.1; }
+              letter-spacing:-0.02em; color:#f5efe6; margin-bottom:0.3rem; line-height:1.1; }
   header .subtitle { font-size:1rem; color:var(--accent); font-weight:500;
                      letter-spacing:0.15em; text-transform:uppercase; margin-bottom:1rem; }
   header p { color: var(--text2); max-width: 680px; margin: 0 auto 0.8rem;
@@ -358,24 +358,24 @@ LANDING_HEAD = """<!DOCTYPE html>
           gap:1.2rem; background:var(--surface); border:1px solid var(--border);
           border-radius:10px; padding:1.25rem 1.5rem;
           transition:border-color .2s, box-shadow .2s; }
-  .card:hover { border-color: rgba(34,211,238,.3); box-shadow: 0 0 20px rgba(34,211,238,.06); }
+  .card:hover { border-color: rgba(149,199,219,.3); box-shadow: 0 0 20px rgba(149,199,219,.06); }
   .card .num { font-family:'Playfair Display',serif; font-weight:900; font-size:1.8rem;
                text-align:center; line-height:1; }
   .card .info h2 { font-family:'Playfair Display',serif; font-weight:700; font-size:1.15rem;
-                   color:#fafafa; margin-bottom:0.2rem; }
+                   color:#f5efe6; margin-bottom:0.2rem; }
   .card .info p { font-size:0.82rem; color:var(--dim); line-height:1.4; }
   .card .action { text-align:right; white-space:nowrap; display:flex;
                   flex-direction:column; align-items:flex-end; gap:0.4rem; }
   .btn { display:inline-block; padding:0.45em 1.3em; border-radius:6px; font-weight:700;
          font-size:0.85rem; transition:background .2s, transform .1s; }
   .btn:active { transform: scale(0.97); }
-  .btn-launch { background: var(--accent); color:#0a0a0f; }
-  .btn-launch:hover { background:#67e8f9; color:#0a0a0f; }
+  .btn-launch { background: var(--accent); color:#121a1b; }
+  .btn-launch:hover { background:#add9e8; color:#121a1b; }
   .badge { display:inline-block; padding:0.25em 0.8em; border-radius:999px;
            font-size:0.72rem; font-weight:700; font-family:'JetBrains Mono',monospace; }
-  .badge-complete { background:rgba(16,185,129,.12); color:var(--green);
-                    border:1px solid rgba(16,185,129,.25); }
-  .section-title { font-family:'Playfair Display',serif; font-size:1.45rem; color:#fafafa;
+  .badge-complete { background:rgba(90,163,147,.12); color:var(--green);
+                    border:1px solid rgba(90,163,147,.25); }
+  .section-title { font-family:'Playfair Display',serif; font-size:1.45rem; color:#f5efe6;
                    margin:2.6rem 0 0.35rem; display:flex; align-items:baseline;
                    gap:0.8rem; flex-wrap:wrap; }
   .section-title .secrange { font-family:'JetBrains Mono',monospace; font-size:0.72rem;

@@ -75,8 +75,8 @@
     <div class="canvas-wrap">
         <canvas id="fs-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#2dd4bf"></i>voltage at the receiver</span>
-            <span><i style="background:#fbbf24"></i>switching threshold</span>
+            <span><i style="background:#79bdb5"></i>voltage at the receiver</span>
+            <span><i style="background:#eea465"></i>switching threshold</span>
         </div>
     </div>
 
@@ -180,9 +180,9 @@
     <div class="canvas-wrap">
         <canvas id="sv-plot" width="780" height="280"></canvas>
         <div class="legend">
-            <span><i style="background:#8b949e"></i>worst-case sum</span>
-            <span><i style="background:#34d399"></i>statistical at three sigma</span>
-            <span><i style="background:#2dd4bf"></i>statistical at $10^{-12}$</span>
+            <span><i style="background:#8e9a96"></i>worst-case sum</span>
+            <span><i style="background:#6fbba9"></i>statistical at three sigma</span>
+            <span><i style="background:#79bdb5"></i>statistical at $10^{-12}$</span>
         </div>
     </div>
 
@@ -230,9 +230,9 @@
     <div class="canvas-wrap">
         <canvas id="bs-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#8b949e"></i>common clock</span>
-            <span><i style="background:#fbbf24"></i>source synchronous</span>
-            <span><i style="background:#2dd4bf"></i>embedded clock</span>
+            <span><i style="background:#8e9a96"></i>common clock</span>
+            <span><i style="background:#eea465"></i>source synchronous</span>
+            <span><i style="background:#79bdb5"></i>embedded clock</span>
         </div>
     </div>
 
@@ -284,8 +284,8 @@
 </section>
 
 <script>
-const C={bg:'#0d1117',grid:'#21262d',dim:'#8b949e',accent:'#2dd4bf',teal:'#34d399',
-         cyan:'#22d3ee',pink:'#f472b6',amber:'#fbbf24',text:'#e6edf3'};
+const C={bg:'#172122',grid:'#293636',dim:'#8e9a96',accent:'#79bdb5',teal:'#6fbba9',
+         cyan:'#95c7db',pink:'#d78da4',amber:'#eea465',text:'#ede5d9'};
 function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const r=window.devicePixelRatio||1,w=c.width,h=c.height;
   c.style.width=w+'px';c.style.height=h+'px';c.width=Math.round(w*r);c.height=Math.round(h*r);
@@ -388,8 +388,8 @@ function axes(ctx,w,h,p,xl,yl){ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginP
     const wd=(terms[k]/tot)*(w-p.l-p.r);
     ctx.fillStyle=cols[i%cols.length];
     ctx.fillRect(x,p.t,wd,h-p.t-p.b);
-    if(wd>70){label(ctx,k.replace(/_/g,' '),x+wd/2,p.t+30,'#0d1117',11,'center');
-      label(ctx,terms[k].toFixed(2)+' ps',x+wd/2,p.t+48,'#0d1117',10,'center');}
+    if(wd>70){label(ctx,k.replace(/_/g,' '),x+wd/2,p.t+30,'#172122',11,'center');
+      label(ctx,terms[k].toFixed(2)+' ps',x+wd/2,p.t+48,'#172122',10,'center');}
     x+=wd;});
   label(ctx,'contributions to lane-to-lane skew, by size',p.l,22,C.dim,10,'left');
   label(ctx,'worst-case sum '+d.worst_case_ps.toFixed(2)+' ps   •   '+

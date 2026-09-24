@@ -183,9 +183,9 @@
     <div class="canvas-wrap">
         <canvas id="cx-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#f472b6"></i>reciprocal of attenuation &mdash; peaks at minimum loss</span>
-            <span><i style="background:#34d399"></i>power handling &mdash; peaks at maximum power</span>
-            <span><i style="background:#fbbf24"></i>the geometric mean of the two</span>
+            <span><i style="background:#d78da4"></i>reciprocal of attenuation &mdash; peaks at minimum loss</span>
+            <span><i style="background:#6fbba9"></i>power handling &mdash; peaks at maximum power</span>
+            <span><i style="background:#eea465"></i>the geometric mean of the two</span>
         </div>
     </div>
 
@@ -272,9 +272,9 @@
     <div class="canvas-wrap">
         <canvas id="bo-plot" width="780" height="290"></canvas>
         <div class="legend">
-            <span><i style="background:#22d3ee"></i>voltage at the receiver</span>
-            <span><i style="background:#8b949e"></i>final value</span>
-            <span><i style="background:#fbbf24"></i>receiver threshold band</span>
+            <span><i style="background:#95c7db"></i>voltage at the receiver</span>
+            <span><i style="background:#8e9a96"></i>final value</span>
+            <span><i style="background:#eea465"></i>receiver threshold band</span>
         </div>
     </div>
 
@@ -356,8 +356,8 @@
     <div class="canvas-wrap">
         <canvas id="td-plot" width="780" height="300"></canvas>
         <div class="legend">
-            <span><i style="background:#22d3ee"></i>impedance the instrument reports</span>
-            <span><i style="background:#8b949e"></i>reference impedance</span>
+            <span><i style="background:#95c7db"></i>impedance the instrument reports</span>
+            <span><i style="background:#8e9a96"></i>reference impedance</span>
         </div>
     </div>
 </section>
@@ -374,8 +374,8 @@
     <div class="canvas-wrap">
         <canvas id="tr-plot" width="780" height="270"></canvas>
         <div class="legend">
-            <span><i style="background:#22d3ee"></i>impedance the instrument reports</span>
-            <span><i style="background:#f472b6"></i>true impedance, 38 &Omega;</span>
+            <span><i style="background:#95c7db"></i>impedance the instrument reports</span>
+            <span><i style="background:#d78da4"></i>true impedance, 38 &Omega;</span>
         </div>
     </div>
 
@@ -512,9 +512,9 @@
 
 <script>
 /* ---------- shared canvas helpers -------------------------------------- */
-const C = { bg:'#0d1117', panel:'#161b22', grid:'#21262d', dim:'#8b949e',
-            accent:'#22d3ee', teal:'#34d399', cyan:'#22d3ee', pink:'#f472b6',
-            amber:'#fbbf24', text:'#e6edf3' };
+const C = { bg:'#172122', panel:'#1e292a', grid:'#293636', dim:'#8e9a96',
+            accent:'#95c7db', teal:'#6fbba9', cyan:'#95c7db', pink:'#d78da4',
+            amber:'#eea465', text:'#ede5d9' };
 
 function hidpi(id) {
     const c = document.getElementById(id);
@@ -672,7 +672,7 @@ function axes(ctx, w, h, pad, xlab, ylab) {
             ctx.moveTo(pad.l, Y(y)); ctx.lineTo(w - pad.r, Y(y)); ctx.stroke();
             label(ctx, y.toFixed(1), pad.l - 6, Y(y) + 3, C.dim, 9, 'right');
         }
-        ctx.fillStyle = 'rgba(251,191,36,.10)';
+        ctx.fillStyle = 'rgba(238,164,101,.10)';
         ctx.fillRect(pad.l, Y(vf * 0.7), w - pad.l - pad.r, Y(vf * 0.3) - Y(vf * 0.7));
 
         ctx.strokeStyle = C.dim; dashed(ctx, true); ctx.beginPath();
@@ -818,16 +818,16 @@ function axes(ctx, w, h, pad, xlab, ylab) {
     const X = f => pad.l + (Math.log10(f) - Math.log10(FLO)) /
                    (Math.log10(FHI) - Math.log10(FLO)) * (w - pad.l - pad.r);
     const bands = [
-        [FLO, r.f_lc, 'lumped', '#3b4252'],
-        [r.f_lc, r.f_skin, 'LC', '#1f6feb'],
-        [r.f_skin, r.f_diel, 'skin effect', '#238636'],
-        [r.f_diel, r.f_wg, 'dielectric loss', '#9e6a03'],
-        [r.f_wg, FHI, 'waveguide', '#8b2252']];
+        [FLO, r.f_lc, 'lumped', '#3c4a49'],
+        [r.f_lc, r.f_skin, 'LC', '#4173a0'],
+        [r.f_skin, r.f_diel, 'skin effect', '#286c56'],
+        [r.f_diel, r.f_wg, 'dielectric loss', '#85522d'],
+        [r.f_wg, FHI, 'waveguide', '#723b4a']];
     bands.forEach(function (b) {
         ctx.fillStyle = b[3];
         ctx.fillRect(X(b[0]), pad.t, X(b[1]) - X(b[0]), h - pad.t - pad.b);
         const mid = (X(b[0]) + X(b[1])) / 2;
-        if (X(b[1]) - X(b[0]) > 55) label(ctx, b[2], mid, pad.t + 26, '#e6edf3', 11, 'center');
+        if (X(b[1]) - X(b[0]) > 55) label(ctx, b[2], mid, pad.t + 26, '#ede5d9', 11, 'center');
     });
     [[r.f_lc, 'LC'], [r.f_skin, 'skin'], [r.f_diel, 'dielectric'], [r.f_wg, 'waveguide']]
         .forEach(function (m) {
