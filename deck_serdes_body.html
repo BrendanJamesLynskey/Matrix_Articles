@@ -1314,7 +1314,7 @@ function hidpi(id) {
 function clear(ctx, w, h) { ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h); }
 function label(ctx, t, x, y, col, size, align) {
     ctx.fillStyle = col || C.dim;
-    ctx.font = (size || 10) + "px 'JetBrains Mono', monospace";
+    ctx.font = (size || 10) + "px 'Red Hat Mono', monospace";
     ctx.textAlign = align || 'left'; ctx.fillText(t, x, y); ctx.textAlign = 'left';
 }
 function dashed(ctx, on) { ctx.setLineDash(on ? [4, 4] : []); }

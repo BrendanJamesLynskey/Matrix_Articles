@@ -279,7 +279,7 @@ function hidpi(id){const c=document.getElementById(id);if(!c)return null;
   const x=c.getContext('2d');x.scale(r,r);return{ctx:x,w,h};}
 function clear(ctx,w,h){ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);}
 function label(ctx,t,x,y,c2,s,a){ctx.fillStyle=c2||C.dim;
-  ctx.font=(s||10)+"px 'JetBrains Mono', monospace";ctx.textAlign=a||'left';
+  ctx.font=(s||10)+"px 'Red Hat Mono', monospace";ctx.textAlign=a||'left';
   ctx.fillText(t,x,y);ctx.textAlign='left';}
 function dashed(ctx,on){ctx.setLineDash(on?[4,4]:[]);}
 function metric(l,v){return '<div class="metric"><div class="metric-label">'+l+

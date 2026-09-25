@@ -201,7 +201,7 @@ HEAD = """<!DOCTYPE html>
     <title>__TITLE__</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,700&family=Red+Hat+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
@@ -333,21 +333,21 @@ LANDING_HEAD = """<!DOCTYPE html>
 <title>Signal Integrity &amp; High-Speed Digital Design</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,700&family=Red+Hat+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet" />
 <style>
   :root { --bg:#121a1b; --surface:#192324; --border:#273434; --text:#d4d4ca;
           --text2:#9ea8a4; --dim:#5f6c6b; --accent:#95c7db; --green:#5aa393;
           --purple:#876daf; --blue:#83a9c9; --red:#ce4138; }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; scroll-behavior: smooth; }
-  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text);
+  body { font-family:'Barlow',sans-serif; background:var(--bg); color:var(--text);
          line-height:1.6; min-height:100vh; }
   a { color: var(--blue); text-decoration: none; }
   a:hover { color: #abc5db; }
   .container { max-width: 980px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
   header { text-align: center; margin-bottom: 2.5rem; }
   header .icon { font-size: 3rem; margin-bottom: 0.5rem; }
-  header h1 { font-family:'Playfair Display',serif; font-weight:900; font-size:2.6rem;
+  header h1 { font-family:'Barlow Semi Condensed',serif; font-weight:900; font-size:2.6rem;
               letter-spacing:-0.02em; color:#f5efe6; margin-bottom:0.3rem; line-height:1.1; }
   header .subtitle { font-size:1rem; color:var(--accent); font-weight:500;
                      letter-spacing:0.15em; text-transform:uppercase; margin-bottom:1rem; }
@@ -359,9 +359,9 @@ LANDING_HEAD = """<!DOCTYPE html>
           border-radius:10px; padding:1.25rem 1.5rem;
           transition:border-color .2s, box-shadow .2s; }
   .card:hover { border-color: rgba(149,199,219,.3); box-shadow: 0 0 20px rgba(149,199,219,.06); }
-  .card .num { font-family:'Playfair Display',serif; font-weight:900; font-size:1.8rem;
+  .card .num { font-family:'Barlow Semi Condensed',serif; font-weight:900; font-size:1.8rem;
                text-align:center; line-height:1; }
-  .card .info h2 { font-family:'Playfair Display',serif; font-weight:700; font-size:1.15rem;
+  .card .info h2 { font-family:'Barlow Semi Condensed',serif; font-weight:700; font-size:1.15rem;
                    color:#f5efe6; margin-bottom:0.2rem; }
   .card .info p { font-size:0.82rem; color:var(--dim); line-height:1.4; }
   .card .action { text-align:right; white-space:nowrap; display:flex;
@@ -372,13 +372,13 @@ LANDING_HEAD = """<!DOCTYPE html>
   .btn-launch { background: var(--accent); color:#121a1b; }
   .btn-launch:hover { background:#add9e8; color:#121a1b; }
   .badge { display:inline-block; padding:0.25em 0.8em; border-radius:999px;
-           font-size:0.72rem; font-weight:700; font-family:'JetBrains Mono',monospace; }
+           font-size:0.72rem; font-weight:700; font-family:'Red Hat Mono',monospace; }
   .badge-complete { background:rgba(90,163,147,.12); color:var(--green);
                     border:1px solid rgba(90,163,147,.25); }
-  .section-title { font-family:'Playfair Display',serif; font-size:1.45rem; color:#f5efe6;
+  .section-title { font-family:'Barlow Semi Condensed',serif; font-size:1.45rem; color:#f5efe6;
                    margin:2.6rem 0 0.35rem; display:flex; align-items:baseline;
                    gap:0.8rem; flex-wrap:wrap; }
-  .section-title .secrange { font-family:'JetBrains Mono',monospace; font-size:0.72rem;
+  .section-title .secrange { font-family:'Red Hat Mono',monospace; font-size:0.72rem;
                    color:var(--accent); letter-spacing:0.12em; text-transform:uppercase;
                    font-weight:700; }
   .secintro { color:var(--dim); font-size:0.88rem; margin:0 0 1rem; max-width:62ch; }
@@ -388,12 +388,12 @@ LANDING_HEAD = """<!DOCTYPE html>
   .panel li { margin-bottom:0.35rem; }
   table { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.5rem; }
   th { text-align:left; color:var(--accent); font-weight:700; padding:0.5rem 0.7rem;
-       border-bottom:1px solid var(--border); font-family:'JetBrains Mono',monospace;
+       border-bottom:1px solid var(--border); font-family:'Red Hat Mono',monospace;
        font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; }
   td { padding:0.45rem 0.7rem; border-bottom:1px solid var(--border); color:var(--text2);
        vertical-align:top; }
   tr:last-child td { border-bottom:none; }
-  .ok { color: var(--green); font-family:'JetBrains Mono',monospace; }
+  .ok { color: var(--green); font-family:'Red Hat Mono',monospace; }
   footer { text-align:center; margin-top:3rem; padding-top:1.5rem;
            border-top:1px solid var(--border); font-size:0.82rem; color:var(--dim); }
   footer a { color: var(--dim); }
