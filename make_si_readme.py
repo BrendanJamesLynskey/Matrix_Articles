@@ -213,6 +213,9 @@ for name, rel in [
      "delivery (the complement to deck 07 here), deck 13 clocks and resets"),
     ("[Arm AMBA](%s/AMBA)" % GH,
      "What the traffic becomes once it is on-chip"),
+    ("[Introduction to Simulation](%s/Introduction_to_Simulation)" % GH,
+     "Where the field solving, circuit models and channel simulation in this series sit among "
+     "the levels of engineering simulation, from field solvers to system models"),
     ("[Hardware](%s/Hardware)" % GH,
      "The index this series sits in"),
 ]:
