@@ -227,6 +227,16 @@ FOOT = """
 """
 
 
+def concept(path):
+    """Concept style (2026-10-24): idempotent oscilloscope hero from ~/Claude_sandbox/_deck_concepts.
+    Skipped quietly where that local tool is absent (e.g. a fresh clone of this repo)."""
+    import subprocess
+    import sys
+    tool = os.path.join(ROOT, '_deck_concepts', 'concept.py')
+    if os.path.exists(tool):
+        subprocess.run([sys.executable, tool, '--concept', 'scope', path], check=True, stdout=subprocess.DEVNULL)
+
+
 def nav(cur):
     out = ['<div class="seriesnav">']
     for d in DECKS:
@@ -268,6 +278,7 @@ def build_deck(d, quiet=False):
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, 'w', encoding='utf-8') as fh:
         fh.write(html)
+    concept(os.path.dirname(out))
     n = len(re.findall(r'<section class="slide"', html))
     if not quiet:
         print('  %-34s %2d slides  %6d kB' % (d['slug'], n, len(html) // 1024))
@@ -555,6 +566,7 @@ numbers in another.</p>
     os.makedirs(REPO, exist_ok=True)
     with open(os.path.join(REPO, 'index.html'), 'w', encoding='utf-8') as fh:
         fh.write(html)
+    concept(REPO)
     print('  %-34s landing page, %d slides indexed' % ('index.html', n_slides))
 
 

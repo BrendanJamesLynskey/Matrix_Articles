@@ -71,6 +71,11 @@ def build(body_file, out_file, title, footer, repo, accents):
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
     with open(out_file, "w", encoding="utf-8") as fh:
         fh.write(html)
+    # concept style (2026-10-24): idempotent oscilloscope hero, if the local tool is present
+    tool = os.path.join(ROOT, "_deck_concepts", "concept.py")
+    if os.path.exists(tool):
+        import subprocess
+        subprocess.run([sys.executable, tool, "--concept", "scope", os.path.dirname(out_file)], check=True, stdout=subprocess.DEVNULL)
     n = len(re.findall(r'<section class="slide"', html))
     print("wrote %s  (%d slides, %d KB)" % (out_file, n, len(html) // 1024))
 
